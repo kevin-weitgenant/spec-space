@@ -107,6 +107,10 @@
 
   // ── small utilities ─────────────────────────────────────────────────────
   function basename(p) { return p.split("/").pop(); }
+  // Percent-encoded pathnames (emoji, accents, spaces...) vs. raw manifest
+  // paths — always compare decoded. decode alone can't throw on "+" or
+  // stray "%", but guard anyway.
+  function decPath(p) { try { return decodeURIComponent(p); } catch (e) { return p; } }
   function dirname(p) { var i = p.lastIndexOf("/"); return i < 0 ? "" : p.slice(0, i); }
   function validName(name, isFolder) {
     if (typeof name !== "string") return false;
@@ -421,7 +425,7 @@
   // ── delete ───────────────────────────────────────────────────────────────
   function doDelete(entry) {
     api("/__delete__", { path: entry.path }).then(function () {
-      var cur = location.pathname.replace(/^\/+/, "");
+      var cur = decPath(location.pathname.replace(/^\/+/, ""));
       if (cur === entry.path || cur.startsWith(entry.path + "/")) {
         fetchManifest(function (tree) {
           var f = firstDoc(tree);
@@ -483,7 +487,7 @@
   // If the currently displayed doc was renamed/moved (or lived inside a moved
   // folder), update the iframe + address bar so nothing 404s on reload.
   function afterPathChange(from, to) {
-    var cur = location.pathname.replace(/^\/+/, "");
+    var cur = decPath(location.pathname.replace(/^\/+/, ""));
     if (cur === from || cur.startsWith(from + "/")) {
       go(to + cur.slice(from.length), false);
     }
@@ -873,7 +877,7 @@
     try {
       var href = iframe.contentWindow.location.href;
       if (!href || href === "about:blank") return; // iframe not loaded yet
-      var p = iframe.contentWindow.location.pathname.replace(/^\/+/, "");
+      var p = decPath(iframe.contentWindow.location.pathname.replace(/^\/+/, ""));
       if (!p) return;
       setActive(p);
       // the doc navigated itself (link inside the iframe) → keep the URL in sync
@@ -920,7 +924,7 @@
     if (iframe && !iframe.getAttribute("src")) {
       // deep link: an explicit ?p= from the bootstrap redirect wins; otherwise
       // if the current URL points at a doc in the tree, open it
-      var initial = DEEPLINK || location.pathname.replace(/^\/+/, "");
+      var initial = DEEPLINK || decPath(location.pathname.replace(/^\/+/, ""));
       var initialHash = "";
       var hi = initial.indexOf("#");
       if (hi >= 0) { initialHash = initial.slice(hi); initial = initial.slice(0, hi); }
@@ -953,7 +957,7 @@
 
   // back/forward buttons
   window.addEventListener("popstate", function (e) {
-    var p = (e.state && e.state.docsPath) || location.pathname.replace(/^\/+/, "");
+    var p = (e.state && e.state.docsPath) || decPath(location.pathname.replace(/^\/+/, ""));
     if (p && iframe) go(p, false);
   });
 })();

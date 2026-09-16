@@ -25,7 +25,7 @@
 function deepLinkBootstrap() {
   return (
     '<script data-injected>try{if(window.top===window.self&&!window.frameElement&&location.pathname!=="/"&&/\\.html?$/i.test(location.pathname))' +
-    'location.replace("/?p="+encodeURIComponent(location.pathname.replace(/^\\/+/,"")+location.hash))}catch(e){}</scr' + "ipt>"
+    'location.replace("/?p="+encodeURIComponent(decodeURIComponent(location.pathname.replace(/^\\/+/,""))+location.hash))}catch(e){}</scr' + "ipt>"
   );
 }
 function injectScripts(html, opts = {}) {
