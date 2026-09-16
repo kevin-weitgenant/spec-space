@@ -14,6 +14,14 @@
   // server's POST endpoints, which don't exist on a static host).
   var EXPORT = window.DOCS_EXPORT === true;
 
+  // Static export deep link: a doc opened directly on the host bounces to
+  // /?p=<path> (see inject.js) — pick it up here and open it in the iframe.
+  var DEEPLINK = null; // "path/doc.html" or "path/doc.html#anchor"
+  if (EXPORT) {
+    var dm = location.search.match(/[?&]p=([^&]+)/);
+    if (dm) { try { DEEPLINK = decodeURIComponent(dm[1]); } catch (e) {} }
+  }
+
   // Fullscreen (ex.: botão tela cheia do mermaid-zoom) exige isto no iframe —
   // shells customizados costumam omitir, então garantimos aqui.
   if (iframe) { try { iframe.allowFullscreen = true; } catch (e) {} }
@@ -910,8 +918,12 @@
     var scrollTop = scroller.scrollTop;
     build(tree);
     if (iframe && !iframe.getAttribute("src")) {
-      // deep link: if the current URL points at a doc in the tree, open it
-      var initial = location.pathname.replace(/^\/+/, "");
+      // deep link: an explicit ?p= from the bootstrap redirect wins; otherwise
+      // if the current URL points at a doc in the tree, open it
+      var initial = DEEPLINK || location.pathname.replace(/^\/+/, "");
+      var initialHash = "";
+      var hi = initial.indexOf("#");
+      if (hi >= 0) { initialHash = initial.slice(hi); initial = initial.slice(0, hi); }
       var f = null;
       if (initial) {
         var links = list.querySelectorAll("a");
@@ -920,7 +932,8 @@
         }
       }
       if (!f) f = firstDoc(tree);
-      if (f) go(f, false);
+      if (f) { skipSyncPush = true; if (iframe) iframe.src = "/" + f + initialHash; setActive(f); syncTitle(f);
+        try { history.replaceState({ docsPath: f }, "", "/" + f + initialHash); } catch (e) {} }
     }
     syncFromIframe();
     scroller.scrollTop = scrollTop;             // preserve sidebar scroll across rebuild

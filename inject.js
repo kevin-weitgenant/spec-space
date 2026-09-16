@@ -17,10 +17,25 @@
 //
 // opts.staticMode: true for the export — defines window.DOCS_EXPORT (read by
 // nav.js to pick /manifest.json and enter read-only mode) and drops the
-// reload/edit clients.
+// reload/edit clients. Static docs ALSO get a small bootstrap (in <head>,
+// before anything renders): on a static host a deep link serves the raw doc
+// — outside the shell's iframe, hence no sidebar. If we're the top window,
+// bounce to the shell as /?p=<doc path>; the shell picks it up and opens it
+// inside the iframe (see nav.js).
+function deepLinkBootstrap() {
+  return (
+    '<script data-injected>try{if(window.top===window.self&&!window.frameElement&&location.pathname!=="/"&&/\\.html?$/i.test(location.pathname))' +
+    'location.replace("/?p="+encodeURIComponent(location.pathname.replace(/^\\/+/,"")+location.hash))}catch(e){}</scr' + "ipt>"
+  );
+}
 function injectScripts(html, opts = {}) {
   const { staticMode = false } = opts;
   const isShell = /<[^>]+\bid\s*=\s*["']docList["']/i.test(html);
+  if (staticMode && !isShell) {
+    html = /<head[^>]*>/i.test(html)
+      ? html.replace(/<head[^>]*>/i, (m) => m + deepLinkBootstrap())
+      : deepLinkBootstrap() + html;
+  }
   const tags = [];
   if (staticMode) tags.push(`<script>window.DOCS_EXPORT=true</script>`);
   else tags.push(`<script src="/__docs__/reload.js" data-injected></script>`);

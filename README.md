@@ -54,8 +54,9 @@ What `dist/` contains: your HTMLs **with the script tags already written in**,
 a `manifest.json` (tree + manual order + folder icons), and `__docs__/` (the
 client scripts the tags reference). On the static site the sidebar works,
 pan/zoom works — but it's read-only (no delete/rename/new-folder/drag; those
-need the dev server). The shell is the entry point; opening a doc's URL
-directly works standalone, just without the sidebar. Publish from the root of
+need the dev server). Deep links work too: opening a doc's URL directly
+bounces to the shell with the sidebar open on that doc (anchors preserved).
+Publish from the root of
 the output folder (absolute `/__docs__/...` paths don't survive sub-path
 hosting like `user.github.io/projeto/`). Live reload and inline editing stay
 dev-only, by design.
