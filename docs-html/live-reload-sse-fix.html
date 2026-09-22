@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fix: live-reload SSE e o limite de 6 conexões</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🔌%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));
+  border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{margin:0 0 8px;font-size:2rem;letter-spacing:-.02em}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 10px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
+.toc-inner{max-width:920px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;padding:10px 24px}
+.toc a{font-size:.9rem;color:var(--soft);text-decoration:none;padding:4px 12px;
+  border-radius:99px;border:1px solid transparent}
+.toc a:hover{background:var(--panel)}
+.toc a.active{background:var(--accent-soft);color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 6px}
+h2 .num{color:var(--accent);margin-right:8px}
+h3{font-size:1.12rem;margin:26px 0 6px}
+.lead{color:var(--soft);margin-top:0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);
+  background:var(--panel);border-radius:8px;padding:12px 16px;margin:16px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+.callout.ramp{border-left-color:var(--purple)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.95rem}
+th{background:var(--panel2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.sim{color:var(--green);font-weight:700}
+.nao{color:var(--red);font-weight:700}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;overflow-x:auto;font-size:.86rem;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;
+  background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:6px 12px;font-size:.9rem}
+.node.dev{background:var(--green-soft);border-color:var(--green)}
+.node.cut{background:var(--red-soft);border-color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.fig-cap{text-align:center;color:var(--soft);font-size:.86rem;margin:4px 0 0}
+footer{color:var(--soft);font-size:.88rem}
+.foot-inner{max-width:920px;margin:0 auto;padding:28px 24px;text-align:center}
+a.top{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:50%;
+  background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;text-decoration:none;opacity:0;pointer-events:none;transition:opacity .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,.2)}
+a.top.show{opacity:1;pointer-events:auto}
+@media(max-width:640px){.hero h1{font-size:1.5rem}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+<div class="hero-inner">
+  <h1>Fix: live-reload travava a 7ª aba</h1>
+  <p class="lede">Um EventSource eterno por aba esbarrava no limite de ~6 conexões HTTP/1.1 por origem. A 7ª aba de docs ficava "carregando" para sempre. O fix: um único SSE multiplexado no manager + eleição de líder no browser via Web Locks + retransmissão por BroadcastChannel.</p>
+  <p class="meta">docs-html/live-reload-sse-fix.html · docs-in-html · implementado em manager.js, reload.js, roots.js, inject.js e client/reload.js</p>
+</div>
+</header>
+
+<nav class="toc">
+<div class="toc-inner">
+  <a href="#sintoma">1 · O sintoma</a>
+  <a href="#investigacao">2 · A investigação</a>
+  <a href="#causa">3 · A causa raiz</a>
+  <a href="#fix">4 · O fix</a>
+  <a href="#licoes">5 · Lições do caminho</a>
+  <a href="#validacao">6 · Como validar</a>
+</div>
+</nav>
+
+<main class="wrap">
+
+<section id="sintoma">
+  <h2><span class="num">1</span>O sintoma</h2>
+  <p class="lead">O que o usuário via, em linguagem crua.</p>
+
+  <p>Com o <b>manager</b> servindo N pastas de docs num único processo
+  (<code>localhost:4400/&lt;slug&gt;/</code>), abrir muitas abas de docs no mesmo browser produzia um
+  comportamento estranho e 100% reproduzível:</p>
+
+  <ul>
+    <li>As <b>6 primeiras abas</b> carregavam normalmente, com live-reload funcionando.</li>
+    <li>A <b>7ª aba em diante</b> ficava "carregando" para sempre — página branca, spinner, nada.</li>
+    <li>Fechar uma das 6 abas antigas <em>liberava</em> imediatamente uma das abas travadas.</li>
+  </ul>
+
+  <p>Reproduzido empiricamente via CDP (Chrome DevTools Protocol) abrindo 7+ abas programaticamente:
+  só as 6 primeiras completavam o load. O número 6 gritava "limite de browser", não "bug de lógica" —
+  mas isso só ficou óbvio depois da investigação.</p>
+
+  <div class="callout danger">
+    <div class="title">Por que era grave</div>
+    O docs-in-html é usado com <em>muitas</em> abas abertas ao mesmo tempo (uma por doc em edição,
+    mais o shell por raiz). Travar na 7ª aba tornava o manager inutilizável no fluxo real de trabalho.
+  </div>
+</section>
+
+<section id="investigacao">
+  <h2><span class="num">2</span>A investigação</h2>
+  <p class="lead">Como se chegou da "aba travada" ao limite de conexões.</p>
+
+  <h3>Primeiro desconfiado: o servidor</h3>
+  <p>A hipótese inicial foi que o manager estava lento ou travando ao servir a 7ª raiz. Teste direto:</p>
+
+  <ul>
+    <li><code>curl</code> na URL travada <b>respondia em ~1ms</b> — servidor saudável.</li>
+    <li>O log do manager mostrava a requisição da página chegando e o HTML sendo enviado.</li>
+    <li>O HTML chegava ao browser, mas a aba <em>continuava</em> "carregando".</li>
+  </ul>
+
+  <div class="callout tip">
+    <div class="title">Diagnóstico-chave</div>
+    Se o servidor responde em ~1ms e mesmo assim a aba não termina o load, o bloqueio é
+    <b>client-side</b>: a aba está esperando algum recurso que nunca completa. "Nunca completa" +
+    "conexão viva" = uma requisição pendurada para sempre. A lista de recursos que cada aba pedia:
+    HTML, CSS, JS… e <b>um EventSource SSE eterno</b>.
+  </div>
+
+  <h3>Fechando o cerco</h3>
+  <p>Olhando o <code>client/reload.js</code> da época: cada aba injetada fazia
+  <code>new EventSource("/__reload__")</code> — uma conexão HTTP <b>que nunca fecha</b>, por design
+  (é o que faz o live-reload ser "live"). Com 6 abas, o browser esgota seu pool de conexões para
+  aquela origem; a 7ª aba pede seu próprio HTML+recursos e o browser não tem slot para atendê-los.
+  Contando as conexões via CDP: 6 EventSource pendurados. Número redondo demais para coincidência.</p>
+</section>
+
+<section id="causa">
+  <h2><span class="num">3</span>A causa raiz</h2>
+  <p class="lead">O limite de 6 conexões HTTP/1.1 por origem — explicado do zero.</p>
+
+  <div class="callout ramp">
+    <div class="title">Rampa: o limite de conexões, para quem nunca ouviu falar</div>
+    <p>Quando seu browser conversa com um servidor em HTTP/1.1, cada pedido usa uma
+    <b>conexão</b> — como uma linha telefônica dedicada. Para que um site lento não monopolize a
+    rede, os browsers limitam quantas linhas simultâneas você pode abrir <b>para o mesmo
+    servidor (origem)</b>: o Chrome e o Firefox usam <b>~6</b>.</p>
+    <p>Páginas normais não sofrem com isso: pedem HTML, CSS, imagens, e cada linha é liberada quando
+    a resposta termina. O problema é o <b>SSE (Server-Sent Events)</b>: por natureza, a resposta
+    <em>nunca termina</em> — o servidor mantém a linha aberta para empurrar eventos quando um
+    arquivo muda. É a funcionalidade inteira, não um bug do SSE.</p>
+    <p>Logo: <b>1 aba com SSE = 1 linha permanentemente ocupada</b>. Com 6 abas, as 6 linhas estão
+    tomadas por EventSources. A 7ª aba não consegue nem baixar seu HTML. É um clássico do
+    desenvolvimento web — a mesma armadilha derruba apps com muitos websockets e iframes.</p>
+  </div>
+
+  <h3>Por que o design antigo escalava mal</h3>
+  <table>
+    <tr><th>Camada</th><th>Comportamento antigo</th><th>Conexões no browser</th></tr>
+    <tr><td>Client (<code>reload.js</code>)</td><td>1 <code>EventSource</code> por aba, aberto no load</td><td>1 por aba, eterna</td></tr>
+    <tr><td>Serve single-root</td><td>SSE em <code>/__reload__</code> da própria raiz</td><td>N abas = N conexões</td></tr>
+    <tr><td>Manager multi-root</td><td>Cada raiz com seu próprio canal SSE</td><td>N abas = N conexões (mesmo pior: multiplicável por raiz)</td></tr>
+  </table>
+
+  <p>O orçamento é da <b>origem</b> (<code>localhost:4400</code>), não por raiz/slug — ter 10 raízes
+  não aumenta o limite. A conclusão da investigação vira a especificação do fix:
+  <b>o browser inteiro pode ter no máximo 1 conexão SSE com o manager</b>. Todo o resto do design
+  deriva disso.</p>
+</section>
+
+<section id="fix">
+  <h2><span class="num">4</span>O fix</h2>
+  <p class="lead">Três peças: multiplexação no servidor, eleição de líder no cliente, filtro por raiz no receptor.</p>
+
+  <div class="flow">
+    <span class="node">Antes</span>
+    <span class="arr">:</span>
+    <span class="node">aba 1</span><span class="arr">→</span><span class="node">SSE</span>
+    <span class="arr">·</span>
+    <span class="node">aba 2</span><span class="arr">→</span><span class="node">SSE</span>
+    <span class="arr">·</span>
+    <span class="node">…</span>
+    <span class="arr">·</span>
+    <span class="node cut">aba 7 — sem conexão, travada</span>
+  </div>
+  <div class="flow">
+    <span class="node">Depois</span>
+    <span class="arr">:</span>
+    <span class="node">aba-líder</span><span class="arr">→</span><span class="node dev">1 SSE único /__reload__</span>
+    <span class="arr">→</span><span class="node dev">BroadcastChannel</span>
+    <span class="arr">→</span><span class="node">todas as abas (filtram por raiz)</span>
+  </div>
+  <p class="fig-cap">Antes: N abas = N SSE (máx 6). Depois: o browser inteiro = 1 SSE, retransmitido localmente.</p>
+
+  <h3>Peça 1 — Hub SSE único no manager (servidor)</h3>
+  <p>O manager passou a expor <b>um único</b> canal SSE em <code>/__reload__</code> na <b>raiz</b>
+  do servidor, carregando eventos de <b>todas</b> as raízes. Cada evento é etiquetado com sua origem:</p>
+
+<pre><code>// manager.js — cada root watcher alimenta o hub via callback
+function makeRoot(dir, slug) {
+  return createRoot(dir, { base: "/" + slug, onReload: (rel) =&gt; hubBroadcast("/" + slug, rel) });
+}
+// evento no fio: { "base": "/slug", "path": "arq.html" }</code></pre>
+
+  <p>O encadeamento: <code>reload.js</code> ganhou o parâmetro <code>onEvent(relPath)</code>
+  (dispara para <em>cada</em> mudança de arquivo); <code>roots.js</code> repassa
+  <code>opts.onReload</code> para o <code>createReload(root, opts.onReload)</code> de cada raiz;
+  o manager conecta esse callback ao hub. Assim, um save em <em>qualquer</em> raiz vira um evento
+  <code>{base, path}</code> no canal único.</p>
+
+  <div class="callout tip">
+    <div class="title">Compatibilidade single-root</div>
+    O serve de raiz única continua mandando <code>{path}</code> <b>sem</b> <code>base</code> — e o
+    cliente novo trata isso: sem <code>base</code>, não há filtro e o evento vale para todos.
+    Nenhuma regressão no fluxo original.
+  </div>
+
+  <h3>Peça 2 — Eleição de líder no cliente (browser)</h3>
+  <p>Se só pode existir 1 SSE por browser, quem o segura? <b>Uma aba eleita</b>, via
+  <b>Web Locks API</b> (<code>navigator.locks</code>):</p>
+
+<pre><code>// client/reload.js (essência)
+var bc = new BroadcastChannel("docs-in-html");
+bc.onmessage = (e) =&gt; onEvent(e.data);          // seguidores recebem aqui
+navigator.locks.request("docs-in-html-sse", { mode: "exclusive" }, (lock) =&gt; {
+  if (!lock) return;                             // não ganhou — vira seguidor
+  openSSE((raw) =&gt; {
+    bc.postMessage(raw);                         // retransmite TODOS os eventos brutos
+    onEvent(raw);                                // e também se aplica
+  });
+  return new Promise(() =&gt; {});                  // segura o lock pela vida da página
+});</code></pre>
+
+  <ul>
+    <li><b>Eleição:</b> todas as abas pedem o lock <code>"docs-in-html-sse"</code>; a primeira vira
+    líder, as demais ficam pendentes (seguidores).</li>
+    <li><b>Retransmissão:</b> o líder retransmite <b>todos os eventos brutos</b> — de todas as raízes —
+    via <code>BroadcastChannel('docs-in-html')</code>, que chega instantaneamente a todas as abas
+    da origem <em>sem consumir nenhuma conexão HTTP</em>.</li>
+    <li><b>Failover automático:</b> fechar a aba-líder libera o lock e a próxima aba pendente assume
+    o SSE — sem intervenção, sem timer.</li>
+    <li><b>Fallback:</b> browsers sem Web Locks/BroadcastChannel caem no SSE direto por aba
+    (comportamento antigo; ok com poucas abas).</li>
+  </ul>
+
+  <h3>Peça 3 — Filtro por raiz no receptor</h3>
+  <p>Como o canal é compartilhado por todas as raízes, cada receptor filtra antes de agir,
+  comparando o <code>base</code> do evento com o seu próprio <code>window.DOCS_BASE</code>
+  (definido na injeção por <code>inject.js</code>; vazio no single-root):</p>
+
+<pre><code>// client/reload.js
+function onEvent(d) {
+  if (!d || !d.path) return;
+  if (typeof d.base === "string" &amp;&amp; d.base.replace(/\/+$/, "") !== BASE_N) return; // outra raiz → ignora
+  if (shouldReload(d.path)) location.reload();
+}</code></pre>
+
+  <p>Só depois de passar no filtro o <code>shouldReload</code> roda (arquivo sou eu? asset
+  compartilhado? o shell só recarrega consigo mesmo, preservando o estado da sidebar).</p>
+</section>
+
+<section id="licoes">
+  <h2><span class="num">5</span>Lições do caminho</h2>
+  <p class="lead">Dois erros intermediários que quase entregaram um fix que não fixava.</p>
+
+  <h3>Erro 1 — Eleição global, SSE por raiz</h3>
+  <p>A primeira tentativa fez a eleição de líder <em>por raiz</em>: uma aba-líder
+  <b>por slug</b>, cada uma com seu próprio SSE em <code>/&lt;slug&gt;/__reload__</code>. A lógica
+  parecia certa, mas…</p>
+
+  <div class="callout warn">
+    <div class="title">Por que falhou</div>
+    O limite de ~6 conexões é <b>por origem</b>, não por raiz. N raízes = N conexões SSE
+    (uma líder cada) — o mesmo teto estourado, só que agora distribuído. A lição:
+    <b>orçamento de conexão é da origem, então a deduplicação também tem que ser da origem</b>.
+    Daí o hub único multiplexado na raiz do manager.
+  </div>
+
+  <h3>Erro 2 — Líder filtrando antes de retransmitir</h3>
+  <p>Na segunda tentativa, o líder já filtrava os eventos pela <em>sua própria</em> raiz e só
+  retransmitia o que sobrava:</p>
+
+  <div class="callout warn">
+    <div class="title">Por que falhou</div>
+    O líder de uma aba da raiz A descartava os eventos das raízes B, C… — e as abas seguidoras
+    dessas raízes ficavam <b>cegas aos próprios eventos</b> (live-reload morto nelas). A lição:
+    <b>o líder é um canal burdo (dumb pipe)</b> — retransmite TUDO cru; o filtro é
+    responsabilidade de cada receptor, que é o único que sabe qual é a sua raiz.
+    Filtrar o mais tarde possível, no destino.
+  </div>
+
+  <table>
+    <tr><th>Tentativa</th><th>Abas carregam?</th><th>Reload nas outras raízes?</th></tr>
+    <tr><td>1 SSE por aba (original)</td><td class="nao">não (6+)</td><td class="sim">sim (nas 6)</td></tr>
+    <tr><td>Líder por raiz, SSE por raiz</td><td class="nao">não</td><td class="sim">sim</td></tr>
+    <tr><td>Líder global filtrando antes</td><td class="sim">sim</td><td class="nao">não</td></tr>
+    <tr><b><td>Hub único + dumb pipe + filtro no receptor</td><td class="sim">sim</td><td class="sim">sim</td></b></tr>
+  </table>
+</section>
+
+<section id="validacao">
+  <h2><span class="num">6</span>Como validar</h2>
+  <p class="lead">O protocolo usado na validação do fix — e que você pode repetir.</p>
+
+  <h3>Carga: 10 abas simultâneas via CDP</h3>
+  <ol>
+    <li>Suba o manager com várias raízes registradas (<code>localhost:4400</code>).</li>
+    <li>Via CDP, abra 10 abas de docs de uma vez e espere os loads.</li>
+    <li><b>Esperado:</b> 10/10 completam o load (antes do fix: só as 6 primeiras).
+    No DevTools → Network, deve haver <b>exatamente 1</b> conexão <code>__reload__</code>
+    pendurada, segurada pela aba-líder.</li>
+  </ol>
+
+  <h3>Reload em aba seguidora</h3>
+  <ol>
+    <li>Escolha uma aba que <em>não</em> é a líder (Network sem SSE próprio).</li>
+    <li>Edite no disco o doc aberto nela.</li>
+    <li><b>Esperado:</b> recarrega sozinha em ~150ms (debounce do watcher) — provando que o
+    caminho líder → BroadcastChannel → seguidor funciona.</li>
+  </ol>
+
+  <h3>Filtro por raiz</h3>
+  <ol>
+    <li>Com uma aba aberta na raiz <code>docs-html-docs</code>, edite um arquivo de <b>outra</b> raiz.</li>
+    <li><b>Esperado:</b> a aba de <code>docs-html-docs</code> <em>não</em> recarrega (evento
+    <code>{base}</code> diferente do seu <code>DOCS_BASE</code>).</li>
+  </ol>
+
+  <h3>Single-root sem regressão</h3>
+  <ol>
+    <li>Rode o serve de raiz única (<code>docs serve</code> na pasta) e abra um doc.</li>
+    <li><b>Esperado:</b> SSE em <code>/__reload__</code> enviando <code>{path}</code> sem
+    <code>base</code>; o cliente novo aceita (sem <code>base</code>, sem filtro) e o reload
+    funciona como sempre funcionou.</li>
+  </ol>
+
+  <h3>Failover do líder</h3>
+  <ol>
+    <li>Identifique a aba-líder (a do SSE no Network) e feche-a.</li>
+    <li><b>Esperado:</b> outra aba assume o lock e abre seu próprio SSE; edite um arquivo para
+    confirmar que o reload continua vivo em todas as abas.</li>
+  </ol>
+
+  <div class="callout warn">
+    <div class="title">Nota de migração</div>
+    Abas que já estavam abertas com o <code>reload.js</code> antigo mantêm o comportamento velho
+    até serem <b>fechadas e reabertas</b> — em particular, uma aba-líder antiga continua segurando o
+    lock <code>docs-in-html-sse</code> com seu SSE por raiz. Após atualizar o projeto, feche todas
+    as abas de docs e reabra-as para o comportamento novo valer em todo o browser.
+  </div>
+</section>
+
+</main>
+
+<footer>
+<div class="foot-inner">
+  docs-in-html · fix do live-reload SSE · manager.js · reload.js · roots.js · inject.js · client/reload.js
+</div>
+</footer>
+
+<a class="top" href="#" id="toTop" title="Voltar ao topo">↑</a>
+
+<script>
+(function(){
+  var top=document.getElementById('toTop');
+  window.addEventListener('scroll',function(){top.classList.toggle('show',window.scrollY>400)},{passive:true});
+  top.addEventListener('click',function(e){e.preventDefault();window.scrollTo({top:0,behavior:'smooth'})});
+  // TOC pill ativo por seção visível
+  var links=[].slice.call(document.querySelectorAll('.toc a'));
+  var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1))});
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){
+      es.forEach(function(en){
+        if(!en.isIntersecting)return;
+        var i=secs.indexOf(en.target);
+        links.forEach(function(a,j){a.classList.toggle('active',j===i)});
+      });
+    },{rootMargin:'-20% 0px -70% 0px'});
+    secs.forEach(function(s){io.observe(s)});
+  }
+})();
+</script>
+</body>
+</html>

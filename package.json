@@ -1,6 +1,6 @@
 {
   "name": "docs-in-html",
-  "version": "0.12.1",
+  "version": "0.13.0",
   "description": "Navigate folders of HTML docs with an auto sidebar tree, live reload, and Mermaid/SVG pan/zoom. HTML over Markdown — zero build.",
   "keywords": [
     "docs",
@@ -38,6 +38,11 @@
     "init.js",
     "export.js",
     "inject.js",
+    "roots.js",
+    "registry.js",
+    "manager.js",
+    "scan.js",
+    "delegation.js",
     "client/"
   ],
   "engines": {

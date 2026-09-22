@@ -1,0 +1,179 @@
+<!doctype html>
+<!-- docs-in-html manager — cards page. One card per registered docs folder:
+     favicon + title from _config.json, served at /<slug>/. Pure HTML+JS,
+     zero build — same spirit as the shell. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>docs-in-html · manager</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🛰️%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe;
+  --green:#1a7f37; --green-soft:#e7f5ec; --red:#cf222e; --red-soft:#ffebe9; --amber:#9a6700;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));
+  border-bottom:1px solid var(--border);padding:34px 26px 22px}
+.hero h1{margin:0 0 4px;font-size:1.7rem;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--soft)}
+main{max-width:980px;margin:0 auto;padding:26px}
+.bar{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:22px;align-items:center}
+button{font:inherit;border:1px solid var(--border);background:#fff;border-radius:8px;
+  padding:8px 14px;cursor:pointer;color:var(--text)}
+button:hover{background:var(--panel)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{filter:brightness(1.07)}
+input{font:inherit;border:1px solid var(--border);border-radius:8px;padding:8px 12px;
+  min-width:260px;flex:1}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;
+  display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s,border-color .15s}
+.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent)}
+.card .head{display:flex;align-items:center;gap:10px}
+.card .fav{font-size:1.6rem;line-height:1}
+.card a.title{font-size:1.05rem;font-weight:650;color:var(--text);text-decoration:none;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card a.title:hover{color:var(--accent)}
+.card .dir{font-size:.78rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
+.card .acts button{padding:4px 10px;font-size:.85rem;border-radius:7px}
+.card .acts .del{color:var(--red)}
+.card .acts .del:hover{background:var(--red-soft)}
+.empty{color:var(--soft);text-align:center;padding:50px 0}
+.empty code{background:var(--panel);padding:2px 6px;border-radius:5px}
+#scanBox{display:none;border:1px solid var(--border);border-radius:12px;background:var(--panel);
+  padding:16px;margin-bottom:22px}
+#scanBox h3{margin:0 0 8px;font-size:1rem}
+#scanBox .row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:7px}
+#scanBox .row:hover{background:#fff}
+#scanBox .row code{font-size:.8rem;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#scanBox .foot{display:flex;gap:8px;margin-top:10px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:500;
+  max-width:80vw;padding:10px 18px;border-radius:9px;background:var(--text);color:#fff;
+  font-size:.9rem;display:none}
+.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>🛰️ docs-in-html manager</h1>
+  <p id="sub">carregando…</p>
+</header>
+<main>
+  <div class="bar">
+    <input id="addInput" placeholder="C:\caminho\para\docs  (adicionar pasta)">
+    <button class="primary" id="addBtn">Adicionar</button>
+    <button id="scanBtn">Escanear</button>
+  </div>
+  <div id="scanBox">
+    <h3>Docs encontradas (pastas com <code>_config.json</code>)</h3>
+    <div id="scanList"></div>
+    <div class="foot">
+      <button class="primary" id="scanAdd">Adicionar selecionadas</button>
+      <button id="scanCancel">Cancelar</button>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">
+    Nenhuma docs registrada ainda.<br><br>
+    Sirva uma pasta com <code>docs-in-html &lt;dir&gt;</code> — ela aparece aqui.<br>
+    Ou use o campo acima / o botão <b>Escanear</b>.
+  </div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+function $(id){return document.getElementById(id)}
+function toast(msg, err){
+  var t=$("toast");t.textContent=msg;t.classList.toggle("err",!!err);t.style.display="block";
+  clearTimeout(t._tm);t._tm=setTimeout(function(){t.style.display="none"},2600);
+}
+function api(url, body){
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(body||{})}).then(function(r){return r.json()});
+}
+var docs=[];
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]})}
+function render(){
+  var g=$("grid");g.innerHTML="";
+  $("empty").style.display=docs.length?"none":"block";
+  $("sub").textContent=docs.length+(docs.length===1?" docs":" docs")+" · clique para abrir";
+  docs.forEach(function(d){
+    var c=document.createElement("div");c.className="card";
+    c.innerHTML=
+      '<div class="head"><span class="fav">'+esc(d.favicon)+'</span>'+
+      '<a class="title" href="/'+encodeURIComponent(d.slug)+'/" title="'+esc(d.dir)+'">'+esc(d.title)+'</a></div>'+
+      '<div class="dir" title="'+esc(d.dir)+'">'+esc(d.dir)+'</div>'+
+      '<div class="acts">'+
+        '<button data-a="warp">⌨ Warp</button>'+
+        '<button data-a="reveal">📂 Revelar</button>'+
+        '<button data-a="del" class="del">✕ Remover</button>'+
+      '</div>';
+    // o card INTEIRO abre a docs (cursor pointer + navigate); botões e link param a propagação
+    c.style.cursor = "pointer";
+    c.onclick = function (ev) {
+      if (ev.target.closest("button") || ev.target.closest("a")) return;
+      location.href = "/" + encodeURIComponent(d.slug) + "/";
+    };
+    c.querySelector('[data-a="warp"]').onclick=function(ev){ev.stopPropagation();
+      api("/api/open-warp",{dir:d.dir}).then(function(j){
+        toast(j.ok?"abrindo Warp em "+d.title:(j.error||"falha ao abrir Warp"),!j.ok);refresh();});
+    };
+    c.querySelector('[data-a="reveal"]').onclick=function(ev){ev.stopPropagation();
+      api("/api/reveal",{dir:d.dir}).then(function(){toast("abrindo no gerenciador de arquivos")});
+    };
+    c.querySelector('[data-a="del"]').onclick=function(ev){ev.stopPropagation();
+      if(!confirm("Remover "+d.title+" do manager?\n(os arquivos não são tocados)"))return;
+      api("/api/remove",{dir:d.dir}).then(function(){toast("removida: "+d.title);refresh()});
+    };
+    g.appendChild(c);
+  });
+}
+function refresh(){
+  fetch("/api/docs",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
+    docs=j;render();}).catch(function(){});
+}
+refresh();
+setInterval(refresh, 5000);
+
+$("addBtn").onclick=function(){
+  var v=$("addInput").value.trim();if(!v)return;
+  api("/api/add",{dir:v}).then(function(j){
+    if(j.error){toast("não foi possível: "+j.error,true);return}
+    toast("adicionada em /"+j.slug+"/");$("addInput").value="";refresh();
+  });
+};
+$("addInput").addEventListener("keydown",function(e){if(e.key==="Enter")$("addBtn").click()});
+
+var scanFound=[];
+$("scanBtn").onclick=function(){
+  $("scanBtn").textContent="escaneando…";$("scanBtn").disabled=true;
+  api("/api/scan",{}).then(function(j){
+    $("scanBtn").textContent="Escanear";$("scanBtn").disabled=false;
+    scanFound=(j.found||[]).filter(function(d){return !docs.some(function(x){return x.dir===d})});
+    var l=$("scanList");l.innerHTML=scanFound.length?"":"<div class='row'>nada novo encontrado</div>";
+    scanFound.forEach(function(d){
+      var row=document.createElement("label");row.className="row";
+      row.innerHTML='<input type="checkbox" checked value="'+esc(d)+'"><code>'+esc(d)+'</code>';
+      l.appendChild(row);
+    });
+    $("scanBox").style.display=scanFound.length?"block":"block";
+  });
+};
+$("scanCancel").onclick=function(){$("scanBox").style.display="none"};
+$("scanAdd").onclick=function(){
+  var dirs=[].slice.call(document.querySelectorAll("#scanList input:checked")).map(function(i){return i.value});
+  if(!dirs.length){$("scanBox").style.display="none";return}
+  Promise.all(dirs.map(function(d){return api("/api/add",{dir:d})})).then(function(){
+    toast(dirs.length+" docs adicionadas");$("scanBox").style.display="none";refresh();
+  });
+};
+</script>
+</body>
+</html>

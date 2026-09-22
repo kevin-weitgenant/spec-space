@@ -111,6 +111,17 @@
   // paths — always compare decoded. decode alone can't throw on "+" or
   // stray "%", but guard anyway.
   function decPath(p) { try { return decodeURIComponent(p); } catch (e) { return p; } }
+
+  // URL base under the manager ("/<slug>"), "" when served single-root.
+  // Every /__... API call and every pathname↔path conversion goes through
+  // these so the same code serves both modes.
+  var BASE = window.DOCS_BASE || "";
+  var BASEP = BASE.replace(/\/+$/, ""); // no trailing slash — join with "/" + path
+  var BASE_REL = decPath(BASE).replace(/^\/+|\/+$/g, ""); // "slug" or ""
+  function stripBase(p) { // leading-slash-stripped pathname → path inside the root
+    if (BASE_REL && p.toLowerCase().indexOf(BASE_REL.toLowerCase() + "/") === 0) return p.slice(BASE_REL.length + 1);
+    return p;
+  }
   function dirname(p) { var i = p.lastIndexOf("/"); return i < 0 ? "" : p.slice(0, i); }
   function validName(name, isFolder) {
     if (typeof name !== "string") return false;
@@ -121,7 +132,7 @@
     return n;
   }
   function api(url, body) {
-    return fetch(url, {
+    return fetch(BASE.replace(/\/+$/, "") + url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -220,7 +231,7 @@
   var ROOT_INFO = { root: "", sep: "/", platform: "" }; // root path, OS separator, OS itself
   var SITE_TITLE = ""; // from _config.json → manifest.title — used for per-doc tab titles
   function fetchManifest(cb) {
-    fetch(EXPORT ? "/manifest.json" : "/__manifest__", { cache: EXPORT ? "default" : "no-store" })
+    fetch(EXPORT ? "/manifest.json" : BASE.replace(/\/+$/, "") + "/__manifest__", { cache: EXPORT ? "default" : "no-store" })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         if (data && Array.isArray(data.tree)) {
@@ -425,7 +436,7 @@
   // ── delete ───────────────────────────────────────────────────────────────
   function doDelete(entry) {
     api("/__delete__", { path: entry.path }).then(function () {
-      var cur = decPath(location.pathname.replace(/^\/+/, ""));
+      var cur = stripBase(decPath(location.pathname.replace(/^\/+/, "")));
       if (cur === entry.path || cur.startsWith(entry.path + "/")) {
         fetchManifest(function (tree) {
           var f = firstDoc(tree);
@@ -487,7 +498,7 @@
   // If the currently displayed doc was renamed/moved (or lived inside a moved
   // folder), update the iframe + address bar so nothing 404s on reload.
   function afterPathChange(from, to) {
-    var cur = decPath(location.pathname.replace(/^\/+/, ""));
+    var cur = stripBase(decPath(location.pathname.replace(/^\/+/, "")));
     if (cur === from || cur.startsWith(from + "/")) {
       go(to + cur.slice(from.length), false);
     }
@@ -784,7 +795,7 @@
   toggle.type = "button";
   toggle.setAttribute("aria-label", "Toggle sidebar");
   var icon = document.createElement("img");
-  icon.src = "/__docs__/sidebar-left.svg";
+  icon.src = BASE.replace(/\/+$/, "") + "/__docs__/sidebar-left.svg";
   icon.alt = "";
   icon.width = 18;
   icon.height = 18;
@@ -841,12 +852,12 @@
   var skipSyncPush = false; // suppress URL push when go() itself caused the iframe load
   function go(path, push) {
     skipSyncPush = true;
-    if (iframe) iframe.src = "/" + path;
+    if (iframe) iframe.src = BASEP + "/" + path;
     setActive(path);
     syncTitle(path);
     try {
-      if (push === false) history.replaceState({ docsPath: path }, "", "/" + path);
-      else history.pushState({ docsPath: path }, "", "/" + path);
+      if (push === false) history.replaceState({ docsPath: path }, "", BASEP + "/" + path);
+      else history.pushState({ docsPath: path }, "", BASEP + "/" + path);
     } catch (e) {}
   }
 
@@ -877,12 +888,12 @@
     try {
       var href = iframe.contentWindow.location.href;
       if (!href || href === "about:blank") return; // iframe not loaded yet
-      var p = decPath(iframe.contentWindow.location.pathname.replace(/^\/+/, ""));
+      var p = stripBase(decPath(iframe.contentWindow.location.pathname.replace(/^\/+/, "")));
       if (!p) return;
       setActive(p);
       // the doc navigated itself (link inside the iframe) → keep the URL in sync
-      if (!skipSyncPush && "/" + p !== location.pathname) {
-        try { history.pushState({ docsPath: p }, "", "/" + p); } catch (e) {}
+      if (!skipSyncPush && BASEP + "/" + p !== location.pathname) {
+        try { history.pushState({ docsPath: p }, "", BASEP + "/" + p); } catch (e) {}
       }
       skipSyncPush = false;
     } catch (e) {}
@@ -924,7 +935,7 @@
     if (iframe && !iframe.getAttribute("src")) {
       // deep link: an explicit ?p= from the bootstrap redirect wins; otherwise
       // if the current URL points at a doc in the tree, open it
-      var initial = DEEPLINK || decPath(location.pathname.replace(/^\/+/, ""));
+      var initial = DEEPLINK || stripBase(decPath(location.pathname.replace(/^\/+/, "")));
       var initialHash = "";
       var hi = initial.indexOf("#");
       if (hi >= 0) { initialHash = initial.slice(hi); initial = initial.slice(0, hi); }
@@ -936,8 +947,8 @@
         }
       }
       if (!f) f = firstDoc(tree);
-      if (f) { skipSyncPush = true; if (iframe) iframe.src = "/" + f + initialHash; setActive(f); syncTitle(f);
-        try { history.replaceState({ docsPath: f }, "", "/" + f + initialHash); } catch (e) {} }
+      if (f) { skipSyncPush = true; if (iframe) iframe.src = BASEP + "/" + f + initialHash; setActive(f); syncTitle(f);
+        try { history.replaceState({ docsPath: f }, "", BASEP + "/" + f + initialHash); } catch (e) {} }
     }
     syncFromIframe();
     scroller.scrollTop = scrollTop;             // preserve sidebar scroll across rebuild
@@ -957,7 +968,7 @@
 
   // back/forward buttons
   window.addEventListener("popstate", function (e) {
-    var p = (e.state && e.state.docsPath) || decPath(location.pathname.replace(/^\/+/, ""));
+    var p = (e.state && e.state.docsPath) || stripBase(decPath(location.pathname.replace(/^\/+/, "")));
     if (p && iframe) go(p, false);
   });
 })();

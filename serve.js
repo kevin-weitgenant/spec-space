@@ -3,66 +3,21 @@
 // Auto sidebar tree (from your folders) + live reload + Mermaid pan/zoom.
 //
 //   docs-in-html [dir] [--port N] [--no-open]   serve a folder (default: current dir)
+//   docs-in-html manager [--no-open]            serve ALL registered docs (multi-root)
 //   docs-in-html init [dir]                     scaffold a starter index.html
 //   docs-in-html export [dir] [--out DIR]       freeze to static files (Surge etc.)
+//
+// Serving a folder also registers it in ~/.docs-in-html/registry.json so the
+// manager picks it up. --no-register skips that; dir --unregister removes it.
 
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
-const { exec, spawn } = require("node:child_process");
-const { createReload } = require("./reload.js");
-const { buildTree } = require("./manifest.js");
-const { SHELL } = require("./shell.js");
-const { injectScripts } = require("./inject.js");
-
-const CLIENT_DIR = path.join(__dirname, "client");
-
-const MIME = {
-  ".html": "text/html; charset=utf-8", ".htm": "text/html; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8", ".mjs": "text/javascript; charset=utf-8",
-  ".css": "text/css; charset=utf-8", ".json": "application/json; charset=utf-8",
-  ".svg": "image/svg+xml", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-  ".gif": "image/gif", ".webp": "image/webp", ".ico": "image/x-icon",
-  ".woff": "font/woff", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8",
-  ".map": "application/json; charset=utf-8",
-};
-
-function send(res, status, body, headers = {}) {
-  res.writeHead(status, headers);
-  res.end(body);
-}
-
-function serveFile(filePath, res) {
-  fs.stat(filePath, (err, stat) => {
-    if (err || !stat.isFile()) return send(res, 404, "404 Not Found");
-    const ext = path.extname(filePath).toLowerCase();
-    const type = MIME[ext] || "application/octet-stream";
-    fs.readFile(filePath, (e, data) => {
-      if (e) return send(res, 500, "500 Internal Server Error");
-      const body = ext === ".html" ? injectScripts(data.toString("utf8"), {}) : data;
-      send(res, 200, body, { "Content-Type": type });
-    });
-  });
-}
-
-// The shell page: the user's index.html when present, otherwise the built-in one.
-// Can be served at a deep URL (e.g. /docs/foo.html) so that a top-level visit
-// there reopens the shell around the doc — <base href="/"> keeps any relative
-// asset references in a custom index.html resolving from the root.
-function serveShell(res) {
-  const idx = path.join(ROOT, "index.html");
-  let html =
-    fs.existsSync(idx) && fs.statSync(idx).isFile()
-      ? fs.readFileSync(idx, "utf8")
-      : SHELL;
-  html = applyShellConfig(html, readConfig(ROOT)); // title + favicon from _config.json
-  if (!/<base\s/i.test(html)) {
-    html = /<head[^>]*>/i.test(html)
-      ? html.replace(/<head[^>]*>/i, (m) => m + '\n<base href="/">')
-      : '<base href="/">\n' + html;
-  }
-  send(res, 200, injectScripts(html, {}), { "Content-Type": "text/html; charset=utf-8" });
-}
+const { exec } = require("node:child_process");
+const { createRoot } = require("./roots.js");
+const { readConfig, writeConfig, defaultConfig } = require("./config.js");
+const registry = require("./registry.js");
+const { MANAGER_PORT, managerBaseUrl, pingManager, addToManager } = require("./delegation.js");
 
 // ── CLI ──────────────────────────────────────────────────────────────────
 function help() {
@@ -70,6 +25,7 @@ function help() {
 
 Usage:
   docs-in-html [dir] [--port N] [--no-open]   serve a folder (default: current dir)
+  docs-in-html manager [--no-open]            serve ALL registered docs (multi-root)
   docs-in-html init [dir]                     scaffold a starter index.html
   docs-in-html export [dir] [--out DIR]       freeze to static files (default out: ./dist)
 
@@ -78,7 +34,18 @@ Options:
                    next free port is used with a warning — an explicit --port
                    must be free or the server exits with an error)
       --no-open    don't open the browser automatically
+      --no-register  don't add the served folder to the manager registry
+      --unregister   remove <dir> from the registry and exit
   -h, --help       show this help
+
+Environment:
+  WARP_BIN        path to the Warp terminal executable, tried first by the
+                   manager's "⌨ Warp" button (then standard install locations
+                   and PATH — see resolveWarp in manager.js)
+
+The manager (docs-in-html manager, port ${MANAGER_PORT} or $DOCS_MANAGER_PORT)
+serves every registered docs at http://localhost:<port>/<slug>/. When it is
+running, serving a folder just registers it there — no extra server.
 `);
 }
 
@@ -89,15 +56,20 @@ let doOpen = true;
 let portWasExplicit = false;
 let mode = "serve";
 let outDir = "dist";
+let noRegister = false;
+let unregister = false;
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
   if (a === "-h" || a === "--help") { help(); process.exit(0); }
   else if (a === "init") mode = "init";
   else if (a === "export") mode = "export";
+  else if (a === "manager") mode = "manager";
   else if (a === "--out") outDir = args[++i] || outDir;
   else if (a === "-p" || a === "--port") { port = Number(args[++i]) || port; portWasExplicit = true; }
   else if (a === "--no-open") doOpen = false;
   else if (a === "-o" || a === "--open") doOpen = true;
+  else if (a === "--no-register") noRegister = true;
+  else if (a === "--unregister") unregister = true;
   else if (!a.startsWith("-")) dir = a;
 }
 
@@ -113,305 +85,100 @@ if (mode === "export") {
   process.exit(0);
 }
 
-// ── server ─────────────────────────────────────────────────────────────────
-// All settings live in ROOT/_config.json (title, favicon, sidebarAnim, icons,
-// order) — read per-request so edits hot-reload. Legacy _icons.json/_order.json
-// are merged as fallback by readConfig; writes absorb them into the config.
-const { readConfig, writeConfig, defaultConfig, applyShellConfig } = require("./config.js");
-
-// Auto-scaffold: first serve of a folder with no _config.json creates one with
-// friendly defaults (title from the folder name) so discovery is zero-effort.
-let scaffolded = false;
-if (!fs.existsSync(path.join(ROOT, "_config.json"))) {
-  writeConfig(ROOT, defaultConfig(ROOT));
-  scaffolded = true; // writeConfig swallows errors; the flag is just for the banner
+if (mode === "manager") {
+  // port precedence: explicit --port > $DOCS_MANAGER_PORT > 4400 (the CLI's
+  // delegation reads the same precedence — see delegation.js managerPort()).
+  const { managerPort } = require("./delegation.js");
+  require("./manager.js").start({ port: portWasExplicit ? port : managerPort(), portWasExplicit, doOpen });
+  // manager keeps the process alive (its own server)
+} else if (unregister) {
+  const removed = registry.remove(ROOT);
+  console.log(removed
+    ? `✓ removida do registry: ${ROOT}`
+    : `(nada a remover — ${ROOT} não estava no registry)`);
+  process.exit(0);
+} else {
+  serveSingle();
 }
 
-function readAnim() {
-  const v = readConfig(ROOT).sidebarAnim;
-  return ["reveal", "slide", "guide"].includes(v) ? v : "guide";
-}
-
-// Keep config.icons keys in sync when files/folders are renamed/moved/deleted
-// from the sidebar — same idea as the config.order bookkeeping.
-function shiftIcons(from, to) { // rename/move: rewrite the key and descendant keys
-  const cfg = readConfig(ROOT);
-  const data = cfg.icons || {};
-  let changed = false;
-  const out = {};
-  for (const k of Object.keys(data)) {
-    if (k === from) { out[to] = data[k]; changed = true; }
-    else if (k.startsWith(from + "/")) { out[to + k.slice(from.length)] = data[k]; changed = true; }
-    else out[k] = data[k];
-  }
-  if (changed) { cfg.icons = out; writeConfig(ROOT, cfg); }
-}
-function pruneIcons(rel) { // delete: drop the key and descendant keys
-  const cfg = readConfig(ROOT);
-  const data = cfg.icons || {};
-  const out = {};
-  let changed = false;
-  for (const k of Object.keys(data)) {
-    if (k === rel || k.startsWith(rel + "/")) { changed = true; continue; }
-    out[k] = data[k];
-  }
-  if (changed) { cfg.icons = out; writeConfig(ROOT, cfg); }
-}
-
-const reload = createReload(ROOT);
-
-const server = http.createServer((req, res) => {
-  if (reload.handle(req, res)) return; // SSE channel
-
-  const raw = (req.url || "/").split("?")[0];
-
-  if (raw === "/__manifest__") {
-    const cfg = readConfig(ROOT);
-    const body = JSON.stringify({ root: ROOT, sep: path.sep, platform: process.platform, anim: readAnim(), title: typeof cfg.title === "string" ? cfg.title : "", tree: buildTree(ROOT) });
-    return send(res, 200, body, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-  }
-
-  // ── file-management endpoints (delete / rename / mkdir) ──────────────────
-  // Shared guards: JSON body cap, relative path inside ROOT, sane segment names.
-  function readJsonBody(req, cb, cap = 4096) {
-    let body = "";
-    req.on("data", (c) => { body += c; if (body.length > cap) req.destroy(); });
-    req.on("end", () => { let j; try { j = JSON.parse(body); } catch (e) { return cb(null); } cb(j); });
-  }
-  // "guides/v2" → "guides/v2" | null (must stay inside ROOT, no weird names)
-  function safeRelPath(p) {
-    if (typeof p !== "string" || p.includes("\\") || p.startsWith("/")) return null;
-    const segs = p.split("/").filter(Boolean);
-    if (!segs.length || segs.includes("..")) return null;
-    for (const s of segs)
-      if (!s || s.startsWith(".") || s.startsWith("_") || /[<>:"|?*\x00-\x1f]/.test(s)) return null;
-    return segs.join("/");
-  }
-  function resolveIn(p) {
-    const rel = safeRelPath(p);
-    if (rel === null) return null;
-    const abs = path.resolve(ROOT, rel);
-    if (!abs.startsWith(ROOT + path.sep)) return null;
-    return { rel, abs };
-  }
-
-  // Delete a doc or an EMPTY folder from the sidebar (POST /__delete__ {path}).
-  if (req.method === "POST" && raw === "/__delete__") {
-    return readJsonBody(req, (j) => {
-      const t = resolveIn(j && j.path);
-      if (!t) return send(res, 400, "400 Bad Request");
-      fs.stat(t.abs, (err, st) => {
-        if (err) return send(res, 404, "404 Not Found");
-        if (st.isDirectory()) {
-          fs.rmdir(t.abs, (e2) => { // rmdir refuses non-empty folders — safety by design
-            if (e2) return send(res, 409, "409 Folder is not empty");
-            pruneIcons(t.rel);
-            send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-          });
-        } else {
-          if (!/\.html?$/i.test(t.rel)) return send(res, 400, "400 Bad Request");
-          fs.unlink(t.abs, (e2) => {
-            if (e2) return send(res, 404, "404 Not Found");
-            pruneIcons(t.rel);
-            send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-          });
-        }
-      });
-    });
-  }
-
-  // Rename / move a doc or folder (POST /__rename__ {from,to}). Same containment,
-  // extension and collision rules on both sides; 409 if the target exists.
-  if (req.method === "POST" && raw === "/__rename__") {
-    return readJsonBody(req, (j) => {
-      const from = resolveIn(j && j.from);
-      const to = resolveIn(j && j.to);
-      if (!from || !to || from.rel === to.rel) return send(res, 400, "400 Bad Request");
-      fs.stat(from.abs, (err, st) => {
-        if (err || !st) return send(res, 404, "404 Not Found");
-        if (st.isFile()) {
-          if (!/\.html?$/i.test(from.rel) || !/\.html?$/i.test(to.rel)) return send(res, 400, "400 Bad Request");
-          if (path.basename(to.rel).toLowerCase() === "index.html") return send(res, 400, "400 Bad Request");
-        } else if (to.rel.startsWith(from.rel + "/")) {
-          return send(res, 400, "400 Cannot move a folder into itself");
-        }
-        fs.access(to.abs, (e2) => {
-          if (!e2) return send(res, 409, "409 Target already exists");
-          fs.rename(from.abs, to.abs, (e3) => {
-            if (e3) return send(res, 500, "500 Rename failed");
-            shiftIcons(from.rel, to.rel);
-            send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-          });
-        });
-      });
-    });
-  }
-
-  // Create a folder (POST /__mkdir__ {path}) — 409 if it already exists.
-  if (req.method === "POST" && raw === "/__mkdir__") {
-    return readJsonBody(req, (j) => {
-      const t = resolveIn(j && j.path);
-      if (!t) return send(res, 400, "400 Bad Request");
-      fs.access(t.abs, (existErr) => {
-        if (!existErr) return send(res, 409, "409 Folder already exists");
-        fs.mkdir(t.abs, { recursive: true }, (err) => {
-          if (err) return send(res, 500, "500 mkdir failed");
-          send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-        });
-      });
-    });
-  }
-
-  // Save an inline-edited doc (POST /__save__ {path, html}) — the editor client
-  // serializes the page minus its data-injected tags; we validate the path with
-  // the same guards as the other endpoints and write the file back in place.
-  if (req.method === "POST" && raw === "/__save__") {
-    return readJsonBody(req, (j) => {
-      const t = resolveIn(j && j.path);
-      if (!t || !/\.html?$/i.test(t.rel) || typeof j.html !== "string")
-        return send(res, 400, "400 Bad Request");
-      fs.writeFile(t.abs, j.html, "utf8", (err) => {
-        if (err) return send(res, 500, "500 write failed");
-        send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-      });
-    }, 10 * 1024 * 1024); // whole-page HTML — allow up to 10 MB
-  }
-
-  // Reveal a doc/folder in the OS file manager (POST /__reveal__ {path}).
-  // Cross-platform: Windows "explorer /select," (opens + pre-selected),
-  // macOS "open -R" (reveal), Linux "xdg-open" on the containing folder
-  // (the XDG spec has no select flag). Spawned without a shell; the path is
-  // validated by resolveIn() so it always lives under ROOT. Exit codes are
-  // ignored — explorer often exits non-zero even on success.
-  if (req.method === "POST" && raw === "/__reveal__") {
-    return readJsonBody(req, (j) => {
-      const t = resolveIn(j && j.path);
-      if (!t) return send(res, 400, "400 Bad Request");
-      fs.stat(t.abs, (err, st) => {
-        if (err || !st) return send(res, 404, "404 Not Found");
-        if (process.platform === "win32") {
-          spawn("explorer", st.isDirectory() ? [t.abs] : [`/select,${t.abs}`], { detached: true, stdio: "ignore" }).unref();
-        } else if (process.platform === "darwin") {
-          spawn("open", ["-R", t.abs], { detached: true, stdio: "ignore" }).unref();
-        } else {
-          spawn("xdg-open", [st.isDirectory() ? t.abs : path.dirname(t.abs)], { detached: true, stdio: "ignore" }).unref();
-        }
-        send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-      });
-    });
-  }
-
-  // Persist a manual drag-order for one folder (POST /__order__ {folder, order}).
-  // Stored in the config.order section of ROOT/_config.json (absorbs a legacy
-  // _order.json on the first write). The leading _ keeps the file hidden from
-  // the manifest.
-  if (req.method === "POST" && raw === "/__order__") {
-    return readJsonBody(req, (j) => {
-      const folder = j && j.folder === "" ? "" : safeRelPath(j.folder);
-      const order = j && Array.isArray(j.order) ? j.order : null;
-      if (folder === null || !order || order.some((s) => typeof s !== "string" || !safeRelPath(s)))
-        return send(res, 400, "400 Bad Request");
-      const cfg = readConfig(ROOT);
-      cfg.order = cfg.order || {};
-      cfg.order[folder] = order;
-      try { writeConfig(ROOT, cfg); } catch { return send(res, 500, "500 write failed"); }
-      send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-    });
-  }
-
-  // Set the site title (POST /__title__ {title}) — persisted to _config.json;
-  // the watcher's own event then refreshes the shell/manifest on the client.
-  if (req.method === "POST" && raw === "/__title__") {
-    return readJsonBody(req, (j) => {
-      const title = j && typeof j.title === "string" ? j.title.trim().slice(0, 200) : "";
-      if (!title) return send(res, 400, "400 Bad Request");
-      const cfg = readConfig(ROOT);
-      cfg.title = title;
-      try { writeConfig(ROOT, cfg); } catch { return send(res, 500, "500 write failed"); }
-      send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-    });
-  }
-
-  if (raw.startsWith("/__docs__/")) {
-    const f = path.join(CLIENT_DIR, path.normalize(raw.slice("/__docs__/".length)));
-    if (f !== CLIENT_DIR && !f.startsWith(CLIENT_DIR + path.sep)) return send(res, 404, "404");
-    if (!fs.existsSync(f) || !fs.statSync(f).isFile()) return send(res, 404, "404");
-    return send(res, 200, fs.readFileSync(f), { "Content-Type": MIME[path.extname(f).toLowerCase()] || "application/octet-stream" });
-  }
-
-  let urlPath = decodeURIComponent(raw);
-  if (urlPath === "/") return serveShell(res);
-
-  const filePath = path.join(ROOT, urlPath);
-  if (!filePath.startsWith(ROOT + path.sep) && filePath !== ROOT) return send(res, 403, "403 Forbidden");
-
-  // Deep URL: a top-level navigation to a doc (address bar, F5, target="_top")
-  // gets the shell wrapped around it. The iframe's own request carries
-  // Sec-Fetch-Dest: iframe and still gets the bare document — no recursion.
-  // Requests without the header (curl, old browsers) get the bare doc too.
-  if (
-    /\.html?$/i.test(urlPath) &&
-    req.headers["sec-fetch-dest"] === "document" &&
-    path.resolve(filePath) !== path.resolve(path.join(ROOT, "index.html"))
-  ) {
-    return serveShell(res);
-  }
-  serveFile(filePath, res);
-});
-
-server.on("close", () => reload.close());
-
-// If --port was passed explicitly, it's a request, not a hint: succeed on that
-// exact port or die with a clear message. Otherwise (default/$PORT) fall back
-// to the next free port, with a warning, so a second docs-in-html serving
-// another folder just works.
-const MAX_FALLBACKS = 20;
-function start(attemptPort, attemptsLeft) {
-  let printed = false;
-  const srv = server.listen(attemptPort, () => {
-    // On Windows the 'listening' callback can fire before a pending EADDRINUSE;
-    // defer the banner one tick so a failed attempt never prints.
-    setImmediate(() => {
-      if (printed) return;
-      printed = true;
-      const url = `http://localhost:${attemptPort}`;
-      console.log(`docs-in-html · serving ${ROOT}`);
-      if (attemptPort !== port)
-        console.log(`  ⚠ porta ${port} está em uso — usando ${attemptPort}`);
-      if (scaffolded)
-        console.log(`  ✓ criado _config.json — ajuste title/favicon lá (hot reload pega na hora)`);
-      console.log(`  → ${url}`);
-      if (doOpen) {
-        const cmd = process.platform === "win32" ? `start "" "${url}"`
-          : process.platform === "darwin" ? `open "${url}"`
-          : `xdg-open "${url}"`;
-        exec(cmd, () => {});
+// ── single-root serve ──────────────────────────────────────────────────────
+async function serveSingle() {
+  // Delegation: if the manager is already running, don't start another
+  // server — register this root there and print the link. The manager IS the
+  // serve for this folder now.
+  if (!noRegister) {
+    const port = await pingManager();
+      if (port) {
+        const slug = await addToManager(ROOT, port);
+        console.log(`docs-in-html · ${ROOT}`);
+        if (portWasExplicit)
+          console.log(`  ⚠ manager no ar — --port ignorado (a docs vive no manager)`);
+        console.log(`  ✓ adicionada ao manager: http://localhost:${port}/${slug}/`);
+        process.exit(0);
       }
+  }
+
+  // Auto-scaffold: first serve of a folder with no _config.json creates one
+  // with friendly defaults (title from the folder name).
+  let scaffolded = false;
+  if (!fs.existsSync(path.join(ROOT, "_config.json"))) {
+    writeConfig(ROOT, defaultConfig(ROOT));
+    scaffolded = true; // writeConfig swallows errors; the flag is just for the banner
+  }
+
+  if (!noRegister) registry.add(ROOT); // silent: picked up next time the manager starts
+
+  const ctx = createRoot(ROOT, { base: "" });
+  const server = http.createServer(ctx.handle);
+  server.on("close", () => ctx.reload.close());
+
+  // If --port was passed explicitly, it's a request, not a hint: succeed on
+  // that exact port or die with a clear message. Otherwise fall back to the
+  // next free port, with a warning.
+  const MAX_FALLBACKS = 20;
+  function start(attemptPort, attemptsLeft) {
+    let printed = false;
+    const srv = server.listen(attemptPort, () => {
+      setImmediate(() => {
+        if (printed) return;
+        printed = true;
+        const url = `http://localhost:${attemptPort}`;
+        console.log(`docs-in-html · serving ${ROOT}`);
+        if (attemptPort !== port)
+          console.log(`  ⚠ porta ${port} está em uso — usando ${attemptPort}`);
+        if (scaffolded)
+          console.log(`  ✓ criado _config.json — ajuste title/favicon lá (hot reload pega na hora)`);
+        console.log(`  → ${url}`);
+        if (doOpen) {
+          const cmd = process.platform === "win32" ? `start "" "${url}"`
+            : process.platform === "darwin" ? `open "${url}"`
+            : `xdg-open "${url}"`;
+          exec(cmd, () => {});
+        }
+      });
     });
-  });
-  srv.once("error", (err) => {
-    printed = true;
-    if (err.code !== "EADDRINUSE") {
-      const tip = err.code === "EACCES"
-        ? " (porta privilegiada? tente uma alta, ex.: --port 8000)" : "";
-      console.error(`erro: não foi possível abrir a porta ${attemptPort}${tip}`);
-      if (err.code !== "EACCES") console.error(`       ${err.message}`);
-      process.exit(1);
-    }
-    if (portWasExplicit) {
-      console.error(`erro: porta ${attemptPort} já está em uso.`);
-      console.error("       pode ser outra instância de docs-in-html; feche-a, ou rode sem --port para auto-escolher a próxima livre.");
-      process.exit(1);
-    }
-    if (attemptsLeft <= 0) {
-      console.error(`erro: nenhuma porta livre a partir de ${port} (tentou até ${attemptPort}).`);
-      console.error("       feche o outro servidor ou passe --port N.");
-      process.exit(1);
-    }
-    // NB: a failed listen leaves nothing to close — srv.close() here would
-    // emit 'close' and (via reload.close()) kill the file watcher forever.
-    if (srv.listening) srv.close();
-    start(attemptPort + 1, attemptsLeft - 1);
-  });
+    srv.once("error", (err) => {
+      printed = true;
+      if (err.code !== "EADDRINUSE") {
+        const tip = err.code === "EACCES"
+          ? " (porta privilegiada? tente uma alta, ex.: --port 8000)" : "";
+        console.error(`erro: não foi possível abrir a porta ${attemptPort}${tip}`);
+        if (err.code !== "EACCES") console.error(`       ${err.message}`);
+        process.exit(1);
+      }
+      if (portWasExplicit) {
+        console.error(`erro: porta ${attemptPort} já está em uso.`);
+        console.error("       pode ser outra instância de docs-in-html; feche-a, ou rode sem --port para auto-escolher a próxima livre.");
+        process.exit(1);
+      }
+      if (attemptsLeft <= 0) {
+        console.error(`erro: nenhuma porta livre a partir de ${port} (tentou até ${attemptPort}).`);
+        console.error("       feche o outro servidor ou passe --port N.");
+        process.exit(1);
+      }
+      if (srv.listening) srv.close();
+      start(attemptPort + 1, attemptsLeft - 1);
+    });
+  }
+  start(port, portWasExplicit ? 0 : MAX_FALLBACKS - 1);
 }
-start(port, portWasExplicit ? 0 : MAX_FALLBACKS - 1);

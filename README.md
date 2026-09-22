@@ -28,6 +28,36 @@ docs-in-html init ./new-docs          # scaffold a starter index.html
 docs-in-html export ./docs --out dist # freeze to static files (Surge etc.)
 ```
 
+## Manager — all your docs, one process, one URL
+
+Serving folders one by one stops scaling at the second project. The manager
+serves **every docs folder you own** from a single process, each at
+`http://localhost:4400/<slug>/`:
+
+```bash
+docs-in-html manager        # cards page at :4400 (or $DOCS_MANAGER_PORT)
+```
+
+- **Serving = registering.** Any `docs-in-html <dir>` (npx included) adds the
+  folder to `~/.docs-in-html/registry.json` — if the manager is running, the
+  CLI doesn't even start a server: it registers the folder there and prints
+  the link. `--no-register` opts out; `dir --unregister` removes.
+- **Slug from your title** — the URL comes from `_config.json`'s `title`
+  ("My Project — Handbook" → `/my-project-handbook/`); collisions get `-2`.
+- **Cards page** at the manager root: title + favicon per docs, one click to
+  open. Actions per card: open in **Warp** (`warp <dir>`; set `$WARP_BIN` if
+  the binary isn't in a standard location), reveal in the file manager,
+  remove from the registry.
+- **One watcher per docs, one SSE per browser.** The manager multiplexes
+  live-reload for all roots into a single connection, and tabs elect a leader
+  (Web Locks) that relays events to the rest — the browser's ~6-connections-
+  per-origin limit never bites, no matter how many tabs you keep open.
+- **Import scan** — the "Escanear" button finds every folder with a
+  `_config.json` under `$HOME` (skip-listed, depth-capped) so you can register
+  existing docs in one batch.
+
+The single-folder mode is unchanged and works standalone, as always.
+
 If the default port (8000, or `$PORT`) is already in use — e.g. another
 `docs-in-html` instance serving a different folder — the next free port is
 used automatically, with a warning:

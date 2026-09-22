@@ -5,7 +5,12 @@
 (function () {
   // The shell (sidebar + iframe) is not an editable doc.
   if (document.getElementById("docList")) return;
+  var BASE = window.DOCS_BASE || ""; // "" single-root, "/<slug>/" under the manager
   var me = location.pathname.replace(/^\/+/, "") || "index.html";
+  // strip the manager prefix so /__save__ gets the path relative to the docs root
+  var baseRel = decodeURI(BASE).replace(/^\/+|\/+$/g, "");
+  if (baseRel && me.toLowerCase().indexOf(baseRel.toLowerCase() + "/") === 0)
+    me = me.slice(baseRel.length + 1) || "index.html";
   if (!/\.html?$/i.test(me)) return; // only edit real docs
 
   var editing = false;
@@ -91,7 +96,7 @@
   function save() {
     if (!editing) return;
     var html = serialize();
-    fetch("/__save__", {
+    fetch(BASE.replace(/\/+$/, "") + "/__save__", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: me, html: html }),

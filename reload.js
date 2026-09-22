@@ -1,12 +1,16 @@
 // Live reload: SSE channel (/__reload__) + recursive file watcher.
-// createReload(root) → { handle, close }. handle() claims the SSE route.
+// createReload(root, onEvent?) → { handle, close }. handle() claims the SSE
+// route. onEvent(relPath) fires for every change — the manager uses it to fan
+// its roots' events into ONE multiplexed SSE (one connection per browser, not
+// one per root: HTTP/1.1 caps the origin at ~6).
 
 const fs = require("node:fs");
 
-function createReload(root) {
+function createReload(root, onEvent) {
   const clients = new Set();
 
   function broadcast(relPath) {
+    if (onEvent) { try { onEvent(relPath); } catch {} }
     if (!clients.size) return;
     const msg = `data: ${JSON.stringify({ path: relPath })}\n\n`;
     for (const res of clients) res.write(msg);

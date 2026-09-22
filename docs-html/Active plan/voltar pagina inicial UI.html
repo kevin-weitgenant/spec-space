@@ -1,0 +1,213 @@
+<!doctype html>
+<!-- Protótipo — variações de UI para "voltar à página inicial do manager"
+     estando dentro de uma documentação. Mockups interativos: escolha a
+     variação nas abas e clique nos elementos para sentir o fluxo. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Voltar ao início — docs-in-html</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🎨%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));
+  border-bottom:1px solid var(--border);padding:34px 26px 20px}
+.hero h1{margin:0 0 4px;font-size:1.6rem;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--soft);max-width:72ch}
+main{max-width:1020px;margin:0 auto;padding:22px 24px 60px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.tabs button{font:inherit;font-size:.92rem;border:1px solid var(--border);background:#fff;
+  border-radius:99px;padding:6px 14px;cursor:pointer;color:var(--soft)}
+.tabs button:hover{background:var(--panel)}
+.tabs button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
+.variant{display:none}
+.variant.on{display:block}
+.verdict{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;border:1px solid var(--border);
+  border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+.verdict .t{font-weight:700;margin-bottom:2px}
+.verdict .p{font-size:.92rem;margin:0}
+.verdict .pro{color:var(--green);font-weight:600}
+.verdict .con{color:var(--amber);font-weight:600}
+
+/* ── mockup do shell (comum a todas as variantes) ── */
+.mock{border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.mhead{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--border);background:#fff}
+.mhead .fav{font-size:1.2rem}
+.mhead .title{font-weight:650;font-size:.98rem}
+.mbody{display:flex;min-height:340px}
+.mside{width:220px;flex:none;border-right:1px solid var(--border);background:var(--panel);padding:10px 8px;font-size:.88rem}
+.mside a{display:block;padding:6px 10px;border-radius:6px;color:var(--text);text-decoration:none;cursor:pointer}
+.mside a:hover{background:var(--panel2)}
+.mside a.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.mside .grp{margin:10px 10px 4px;font-size:.75rem;color:var(--soft);text-transform:uppercase;letter-spacing:.04em}
+.mdoc{flex:1;padding:18px 22px;background:#fff}
+.mdoc h3{margin:0 0 8px;font-size:1.05rem}
+.mdoc p{color:var(--soft);font-size:.9rem}
+.mdoc .lorem{height:8px;border-radius:4px;background:var(--panel2);margin:8px 0}
+.mdoc .lorem.w70{width:70%}.mdoc .lorem.w50{width:50%}
+
+/* elementos das variantes */
+.homebtn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:.82rem;font-weight:600;
+  color:var(--accent);background:var(--accent-soft);border:1px solid transparent;border-radius:99px;
+  padding:4px 12px;cursor:pointer;text-decoration:none}
+.homebtn:hover{border-color:var(--accent)}
+.homebtn.bare{background:#fff;color:var(--soft);border-color:var(--border)}
+.homebtn.bare:hover{color:var(--accent);border-color:var(--accent)}
+.backitem{display:flex;align-items:center;gap:8px;padding:7px 10px;margin:0 2px 6px;border-radius:6px;
+  color:var(--accent);font-weight:600;cursor:pointer;text-decoration:none}
+.backitem:hover{background:var(--accent-soft)}
+.sidefoot{position:relative;margin-top:14px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+.sidefoot .lbl{font-size:.72rem;color:var(--soft);margin:0 10px;text-transform:uppercase;letter-spacing:.04em}
+.fab{position:absolute;right:18px;bottom:16px;display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent);color:#fff;border-radius:99px;padding:8px 16px;font-size:.85rem;font-weight:600;
+  cursor:pointer;box-shadow:0 4px 14px rgba(31,111,235,.4);border:none}
+.fab:hover{filter:brightness(1.07)}
+.strip{display:flex;align-items:center;gap:10px;background:#0d1117;color:#fff;font-size:.8rem;padding:5px 14px}
+.strip a{color:#9ecbff;text-decoration:none;cursor:pointer;font-weight:600}
+.strip a:hover{text-decoration:underline}
+.strip .cur{color:#fff;font-weight:600}
+.strip select{font:inherit;font-size:.78rem;border-radius:6px;border:1px solid var(--border);padding:2px 6px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+  padding:8px 16px;border-radius:8px;font-size:.85rem;display:none;z-index:50}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>🎨 Protótipo · "Voltar ao início" dentro de uma docs</h1>
+  <p>Cinco variações de UI para sair de uma documentação e voltar à página do manager (ou pular direto para outra docs). Cada aba é um mockup interativo do shell — clique nos elementos para sentir o fluxo. No fim de cada uma, prós e contras.</p>
+</header>
+<main>
+  <div class="tabs" id="tabs">
+    <button data-v="a" class="on">A · Botão no header</button>
+    <button data-v="b">B · Item no topo da sidebar</button>
+    <button data-v="c">C · Pill flutuante</button>
+    <button data-v="d">D · Strip do manager no topo</button>
+    <button data-v="e">E · Switcher no rodapé da sidebar</button>
+  </div>
+
+  <!-- ═══ VARIANTE A ═══ -->
+  <div class="variant on" id="v-a">
+    <div class="verdict"><div><div class="t">A — Botão no header do shell</div>
+      <p class="p"><span class="pro">+ sempre visível, lugar canônico, zero conflito com a sidebar</span> · <span class="con">− cabe no header do index.html customizado do usuário (precisa de fallback/injeção)</span></p></div></div>
+    <div class="mock">
+      <div class="mhead">
+        <span class="fav">📚</span><span class="title">Docs-html DOCS</span>
+        <a class="homebtn" onclick="goHome()">🛰️ Todas as docs</a>
+      </div>
+      <div class="mbody">
+        <nav class="mside">
+          <a class="active">Arquitetura do Pacote</a><a>Collapse Bug and Reveal…</a><a>Config JSON Plan</a><a>Live Reload SSE Fix</a>
+        </nav>
+        <div class="mdoc"><h3>Arquitetura do Pacote</h3><p>…conteúdo da docs…</p><div class="lorem w70"></div><div class="lorem"></div><div class="lorem w50"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VARIANTE B ═══ -->
+  <div class="variant" id="v-b">
+    <div class="verdict"><div><div class="t">B — Item fixo no topo da sidebar</div>
+      <p class="p"><span class="pro">+ mora onde a navegação já vive (a sidebar é a navegação); funciona até em shell customizado (nav.js injeta)</span> · <span class="con">− mistura um item "global" com itens da docs; some se a sidebar for recolhida</span></p></div></div>
+    <div class="mock">
+      <div class="mhead"><span class="fav">📚</span><span class="title">Docs-html DOCS</span></div>
+      <div class="mbody">
+        <nav class="mside">
+          <a class="backitem" onclick="goHome()">← Todas as docs</a>
+          <div class="grp">Raiz</div>
+          <a class="active">Arquitetura do Pacote</a><a>Collapse Bug and Reveal…</a><a>Config JSON Plan</a><a>Live Reload SSE Fix</a>
+        </nav>
+        <div class="mdoc"><h3>Arquitetura do Pacote</h3><p>…conteúdo da docs…</p><div class="lorem w70"></div><div class="lorem"></div><div class="lorem w50"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VARIANTE C ═══ -->
+  <div class="variant" id="v-c">
+    <div class="verdict"><div><div class="t">C — Pill flutuante (canto inferior direito)</div>
+      <p class="p"><span class="pro">+ não mexe em nada do shell do usuário; idêntico em shells customizados; discretíssimo</span> · <span class="con">− flutuante cobre conteúdo (pode incomodar em leitura longa); aparece em CADA doc do iframe, não só no shell — precisa de regra</span></p></div></div>
+    <div class="mock" style="position:relative">
+      <div class="mhead"><span class="fav">📚</span><span class="title">Docs-html DOCS</span></div>
+      <div class="mbody">
+        <nav class="mside"><div class="grp">Raiz</div><a class="active">Arquitetura do Pacote</a><a>Collapse Bug and Reveal…</a><a>Config JSON Plan</a><a>Live Reload SSE Fix</a></nav>
+        <div class="mdoc"><h3>Arquitetura do Pacote</h3><p>…conteúdo da docs…</p><div class="lorem w70"></div><div class="lorem"></div><div class="lorem w50"></div><div class="lorem"></div></div>
+      </div>
+      <button class="fab" onclick="goHome()">🛰️ Início</button>
+    </div>
+  </div>
+
+  <!-- ═══ VARIANTE D ═══ -->
+  <div class="variant" id="v-d">
+    <div class="verdict"><div><div class="t">D — Strip fina do manager no topo da página</div>
+      <p class="p"><span class="pro">+ contexto constante: mostra ONDE você está e permite pular para OUTRA docs sem voltar ao início (select); sempre visível mesmo com sidebar recolhida</span> · <span class="con">− consome altura permanente; barra escura no topo de toda docs muda o "climate" das páginas do usuário</span></p></div></div>
+    <div class="mock">
+      <div class="strip">
+        <a onclick="goHome()">🛰️ docs-in-html</a><span style="opacity:.4">/</span>
+        <span class="cur">Docs-html DOCS</span>
+        <span style="flex:1"></span>
+        <label style="opacity:.75">ir para:</label>
+        <select onchange="toast('navegaria para: '+this.value)">
+          <option value="docs-html-docs">Docs-html DOCS</option>
+          <option value="docs-html">Docs Html (KYC)</option>
+          <option value="find-jobs-in-linkedin-posts">Find jobs in Linkedin Posts</option>
+          <option value="voice-ai-avatar">Voice Ai Avatar</option>
+        </select>
+      </div>
+      <div class="mhead"><span class="fav">📚</span><span class="title">Docs-html DOCS</span></div>
+      <div class="mbody">
+        <nav class="mside"><div class="grp">Raiz</div><a class="active">Arquitetura do Pacote</a><a>Collapse Bug and Reveal…</a><a>Config JSON Plan</a><a>Live Reload SSE Fix</a></nav>
+        <div class="mdoc"><h3>Arquitetura do Pacote</h3><p>…conteúdo da docs…</p><div class="lorem w70"></div><div class="lorem"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VARIANTE E ═══ -->
+  <div class="variant" id="v-e">
+    <div class="verdict"><div><div class="t">E — Mini-switcher no rodapé da sidebar</div>
+      <p class="p"><span class="pro">+ troca direta entre docs SEM passar pelo início (2 cliques viram 1); fica escondido até você querer</span> · <span class="con">− rodapé precisa de espaço/scroll na sidebar; menos óbvio para quem nunca viu; some com a sidebar recolhida</span></p></div></div>
+    <div class="mock">
+      <div class="mhead"><span class="fav">📚</span><span class="title">Docs-html DOCS</span></div>
+      <div class="mbody">
+        <nav class="mside" style="display:flex;flex-direction:column">
+          <div style="flex:1">
+            <div class="grp">Raiz</div>
+            <a class="active">Arquitetura do Pacote</a><a>Collapse Bug and Reveal…</a><a>Config JSON Plan</a><a>Live Reload SSE Fix</a>
+          </div>
+          <div class="sidefoot">
+            <span class="lbl">Outras docs</span>
+            <a onclick="toast('navegaria para outra docs')">▸ Docs Html (KYC)</a>
+            <a onclick="toast('navegaria para outra docs')">▸ Find jobs in Linkedin Posts</a>
+            <a onclick="toast('navegaria para outra docs')">▸ Voice Ai Avatar</a>
+            <a class="backitem" style="margin-top:4px" onclick="goHome()">🛰️ Ver todas</a>
+          </div>
+        </nav>
+        <div class="mdoc"><h3>Arquitetura do Pacote</h3><p>…conteúdo da docs…</p><div class="lorem w70"></div><div class="lorem"></div><div class="lorem w50"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <p style="color:var(--soft);font-size:.9rem;margin-top:22px">
+    <b>Nota de implementação:</b> B e E são injetáveis pelo <code>nav.js</code> (funcionam em shells customizados);
+    A precisa do header do shell; C e D são injetáveis pelo <code>reload.js</code>/<code>inject.js</code> em qualquer página.
+    As variações podem se combinar — ex.: B + E (voltar no topo, switcher no rodapé).
+  </p>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+var tabs=document.getElementById("tabs");
+tabs.addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b)return;
+  tabs.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b)});
+  document.querySelectorAll(".variant").forEach(function(v){v.classList.toggle("on",v.id==="v-"+b.dataset.v)});
+});
+function goHome(){toast("→ voltaria para a página do manager (:4400/)")}
+var tm;function toast(m){var t=document.getElementById("toast");t.textContent=m;t.style.display="block";clearTimeout(tm);tm=setTimeout(function(){t.style.display="none"},1800)}
+</script>
+</body>
+</html>

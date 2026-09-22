@@ -29,7 +29,7 @@ function deepLinkBootstrap() {
   );
 }
 function injectScripts(html, opts = {}) {
-  const { staticMode = false } = opts;
+  const { staticMode = false, base = "" } = opts; // base: "" (single root) or "/<slug>" (manager)
   const isShell = /<[^>]+\bid\s*=\s*["']docList["']/i.test(html);
   if (staticMode && !isShell) {
     html = /<head[^>]*>/i.test(html)
@@ -37,17 +37,19 @@ function injectScripts(html, opts = {}) {
       : deepLinkBootstrap() + html;
   }
   const tags = [];
+  // dev clients read window.DOCS_BASE to prefix their /__... API calls
+  if (!staticMode && base) tags.push(`<script>window.DOCS_BASE=${JSON.stringify(base + "/")}</script>`);
   if (staticMode) tags.push(`<script>window.DOCS_EXPORT=true</script>`);
-  else tags.push(`<script src="/__docs__/reload.js" data-injected></script>`);
-  if (isShell) tags.push(`<script src="/__docs__/nav.js" data-injected></script>`);
-  else if (!staticMode) tags.push(`<script src="/__docs__/edit.js" data-injected defer></script>`);
+  else tags.push(`<script src="${base}/__docs__/reload.js" data-injected></script>`);
+  if (isShell) tags.push(`<script src="${base}/__docs__/nav.js" data-injected></script>`);
+  else if (!staticMode) tags.push(`<script src="${base}/__docs__/edit.js" data-injected defer></script>`);
   const wantsZoom =
     /\bclass\s*=\s*["'][^"']*\bmermaid\b/.test(html) ||
     /<figure[\s>]/i.test(html) ||
     /class\s*=\s*["'][^"']*\b(panzoom|diagram|zoomable)\b/i.test(html);
   const hasOwnZoom = /<script[^>]+src\s*=\s*["'][^"']*(?:mermaid-zoom|svg-pan-zoom)/i.test(html);
   if (wantsZoom && !hasOwnZoom) {
-    tags.push(`<script src="/__docs__/mermaid-zoom.js" data-injected defer></script>`);
+    tags.push(`<script src="${base}/__docs__/mermaid-zoom.js" data-injected defer></script>`);
   }
   const block = tags.join("");
   return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, block + "$&") : html + block;

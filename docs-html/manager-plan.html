@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano: docs-in-html Manager</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🛰️%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));
+  border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{margin:0 0 8px;font-size:2rem;letter-spacing:-.02em}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 10px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid var(--border)}
+.toc-inner{max-width:920px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px;padding:10px 24px}
+.toc a{font-size:.9rem;color:var(--soft);text-decoration:none;padding:4px 12px;
+  border-radius:99px;border:1px solid transparent}
+.toc a:hover{background:var(--panel)}
+.toc a.active{background:var(--accent-soft);color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 6px}
+h2 .num{color:var(--accent);margin-right:8px}
+h3{font-size:1.12rem;margin:26px 0 6px}
+.lead{color:var(--soft);margin-top:0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);
+  background:var(--panel);border-radius:8px;padding:12px 16px;margin:16px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+table{width:100%;border-collapse:collapse;margin:16px 0;font-size:.95rem}
+th{background:var(--panel2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.sim{color:var(--green);font-weight:700}
+.nao{color:var(--red);font-weight:700}
+.talvez{color:var(--amber);font-weight:700}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;overflow-x:auto;font-size:.86rem;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.9em;
+  background:var(--code-bg);padding:1px 5px;border-radius:4px}
+pre code{background:none;padding:0}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:6px 12px;font-size:.9rem}
+.node.dev{background:var(--green-soft);border-color:var(--green)}
+.node.cut{background:var(--red-soft);border-color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.fig-cap{text-align:center;color:var(--soft);font-size:.86rem;margin:4px 0 0}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:12px;margin:16px 0;text-align:center}
+.qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);
+  border-radius:8px;padding:16px;margin:16px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{text-align:left;font:inherit;font-size:.95rem;padding:8px 12px;border-radius:8px;
+  border:1px solid var(--border);background:#fff;cursor:pointer}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
+.opt.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+.q-feedback{display:none;margin-top:10px;padding:10px 12px;background:var(--panel);
+  border-radius:8px;font-size:.93rem}
+.q-feedback.show{display:block}
+footer{color:var(--soft);font-size:.88rem}
+.foot-inner{max-width:920px;margin:0 auto;padding:28px 24px;text-align:center}
+a.top{position:fixed;right:20px;bottom:20px;width:44px;height:44px;border-radius:50%;
+  background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;text-decoration:none;opacity:0;pointer-events:none;transition:opacity .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,.2)}
+a.top.show{opacity:1;pointer-events:auto}
+@media(max-width:640px){.hero h1{font-size:1.5rem}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+<div class="hero-inner">
+  <h1>Plano: docs-in-html Manager</h1>
+  <p class="lede">Um supervisor único que descobre, inicia e navega entre todas as suas instâncias de docs — uma URL no browser, um clique para abrir o Warp na pasta certa.</p>
+  <p class="meta">docs-html/manager-plan.html · docs-in-html · análise e proposta, nada implementado ainda</p>
+</div>
+</header>
+
+<nav class="toc">
+<div class="toc-inner">
+  <a href="#contexto">1 · Contexto</a>
+  <a href="#intuicao">2 · Intuição</a>
+  <a href="#abordagens">3 · Abordagens</a>
+  <a href="#proposta">4 · Proposta</a>
+  <a href="#warp">5 · Warp</a>
+  <a href="#abertos">6 · Decisões</a>
+  <a href="#validacao">7 · Validação</a>
+  <a href="#quiz">8 · Quiz</a>
+</div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+  <p class="lead">O problema que você já vive hoje, e o que o ecossistema atual fornece de gancho.</p>
+
+  <div class="callout">
+    <div class="title">A dor</div>
+    Cada projeto tem sua pasta de docs servida pelo <code>docs-in-html</code> na unha. Isso significa:
+    (a) lembrar quais pastas têm docs, (b) abrir um terminal em cada uma, (c) rodar o serve
+    (e caçar portas que colidem), (d) abrir <em>outra</em> sessão do pi/Warp naquela pasta quando
+    quer que o agente edite as docs. Com N projetos, são 2N rituais manuais por dia.
+  </div>
+
+  <h3>O marcador já existe</h3>
+  <p>O <code>_config.json</code> é criado pelo <code>init</code> (e auto-scaffoldado pelo serve) em toda pasta de docs — é o contrato perfeito de descoberta: se existe <code>dir/_config.json</code>, aquilo é uma instância de docs. Como contrafato, toda pasta de docs também tem HTML, mas <code>_config.json</code> é mais específico e barato de testar (um <code>stat</code> por diretório).</p>
+
+  <div class="callout tip">
+    <div class="title">Detalhe do repo atual</div>
+    As peças necessárias já estão lá como funções reutilizáveis — <code>buildTree</code> (manifest.js), <code>SHELL</code> (shell.js), <code>injectScripts</code> (inject.js), <code>readConfig</code>/<code>applyShellConfig</code> (config.js) e o live-reload (reload.js). O que falta é juntá-las num contexto por raiz em vez de globais de um único serve — ou seja, a arquitetura D é mais evolução natural do que ruptura.
+  </div>
+</section>
+
+<section id="intuicao">
+  <h2><span class="num">2</span>Intuição</h2>
+  <p class="lead">Não gerencie servidores; gerencie <em>docs</em>. O resto deriva disso.</p>
+
+  <p>Um scan global parece a resposta óbvia, mas inverte o controle: você deixa o estado do seu
+  ambiente depender de varreduras de disco. A intuição melhor é:</p>
+
+  <ol>
+    <li><b>Não gerencie processos; gerencie pastas.</b> A unidade de registro não é “um servidor rodando” — é “um diretório de docs”. Servidores valem e caem; a pasta é o que persiste.</li>
+    <li><b>Um registro persistente</b> (<code>~/.docs-in-html/registry.json</code>) mapeia
+    <code>slug → {dir, título}</code>. Registrada uma vez, a pasta é servida/watchada sempre que o manager existir.</li>
+    <li><b>Um único processo, uma única URL.</b> O manager <em>é</em> um serve multi-raiz:
+    <code>localhost:4400/projeto-x/…</code> resolve direto no processo, com um watcher por docs. Você nunca mais decora portas nem spawna nada.</li>
+    <li><b>Scan é import, não runtime.</b> A varredura por <code>_config.json</code> acontece
+    uma vez (e sob demanda) para popular o registro — depois disso, o manager só observa o que foi registrado.</li>
+  </ol>
+
+  <div class="flow">
+    <span class="node">Browser</span><span class="arr">→</span>
+    <span class="node dev">Manager :4400 (multi-raiz)</span><span class="arr">→</span>
+    <span class="node">watcher projeto-x</span>
+    <span class="arr">·</span>
+    <span class="node">watcher specs-api</span>
+  </div>
+  <p class="fig-cap">Uma porta para o mundo de fora; um watcher por docs por dentro.</p>
+</section>
+
+<section id="abordagens">
+  <h2><span class="num">3</span>Abordagens analisadas</h2>
+  <p class="lead">Quatro caminhos, do mais ingênuo ao mais robusto.</p>
+
+  <h3>A. Scan global contínuo do filesystem</h3>
+  <p>Varrer <code>C:\Users\kevin</code> (ou <code>$HOME</code>) recursivamente atrás de
+  <code>_config.json</code>, a cada abertura do manager. Funciona, mas:</p>
+  <ul>
+    <li><b>Custo real e alto.</b> Um perfil de usuário tem facilmente 10⁵–10⁶ diretórios
+    (node_modules, .git, caches, AppData). Mesmo pulando essas pastas, uma varredura completa
+    em Windows custa de segundos a dezenas de segundos — e você pagaria isso a cada uso.</li>
+    <li><b>Watchers inviáveis em escala.</b> Ficar observando o disco inteiro para detectar
+    novas docs é frágil, consome recursos e depende de APIs específicas de cada SO.</li>
+    <li><b>Falsos positivos.</b> Nada impede um <code>_config.json</code> solto de outra ferramenta; o scan precisaria validar conteúdo (chaves <code>title</code>/<code>favicon</code>) para ter confiança.</li>
+  </ul>
+  <div class="callout warn">
+    <div class="title">Veredito</div>
+    Ótimo como <b>import one-shot com cache</b> (roda no primeiro setup, mostra a lista, você
+    confirma o que registrar); ruim como mecanismo de descoberta contínua.
+  </div>
+
+  <h3>B. Registro + supervisor (o manager cria tudo)</h3>
+  <p>O manager mantém o registro e é quem spawna os serves. Descoberta não é necessária no
+  dia a dia: nova docs = botão “adicionar pasta” (ou arrastar) no manager, que valida o
+  <code>_config.json</code>, escolhe porta e registra.</p>
+  <ul>
+    <li><span class="sim">Simples</span> — sem watchers, sem scan em runtime, sem corrida de estado.</li>
+    <li><span class="sim">Cross-platform</span> — Node puro, mesmo perfil do docs-in-html atual.</li>
+    <li><span class="nao">Lacuna</span> — docs que você servir manualmente (fora do manager) ficam invisíveis… o que nos leva a C.</li>
+  </ul>
+
+  <h3>C. Beacon: serves se anunciam ao manager</h3>
+  <p>Sua ideia da “tag”: um hook no <code>serve.js</code> que, ao subir, faz um
+  <code>POST localhost:4400/api/announce</code> com <code>{dir, port, title}</code>. O manager
+  registra na hora, mesmo para serves iniciados à mão. É elegante porque o serve <em>sabe</em> a verdade (porta real, título do <code>_config.json</code>) — não há inferência.</p>
+  <ul>
+    <li><span class="sim">Detecção exata</span> — porta, título e favicon vêm prontos, sem ler nada.</li>
+    <li><span class="talvez">Firewall</span> — em Windows o primeiro POST local pode disparar um prompt de firewall; um manager rodando em localhost puro geralmente escapa, mas é um ponto de atenção.</li>
+    <li><span class="talvez">Retrocompat</span> — versões antigas do pacote não anunciam; o beacon é <b>acréscimo opcional</b>, nunca o mecanismo principal. Fail-safe: se o manager não responde, o serve segue normalmente.</li>
+  </ul>
+
+  <h3>D. Um único processo, multi-raiz (sem filhos) — escolhida</h3>
+  <p>Em vez de N serves, o manager <em>é</em> um serve multi-raiz: recebe o request
+  <code>/projeto-x/foo.html</code>, resolve a raiz no registro e reutiliza as funções já
+  exportadas (<code>buildTree</code>, <code>SHELL</code>, <code>injectScripts</code>) para servir direto. Menos processos, menos RAM, e o live-reload ganha um canal único de WebSocket multiplexado por slug.</p>
+  <ul>
+    <li><span class="sim">Arquitetura mais limpa</span> a longo prazo; um watcher por docs.</li>
+    <li><span class="sim">Um só comando</span> para tudo: registra a pasta e ela passa a ser watchada/servida — a UX “B” (registro) e o mecanismo “D” viram uma coisa só.</li>
+    <li><span class="talvez">Refatoração</span> — o <code>serve.js</code> atual usa constantes globais (<code>ROOT</code>, etc.); servir N raízes exige reestruturar em contexto por raiz. É o custo de entrada, pago uma vez.</li>
+  </ul>
+
+  <h3>Comparação</h3>
+  <table>
+    <tr><th></th><th>Custo de descoberta</th><th>Detecta serve manual</th><th>Cross-platform</th><th>Complexidade</th></tr>
+    <tr><td><b>A</b> Scan contínuo</td><td class="nao">Alto, recorrente</td><td class="sim">Sim</td><td class="sim">Sim</td><td class="talvez">Média</td></tr>
+    <tr><td><b>B</b> Registro + supervisor</td><td class="sim">Zero</td><td class="nao">Não</td><td class="sim">Sim</td><td class="sim">Baixa</td></tr>
+    <tr><td><b>C</b> Beacon no serve</td><td class="sim">Zero</td><td class="sim">Sim</td><td class="talvez">Quase (fw)</td><td class="sim">Baixa</td></tr>
+    <tr><td><b>D</b> Multi-raiz único</td><td class="sim">Zero (usa B/C)</td><td class="nao">Não (só as dele)</td><td class="sim">Sim</td><td class="talvez">Média</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <div class="title">Decisão (atualizada)</div>
+    <b>D é a arquitetura escolhida</b> — um único processo multi-raiz, com registro de pastas watchadas (evolução natural de B, que vira a camada de registro dentro de D). <b>A continua como import pontual</b> (botão “escanear”, skip-list e cache) e <b>C como bônus</b> futuro. O proxy reverso da fase-1-original foi descartado: se só existe um processo, não há nada a proxiar.
+  </div>
+</section>
+
+<section id="proposta">
+  <h2><span class="num">4</span>Proposta: fase 1 em detalhe (arquitetura D)</h2>
+  <p class="lead">Um único processo multi-raiz — o manager <em>é</em> um serve que serve N raízes — alimentado por um registro de pastas watchadas.</p>
+
+  <div class="callout tip">
+    <div class="title">Status: ✅ implementado e validado</div>
+    Etapas 1–6 executadas (revisão de código independente incluída — 2 achados críticos corrigidos: injeção de comando no endpoint Warp e crashes por request malformado). Checkpoints verificados: single-root byte-idêntico ao HEAD original; 7 docs reais registradas e servidas em <code>:4400/&lt;slug&gt;/</code>; live-reload e navegação testados num browser real (CDP), console limpo; delegação sem processo extra; scan frio em ~0,2 s. Restam apenas os itens de release (help/README/version bump opcional).
+  </div>
+
+  <h3>Fluxo de uso</h3>
+  <div class="flow">
+    <span class="node">docs-in-html &lt;dir&gt;</span><span class="arr">serve + registra (default)</span>
+    <span class="node">registry.json</span><span class="arr">alimenta</span>
+    <span class="node dev">manager :4400</span><span class="arr">serve</span>
+    <span class="node">/x/… /y/…</span>
+  </div>
+
+  <ul>
+    <li><b>Registro sem comando novo:</b> o serve comum (<code>docs-in-html &lt;dir&gt;</code>) passa, por padrão, a registrar a pasta no <code>~/.docs-in-html/registry.json</code> ao subir — você não muda seu hábito: serve como sempre serviu, e a pasta entra no manager de graça. <code>--no-register</code> como opt-out. Remover do registro é pela UI do manager (ou <code>--unregister</code>), não por um subcomando dedicado.</li>
+    <li><b>Um processo, N raízes:</b> <code>docs-in-html manager</code> sobe o servidor em 4400 (ou <code>$DOCS_MANAGER_PORT</code>). Cada docs vive num prefixo: <code>localhost:4400/projeto-x/…</code>. Reusa <code>buildTree</code>, <code>SHELL</code>, <code>injectScripts</code> e <code>applyShellConfig</code> por raiz — nada de proxy, nada de filhos.</li>
+    <li><b>Um watcher por docs:</b> <code>fs.watch</code> recursivo (ou <code>@parcel/watcher</code> se a recursão nativa falhar em algum SO) por raiz registrada; cada evento recarrega só a árvore daquela raiz. O live-reload vira um WebSocket único multiplexado por slug — o cliente só ouve o canal da sua docs.</li>
+    <li><b>Refactor do core:</b> o <code>serve.js</code> atual é um script com globais (<code>ROOT</code> etc.). A mudança estrutural da fase 1 é extrair um <b>contexto por raiz</b> (<code>createRoot(dir, {base})</code> → tree, config, watcher) e o router de prefixos por cima. O CLI de serve single-root atual continua idêntico por fora — passa a ser um caso especial do contexto único.</li>
+    <li><b>UI do manager</b> (<code>localhost:4400/</code>): grid de cards — favicon + título do <code>_config.json</code> de cada raiz, ações: <i>abrir</i>, <i>abrir no Warp</i>, <i>revelar no Explorer</i>, <i>desregistrar</i>. HTML puro, zero build, no espírito do projeto.</li>
+    <li><b>Import por scan (botão “escanear”):</b> caminha <code>$HOME</code> (pastas extras configuráveis), pula <code>node_modules, .git, AppData, Library, .cache, dotfiles</code>, limita profundidade (~6) e valida o JSON encontrado. Resultado em tabela com checkboxes — você escolhe o que registrar. Cache em <code>~/.docs-in-html/scan-cache.json</code> para só revarrer o que mudou (mtime de diretórios).</li>
+    <li><b>Prefixos vs globais:</b> como cada docs fica atrás de <code>/&lt;slug&gt;/</code>, o shell precisa injetar <code>&lt;base href="/&lt;slug&gt;/"&gt;</code> — o contexto por raiz já carrega esse <code>base</code>, sem flag nova no CLI de serve.</li>
+  </ul>
+
+  <h3>Arquivos: o que muda exatamente</h3>
+  <table>
+    <tr><th>Arquivo</th><th>Ação</th><th>O que acontece</th></tr>
+    <tr><td><code>serve.js</code></td><td class="talvez"><b>editado</b></td><td>Perde as globais (<code>ROOT</code>, watcher, estado); vira consumidor de <code>roots.js</code>; grava no registry por padrão ao subir (<code>--no-register</code>, <code>--unregister</code>); novo modo <code>manager</code></td></tr>
+    <tr><td><code>reload.js</code></td><td class="talvez"><b>editado (leve)</b></td><td>Já é root-scoped (<code>createReload(root)</code>) — só multiplexa o WebSocket por slug (canal por raiz num servidor só)</td></tr>
+    <tr><td><code>manifest.js</code>, <code>inject.js</code>, <code>config.js</code>, <code>shell.js</code></td><td class="sim"><b>intocados</b></td><td>Já são funções puras root-scoped (<code>buildTree(root)</code>, <code>injectScripts</code>, <code>readConfig</code>…) — o manager os consome direto</td></tr>
+    <tr><td><code>roots.js</code></td><td class="nao"><b>novo</b></td><td>Contexto por raiz: <code>createRoot(dir, {slug, base})</code> → config, tree, watcher; compartilhado por serve single-root e manager</td></tr>
+    <tr><td><code>manager.js</code></td><td class="nao"><b>novo</b></td><td>Servidor :4400 — router de prefixos por raiz, UI de cards, API JSON (<code>/api/docs</code>, <code>/api/add</code>, <code>/api/remove</code>, <code>/api/open-warp</code>, <code>/api/reveal</code>)</td></tr>
+    <tr><td><code>registry.js</code></td><td class="nao"><b>novo</b></td><td>CRUD tolerante do <code>~/.docs-in-html/registry.json</code> (slug, dir; preserva chaves desconhecidas)</td></tr>
+    <tr><td><code>scan.js</code></td><td class="nao"><b>novo</b></td><td>Import one-shot: caminhada com skip-list, profundidade ~6, cache incremental por mtime</td></tr>
+    <tr><td><code>client/manager.html</code></td><td class="nao"><b>novo</b></td><td>Página de cards (grid, status, ações, “adicionar pasta”, “escanear”) — HTML+JS puro</td></tr>
+    <tr><td><code>client/reload.js</code></td><td class="talvez"><b>editado (leve)</b></td><td>Conecta ao WebSocket do manager escutando só o canal do seu slug</td></tr>
+    <tr><td><code>package.json</code></td><td class="talvez"><b>editado</b></td><td>Help/description mencionam o novo modo; <code>files</code> ganha os novos módulos</td></tr>
+  </table>
+  <p class="fig-cap">Nenhum arquivo é removido — o CLI, o export, o init e o shell continuam exatamente onde estão.</p>
+
+  <div class="callout">
+    <div class="title">Comportamento do <code>docs-in-html &lt;dir&gt;</code> conforme o manager</div>
+    <b>Manager rodando:</b> o CLI <b>não sobe server adicional</b> — registra/atualiza a raiz no manager e apenas <b>avisa no terminal</b>, com o link: <code>✓ adicionada ao manager: http://localhost:4400/projeto-x/</code>. Não abre browser, não rouba o foco — quem navega é você, quando quiser, pela página do manager. Nada de servidor duplicado, nada de porta 8000 ocupada à toa: o manager <em>é</em> o serve daquela pasta.
+    <br><b>Manager parado:</b> comportamento de hoje — server próprio, watcher, porta 8000, auto-open (com o registro silencioso no registry para a próxima).
+    <br>Detectar o manager é barato: um ping em <code>localhost:4400/api/ping</code> antes de subir o server. É uma mudança deliberada de comportamento quando o manager existe — mas só nesse caso; sem manager, o contrato atual é intocável.
+  </div>
+
+  <div class="callout tip">
+    <div class="title">E o <code>npx</code>? Continua funcionando — o registry não mora no pacote</div>
+    O <code>~/.docs-in-html/registry.json</code> vive na <b>home do usuário</b>, não junto ao pacote. O <code>npx docs-in-html &lt;dir&gt;</code> executa o mesmo código, no mesmo processo, com as mesmas permissões de escrita na home — logo, registra normalmente, sem instalação global. O que o <code>npx</code> não dá é só <b>comodidade</b>: o manager é um processo de longa duração, e rodá-lo via npx toda vez (re-download/check de versão) é chato — aí sim a instalação global (ou um atalho de auto-start no login) vale a pena. Ou seja: <span class="sim">registro via npx: sim</span>, <span class="sim">manager via npx: possível</span>, <span class="talvez">manager no dia a dia: global</span>. Cuidado único: manter o formato do registry simples e tolerante a versões (chaves desconhecidas preservadas), já que versões diferentes do pacote podem escrever nele.
+  </div>
+
+  <h3>Etapas</h3>
+  <ol>
+    <li><b>Refactor do core — <code>roots.js</code>.</b> Extrair o estado global do <code>serve.js</code> para contexto por raiz; reconstruir o serve atual em cima (mesma UX, mesmas flags). <i>Checkpoint: comportamento idêntico ao de hoje, testado servindo esta própria docs-html.</i></li>
+    <li><b>Registry.</b> <code>registry.js</code> + o serve passando a gravar/remover entradas (<code>--no-register</code>/<code>--unregister</code>). <i>Checkpoint: servir pastas diferentes popular o mesmo registry.</i></li>
+    <li><b>Manager multi-raiz.</b> <code>manager.js</code>: router de prefixos, um watcher por raiz, WebSocket multiplexado, live-reload por docs, endpoint <code>/api/ping</code>. <i>Checkpoint: duas docs acessíveis em <code>:4400/a/</code> e <code>:4400/b/</code> com reload instantâneo em ambas.</i></li>
+    <li><b>Delegação do CLI.</b> O serve, ao subir, pinga o manager: se responder, registra/ativa a raiz nele e imprime o aviso com o link (<code>✓ adicionada ao manager: :4400/&lt;slug&gt;/</code>) — sem server próprio e sem abrir browser. Sem resposta, fluxo atual. <i>Checkpoint: com manager rodando, <code>docs-in-html &lt;dir&gt;</code> imprime o link, nenhum processo novo fica de pé e nenhum browser se abre.</i></li>
+    <li><b>UI de cards.</b> <code>client/manager.html</code>: grid com título/favicon do <code>_config.json</code>, abrir/remover, botão “adicionar pasta”.</li>
+    <li><b>Integrações do SO.</b> Endpoints <code>/api/open-warp</code> (<code>warp &lt;dir&gt;</code> via child_process, fallback para terminal padrão) e <code>/api/reveal</code> (Explorer/Finder).</li>
+    <li><b>Import por scan.</b> <code>scan.js</code> + botão “escanear” na UI, com checkboxes de confirmação e cache.</li>
+    <li><b>Polimento e release.</b> Help atualizado, README, bump de versão (minor), publicação no npm.</li>
+  </ol>
+
+  <h3>Resultado esperado ao final</h3>
+  <div class="callout tip">
+    <div class="title">O dia a dia depois do plano</div>
+    <ul>
+      <li><code>docs-in-html manager</code> sobe uma vez (boot/login) — e a partir dali você abre <code>localhost:4400</code> no browser e vê <b>todas as suas docs</b> num grid, com título e favicon de cada uma; um clique entra na docs, com sidebar, tree e live-reload iguais aos de hoje.</li>
+      <li><b>Nenhum ritual de portas/terminais</b>: servir uma pasta nova com <code>docs-in-html &lt;dir&gt;</code> (npx ou global) já a registra; ela aparece no manager na hora. O botão “escanear” traz as docs históricas em um lote.</li>
+      <li>Do card da docs, <b>“abrir no Warp”</b> abre o terminal na pasta certa — a ponte para a sessão do pi — e “revelar” abre o Explorer/Finder.</li>
+      <li>O manager é <b>um único processo Node, zero dependências novas</b> (se <code>fs.watch</code> recursivo bastar), cross-platform, e o modo single-root atual continua funcionando igual para quem não quer manager.</li>
+      <li>Recursos: <b>N watchers, 1 processo</b> — nada de N serves espalhados nem portas para decorar.</li>
+    </ul>
+  </div>
+
+  <h3>Novo pacote ou feature no docs-in-html?</h3>
+  <p>A dúvida de empacotamento, analisada friamente:</p>
+  <table>
+    <tr><th></th><th>Mesmo pacote (subcomando)</th><th>Pacote separado (docs-manager)</th></tr>
+    <tr><td>Reuso de buildTree/SHELL/inject/config</td><td class="sim">Direto (mesmos arquivos)</td><td class="nao"><code>require("docs-in-html")</code> — mas o core atual não exporta o bastante; precisaria expor API primeiro</td></tr>
+    <tr><td>Refactor multi-raiz</td><td class="sim">Acontece onde o código vive — sem atrito</td><td class="nao">Duplica lógica ou força refactor de API pública só para o outro pacote consumir</td></tr>
+    <tr><td>Instalação/usuário</td><td class="sim">Um <code>npm i -g docs-in-html</code> já traz tudo</td><td class="talvez">Duas instalações, versionamento cruzado (manager vs serve)</td></tr>
+    <tr><td>Risco ao estável</td><td class="talvez">Mudança no core pode afetar o serve single-root</td><td class="sim">Core intocado</td></tr>
+    <tr><td>Descoberta/marketing</td><td class="sim">“docs-in-html agora também gerencia suas docs” — uma narrativa</td><td class="talvez">Divide a atenção</td></tr>
+  </table>
+  <div class="callout tip">
+    <div class="title">Recomendação</div>
+    <b>Mesmo pacote</b> — e sem subcomando de registro: o serve existente registra por padrão, e apenas <code>docs-in-html manager</code> é comando novo. A arquitetura D <em>exige</em> o refactor de contexto por raiz — e ele é valioso justamente no core, não ao lado dele. Um pacote separado só faz sentido se quisesse manter o serve 100% congelado, o que D descarta por definição. Mitigação do risco: o refactor mantém o comportamento do CLI atual como teste de regressão (mesma UX, mesmas flags, agora implementado sobre <code>roots.js</code>).
+  </div>
+</section>
+
+<section id="warp">
+  <h2><span class="num">5</span>Integração com o Warp</h2>
+  <p class="lead">Do que a documentação oficial do Warp nos dá hoje.</p>
+
+  <ul>
+    <li><b>CLI <code>warp &lt;dir&gt;</code></b> — abre uma janela/sessão do Warp diretamente num diretório. Existe nas três plataformas (o Warp no Windows suporta PowerShell, cmd, bash…). É o caminho direto para o botão <i>“abrir no Warp”</i>: o browser não pode spawnar processos, então o card chama <code>POST /api/open-warp</code> no manager, que executa <code>warp &lt;caminho&gt;</code> via <code>child_process</code> — com o shell certo por plataforma (PowerShell no Windows, <code>open</code>/direct no macOS/Linux).</li>
+    <li><b>URI scheme <code>warp://</code></b> — dispara ações programáticas: launch configurations, tab configs (<code>warp://tab_config/nome</code>, com <code>?new_window=true</code>). Útil como atalho futuro (“abrir esta docs com o comando <code>pi</code> já rodando”), mas não abre diretório arbitrário — exige um TOML de tab config por projeto. Fica como evolução: o manager poderia <em>gerar</em> essas launch configs com <code>cwd</code> da docs + comando inicial (ex.: <code>pi</code>) a partir do registro.</li>
+    <li><b>Launch configurations (YAML)</b> — o Warp já tem o conceito de layouts salvos com <code>cwd</code> e comandos iniciais por pane. É exatamente o formato certo para “abrir projeto X com pi + serve do docs”: o manager pode emitir esses YAMLs automaticamente, um por docs registrada.</li>
+  </ul>
+
+  <div class="callout tip">
+    <div class="title">Decisão sugerida</div>
+    Fase 1: <code>warp &lt;dir&gt;</code> via endpoint do manager (simples, cross-platform, resolve o caso “abrir o pi na pasta”). Fase 2: gerar launch configs por projeto para já abrir com <code>pi</code> rodando. Detectar ausência do <code>warp</code> no PATH e oferecer fallback (abrir no terminal padrão do SO).
+  </div>
+</section>
+
+<section id="abertos">
+  <h2><span class="num">6</span>Decisões encerradas</h2>
+  <ul>
+    <li><span class="sim">✓ Watcher:</span> <code>fs.watch</code> recursivo nativo (zero-dependency). Linux sem recursão → fallback de recursão manual + aviso. A troca por <code>@parcel/watcher</code> fica como plano B (dependência opcional), isolada atrás de <code>roots.js</code>.</li>
+    <li><span class="sim">✓ Empacotamento:</span> mesmo pacote, sem comando <code>watch</code> — o serve padrão registra; só <code>manager</code> é comando novo.</li>
+    <li><span class="sim">✓ Auto-start:</span> manual por ora — <code>docs-in-html manager</code> explícito; atalho de login é documento futuro.</li>
+    <li><span class="sim">✓ Ping de delegação:</span> timeout curto (~300ms) antes de decidir subir server próprio.</li>
+    <li><span class="sim">✓ Porta do manager:</span> 4400 fixa ou <code>$DOCS_MANAGER_PORT</code> (CLI e manager leem a mesma variável, então a delegação concorda automaticamente). O manager grava <code>managerPort</code> no registry como fonte secundária para o ping (CLI usa a env primeiro, o registry como fallback). Porta ocupada → mensagem clara e exit, sem porta flutuante.</li>
+    <li><span class="sim">✓ Unregister:</span> <code>docs-in-html &lt;dir&gt; --unregister</code> remove do registry e sai + botão “remover” na UI.</li>
+    <li><span class="sim">✓ Beacon:</span> fora desta execução — serves de versões antigas são simplesmente ignorados.</li>
+    <li><span class="sim">✓ Slug = título:</span> o slug vem do <code>title</code> do <code>_config.json</code> (ex.: “My Project — Handbook” → <code>my-project-handbook</code>): slugified para URL, exibido como título no card e na aba. Renomear o título no config muda o slug — o registry revalida no boot e avisa quando um link antigo deixa de existir. Colisões (dois títulos iguais) resolvem com sufixo <code>-2</code> e aviso na UI.</li>
+    <li><span class="sim">✓ Escopo do scan:</span> default <code>$HOME</code>, profundidade 6, skip-list fixa (node_modules, .git, AppData, Library, .cache, dotfiles) + pastas extras configuráveis no registry.</li>
+    <li><span class="sim">✓ npx:</span> registry na home do usuário, não no pacote — registro via npx funciona; formato tolerante a versões.</li>
+  </ul>
+</section>
+
+<section id="validacao">
+  <h2><span class="num">7</span>Validação: a execução se autotesta</h2>
+  <p class="lead">Cada etapa termina com evidência verificável — não com “parece que funcionou”.</p>
+
+  <h3>Camada 1 — CLI/HTTP (bash + curl)</h3>
+  <ul>
+    <li><b>Etapa 1 (refactor):</b> servir a própria <code>docs-html/</code> deste projeto e comparar as respostas HTTP <em>antes vs. depois</em> do refactor — status, headers, body do shell, do manifest (<code>/manifest.json</code> ou equivalente) e de um HTML interno byte a byte. Diferença = bug.</li>
+    <li><b>Etapa 2 (registry):</b> servir duas pastas temporárias e conferir o <code>~/.docs-in-html/registry.json</code> resultante (entradas, sem duplicação ao repetir o comando, <code>--no-register</code> não grava, <code>--unregister</code> remove).</li>
+    <li><b>Etapa 3 (manager):</b> <code>curl :4400/a/…</code> e <code>:4400/b/…</code> para duas raízes; <code>/api/ping</code>; porta ocupada → exit com mensagem; <code>DOCS_MANAGER_PORT</code> respeitada.</li>
+    <li><b>Etapa 4 (delegação):</b> com o manager de pé, rodar <code>docs-in-html &lt;dir&gt;</code> e verificar: link impresso, <b>nenhum processo novo</b> (<code>tasklist</code>/<code>ps</code> antes/depois), nenhum browser aberto. Sem manager → server próprio sobe normalmente.</li>
+    <li><b>Etapa 6 (scan):</b> árvore de teste com <code>node_modules</code>/dotfiles plantados — nenhum falso positivo; cache revalida por mtime.</li>
+  </ul>
+
+  <h3>Camada 2 — Browser real (Chrome DevTools Protocol)</h3>
+  <p>Além do curl, a UI é testada num browser de verdade: iniciar Edge/Chrome com remote debugging e dirigir a página por CDP — navegar, clicar, inspecionar DOM e capturar erros de console:</p>
+  <ul>
+    <li><b>UI de cards:</b> <code>localhost:4400</code> renderiza um card por raiz com título/favicon corretos; clique abre a docs com sidebar e tree.</li>
+    <li><b>Live-reload:</b> com a página aberta, editar um HTML no disco e observar o WebSocket disparar a recarga (sem polling manual).</li>
+    <li><b>Console limpo:</b> zero erros JS no shell, no manager e nas docs internas (incluindo Mermaid, se a docs de teste tiver diagramas).</li>
+    <li><b>Ações:</b> “remover” tira o card e derruba a rota; “abrir no Warp” invoca o endpoint (o processo <code>warp</code> é verificado por mock/inspeção, sem depender do Warp instalado).</li>
+  </ul>
+
+  <h3>Camada 3 — Revisão por subagentes</h3>
+  <ul>
+    <li>Um <b>revisor read-only</b> examina o diff de cada etapa contra este plano (o refactor do <code>serve.js</code> é o crítico: globais destruídas, nenhuma flag/UX mudada).</li>
+    <li>Um <b>testador</b> executa os checkpoints das camadas 1–2 de forma independente e reporta só evidências (curl, screenshots DOM, saídas).</li>
+    <li>Execução paralelizável quando as etapas permitem (ex.: revisão da etapa N enquanto a etapa N+1 é implementada).</li>
+  </ul>
+
+  <div class="callout tip">
+    <div class="title">Critério de pronto por etapa</div>
+    Etapa só é considerada concluída com: <b>(1)</b> checkpoint do plano passando, <b>(2)</b> zero erro de console no browser, <b>(3)</b> revisão de diff limpa. Qualquer falha trava a etapa seguinte — sem “resolver depois”.
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">8</span>Quiz</h2>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. Por que o scan global por <code>_config.json</code> foi rebaixado a “import pontual” em vez de mecanismo contínuo?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Porque <code>_config.json</code> não é um marcador confiável de uma pasta de docs</button>
+      <button class="opt" data-k="b">Porque varrer o perfil do usuário repetidamente custa de segundos a dezenas de segundos, e observar o disco inteiro continuamente é frágil e caro</button>
+      <button class="opt" data-k="c">Porque o scan só funciona no Windows</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> O marcador é ótimo; o problema é o custo de recorrência e a inviabilidade de watchers em escala. Uma vez com cache, o scan é uma ferramenta de import — não de runtime.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. O que resolve a lacuna do registro puro (docs servidas manualmente ficarem invisíveis ao manager)?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Scan contínuo a cada 30 segundos</button>
+      <button class="opt" data-k="b">Ler o histórico do shell do usuário</button>
+      <button class="opt" data-k="c">O beacon: o próprio serve, ao subir, anuncia {dir, porta, título} ao manager via POST local</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O serve é a fonte da verdade (porta real, título). O beacon é opcional e fail-safe: se o manager não existe, o serve segue normal.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">3. Por que a UI do manager precisa de um endpoint de servidor (e não pode abrir o Warp sozinha, via JS)?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Porque o Warp não tem CLI no Windows</button>
+      <button class="opt" data-k="b">Porque código de browser não pode executar processos no sistema; quem roda <code>warp &lt;dir&gt;</code> é o manager via child_process</button>
+      <button class="opt" data-k="c">Porque o Warp exige autenticação para abrir pastas</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> A sandbox do browser impede spawn. O card faz <code>POST /api/open-warp</code>; o manager executa <code>warp &lt;caminho&gt;</code> com o shell adequado de cada plataforma.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">4. Qual recurso do Warp melhor representa o futuro “abrir a docs já com o pi rodando”?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Launch configurations (YAML) com <code>cwd</code> e comandos iniciais por pane — que o manager poderia gerar a partir do registro</button>
+      <button class="opt" data-k="b">O comando <code>warp --version</code></button>
+      <button class="opt" data-k="c">O URI scheme <code>warp://tab_config</code>, que abre qualquer diretório arbitrário diretamente</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> Launch configs são exatamente “cwd + comandos na inicialização”. O URI scheme <code>warp://tab_config</code> abriria um TOML salvo — não um diretório arbitrário.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">5. Na arquitetura D, por que o refactor de “contexto por raiz” (<code>roots.js</code>) é o coração da fase 1?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Porque permite trocar o HTTP server por um mais rápido</button>
+      <button class="opt" data-k="b">Porque o manager precisa de um banco de dados para N raízes</button>
+      <button class="opt" data-k="c">Porque o <code>serve.js</code> atual usa globais (<code>ROOT</code> etc.); servir N raízes no mesmo processo exige encapsular árvore, config e watcher por raiz — e o serve single-root atual vira um caso especial disso</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> Sem estado global, não há como distinguir duas docs no mesmo processo. O refactor é exatamente trocar globais por contexto por raiz — e ainda melhora o modo single-root sem mudar sua UX.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">6. Como o registro de pastas entra no fluxo, sem comando novo?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Através de um subcomando <code>watch</code> dedicado</button>
+      <button class="opt" data-k="b">O serve comum registra a pasta por padrão ao subir (<code>--no-register</code> como opt-out) — o hábito do usuário não muda</button>
+      <button class="opt" data-k="c">O manager detecta pastas por scan contínuo</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Nenhuma nova coisa para aprender: <code>docs-in-html &lt;dir&gt;</code> continua sendo o único gesto — a diferença é que a pasta agora também entra no registry e aparece no manager.</div>
+  </div>
+</section>
+
+</main>
+
+<footer><div class="foot-inner">Plano · docs-in-html Manager · docs-in-html</div></footer>
+<a class="top" href="#">↑</a>
+
+<script>
+document.querySelectorAll(".qcard").forEach(c=>{
+  const ans=c.dataset.answer,fb=c.querySelector(".q-feedback");
+  c.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+    c.querySelectorAll(".opt").forEach(o=>o.classList.remove("right","wrong"));
+    if(b.dataset.k===ans){b.classList.add("right");}
+    else{
+      b.classList.add("wrong");
+      const cor=c.querySelector('.opt[data-k="'+ans+'"]');cor&&cor.classList.add("right");
+    }
+    fb.classList.add("show");
+  }));
+});
+const links=[...document.querySelectorAll(".toc a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+window.addEventListener("scroll",()=>{
+  let i=secs.findIndex(s=>s&&s.getBoundingClientRect().top>=120);
+  if(i<=0)i=0; else i=i-1;
+  links.forEach(l=>l.classList.remove("active"));
+  if(secs[i])links[i].classList.add("active");
+  document.querySelector("a.top").classList.toggle("show",scrollY>600);
+},{passive:true});
+</script>
+</body>
+</html>
