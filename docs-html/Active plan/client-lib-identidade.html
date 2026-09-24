@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano: client/lib.js — identidade, BASE e api()</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.hero{width:100%;background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{padding:4px 14px;border-radius:999px;border:1px solid var(--border);
+  color:var(--soft);text-decoration:none;font-size:.88rem;white-space:nowrap}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{border-bottom:1px solid var(--border);padding:34px 0}
+section:last-of-type{border-bottom:none}
+h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 14px}
+h2 .num{color:var(--accent);margin-right:10px}
+h3{font-size:1.1rem;margin:26px 0 8px}
+.lead{color:var(--soft);margin-top:0}
+p{margin:12px 0}
+code{background:var(--code-bg);padding:1px 6px;border-radius:5px;font-size:.88em;
+  font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.55}
+pre code{background:none;padding:0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);
+  border-radius:8px;padding:14px 18px;margin:18px 0;background:var(--panel)}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+.ramp{border:2px dashed var(--border);border-radius:10px;padding:16px 20px;margin:20px 0;background:var(--bg)}
+.ramp .ramp-title{font-weight:700;color:var(--soft);margin-bottom:6px}
+table{border-collapse:collapse;width:100%;margin:18px 0;font-size:.94rem}
+th{background:var(--panel2);text-align:left;padding:9px 12px}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+.sim{color:var(--green);font-weight:700}
+.nao{color:var(--red);font-weight:700}
+.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:18px 0}
+.node{padding:6px 14px;border-radius:999px;border:1px solid var(--border);background:var(--panel);font-size:.9rem}
+.node.dev{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
+.node.cut{background:var(--red-soft);border-color:var(--red);color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.figcap{text-align:center;color:var(--soft);font-size:.88rem;margin:4px 0 10px}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;
+  padding:16px;margin:18px 0;text-align:center}
+.qcard{background:var(--bg);border:1px solid var(--border);border-left:4px solid var(--purple);
+  border-radius:8px;padding:16px 20px;margin:16px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;width:100%;padding:10px 14px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg);font:inherit;font-size:.95rem;cursor:pointer}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-soft);border-color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.q-feedback{display:none;margin-top:12px;padding:10px 14px;border-radius:8px;
+  background:var(--panel);font-size:.94rem}
+.q-feedback.show{display:block}
+footer{max-width:920px;margin:0 auto;padding:26px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+.top{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;
+  background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:1.2rem;text-decoration:none;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano: client/lib.js — identidade, BASE e api()</h1>
+    <p class="lede">O mesmo bloco de oito linhas que responde "quem sou eu?" está copiado, letra por letra, em três clientes do browser. Este plano extrai essa regra — junto do wrapper de <code>fetch</code> que também se repete — para um único módulo, <code>client/lib.js</code>, injetado antes de todos os outros.</p>
+    <p class="meta">Candidato 4 · refactoração de extração · docs-in-html · cliente · zero dependências</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#intuicao">2 · Intuição</a>
+    <a href="#mudancas">3 · Mudanças</a>
+    <a href="#quiz">4 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+  <p class="lead">O que já existe no repo e por que essa duplicação apareceu — e por que ela é mais perigosa do que parece.</p>
+
+  <div class="ramp">
+    <p class="ramp-title">Rampa para iniciante (pode pular)</p>
+    <p>O docs-in-html serve pastas de HTML num servidor de desenvolvimento. Quando o servidor devolve uma página, o módulo <code>inject.js</code> acrescenta, antes de <code>&lt;/body&gt;</code>, algumas tags <code>&lt;script&gt;</code>: o cliente de hot-reload (<code>reload.js</code>), o editor inline (<code>edit.js</code>), o destaque de mudanças (<code>changes.js</code>) e, na "shell" (a página com sidebar), o navegador de arquivos (<code>nav.js</code>). Esses scripts rodam dentro da página do usuário e precisam responder a uma pergunta aparentemente boba: <em>que arquivo é este?</em> A resposta depende de onde a página vive — sozinha no servidor, ou sob o gerenciador multi-docs num prefixo tipo <code>/meu-projeto/</code> — e é exatamente aí que a mesma lógica foi copiada três vezes.</p>
+  </div>
+
+  <h3>O bloco "quem sou eu", três vezes</h3>
+  <p>Para um cliente saber se deve recarregar a página, salvar o arquivo certo ou comparar com o snapshot correto, ele precisa converter <code>location.pathname</code> no caminho relativo à raiz de docs. Em <code>client/reload.js</code> (linhas 26–30):</p>
+  <pre><code>var me = (isShell ? "index.html" : decodeURI(location.pathname).replace(/^\/+/, "")) || "index.html";
+var baseRel = decodeURI(BASE).replace(/^\/+|\/+$/g, "");
+if (baseRel &amp;&amp; me.toLowerCase().indexOf(baseRel.toLowerCase() + "/") === 0)
+  me = me.slice(baseRel.length + 1) || "index.html";</code></pre>
+  <p>O mesmo bloco aparece <strong>verbatim</strong> em <code>client/changes.js</code> (linhas 27–31) e, em forma quase idêntica, em <code>client/edit.js</code> (linhas 12–16). Três cópias da mesma regra sutil — <code>decodeURI</code>, strip da barra inicial, comparação <em>case-insensitive</em> com o prefixo do gerenciador, fallback para <code>index.html</code>.</p>
+
+  <h3>Detectar a shell: duas técnicas, o mesmo sinal</h3>
+  <p>O sinal de "esta página é a shell" é o elemento <code id="code-docList">#docList</code>. Dois lados o detectam de formas diferentes, porque vivem em mundos diferentes:</p>
+  <ul>
+    <li><strong>No cliente</strong> (DOM pronto): <code>client/reload.js:23</code> usa <code>document.getElementById("docList")</code>; <code>client/edit.js:6</code> faz o mesmo para se <em>abster</em> de editar a shell.</li>
+    <li><strong>No servidor</strong> (pré-DOM): <code>inject.js:50</code> decide quais scripts injetar testando o HTML cru com a regex <code>/&lt;[^&gt;]+\bid\s*=\s*["']docList["']/i</code> — o arquivo nem chegou ao browser ainda.</li>
+  </ul>
+
+  <h3>O wrapper de fetch que também se repete</h3>
+  <p>Quem chama as APIs privadas (<code>/__save__</code>, <code>/__manifest__</code>, endpoints de criação/renomeação) precisa montar a URL: <code>BASE.replace(/\/+$/, "") + url</code>. Acontece em <code>client/nav.js</code> (função <code>api()</code>, linha ~136, e o fetch de <code>/__manifest__</code>, linha ~236) e em <code>client/edit.js</code> (função <code>save()</code>, linha ~99). Cada cópia embute também JSON.stringify do corpo e tratamento de erro — de novo, com pequenas variações.</p>
+
+  <div class="callout danger">
+    <div class="title">O custo real dessa duplicação</div>
+    <p>Uma mudança na regra de slug/base — por exemplo, aceitar caminhos com <code>%20</code>, ou um novo formato de prefixo do gerenciador — exige <strong>três edições sincronizadas</strong> em três arquivos, e nenhuma delas é testável de forma isolada: a lógica só roda no browser, dentro de uma IIFE, lendo <code>location</code>. É o tipo de código onde o bug aparece só depois que o usuário aperta F5 num endereço profundo.</p>
+  </div>
+</section>
+
+<section id="intuicao">
+  <h2><span class="num">2</span>Intuição</h2>
+  <p class="lead">Três perguntas de identidade, uma resposta só. O que muda é dar a essa resposta um endereço.</p>
+
+  <h3>A pergunta é uma, os lugares são vários</h3>
+  <p>Pense num exemplo concreto. O gerenciador serve seus docs em <code>/docs-proj/</code> e você abriu <code>/docs-proj/guias/intro.html</code> num F5 direto (fora da shell). O pathname é <code>/docs-proj/guias/intro.html</code>, mas o que o reload client, o editor e o diff de mudanças precisam saber é apenas <code>guias/intro.html</code>. Cada um dos três chega lá sozinho, com o seu bloco copiado de oito linhas. Se amanhã o prefixo puder ter maiúsculas ou a regra de fallback mudar, são três lugares para errar.</p>
+  <p>A intuição do plano é a mais antiga da engenharia: <em>quando a mesma pergunta é feita em três lugares, a resposta merece um endereço próprio</em>. Não estamos inventando abstração — estamos dando nome a algo que já existe, duplicado.</p>
+
+  <div class="flow">
+    <span class="node cut">me() copiado ×3</span>
+    <span class="arr">→</span>
+    <span class="node dev">lib.me()</span>
+    <span class="arr">·</span>
+    <span class="node cut">BASE.replace + fetch ×3</span>
+    <span class="arr">→</span>
+    <span class="node dev">lib.api(path)</span>
+    <span class="arr">·</span>
+    <span class="node cut">getElementById("docList") ×2</span>
+    <span class="arr">→</span>
+    <span class="node dev">lib.isShell()</span>
+  </div>
+  <p class="figcap">Antes e depois: três regras espalhadas convergem para um módulo.</p>
+
+  <h3>Por que um módulo UMD (e não ESM)</h3>
+  <p>Os clientes atuais são scripts clássicos, carregados por tag <code>&lt;script src&gt;</code> sem módulos. Para que <code>lib.js</code> funcione nesse mundo <em>e</em> dentro do <code>node --test</code> (que usa CommonJS), o formato natural é o guard UMD: dentro do browser ele publica <code>window.docsLib</code>; dentro do Node ele faz <code>module.exports</code>. É o mesmo padrão de adaptador barato que permite testar a regra de prefixo passando um pathname qualquer, sem servidor e sem browser:</p>
+  <pre><code>me("/docs-proj/guias/intro.html", "/docs-proj/") // → "guias/intro.html"</code></pre>
+  <p>É aqui que a extração paga sozinha: hoje essa linha é impossível de executar num teste; depois, ela é só uma chamada de função pura.</p>
+
+  <h3>A simetria que não se pode capturar</h3>
+  <p>Tem uma tentação a evitar. <code>inject.js</code> também detecta a shell — mas opera sobre HTML cru, antes de existir DOM, no servidor (ou no export estático). <code>isShell()</code> usa <code>document.getElementById</code>, que não existe ali. As duas detecções respondem a mesma pergunta em <strong>camadas diferentes</strong>; uni-las forçaria uma das duas a mudar de mundo (regex no cliente, ou DOM no servidor). A duplicação de <em>um teste de dois usos</em> entre camadas é o preço honesto da arquitetura — e o plano a mantém.</p>
+
+  <div class="mermaid">
+flowchart LR
+  subgraph servidor["Servidor (pré-DOM)"]
+    INJ["inject.js"] -->|regex sobre HTML cru| R1{"é a shell?"}
+  end
+  subgraph browser["Browser (DOM pronto)"]
+    LIB["lib.js (novo)"] -->|getElementById| R2{"é a shell?"}
+    RL["reload.js"] --> LIB
+    ED["edit.js"] --> LIB
+    CH["changes.js"] --> LIB
+    NV["nav.js"] --> LIB
+    INJ -.->|tag &lt;script&gt; extra| LIB
+  end
+  INJ -.-> RL
+  INJ -.-> ED
+  INJ -.-> CH
+  INJ -.-> NV
+  </div>
+  <p class="figcap">O servidor decide o que injetar via regex; os clientes compartilham lib.js via DOM. Setas tracejadas = tags injetadas.</p>
+</section>
+
+<section id="mudancas">
+  <h2><span class="num">3</span>Mudanças</h2>
+  <p class="lead">Seis arquivos: um novo módulo, quatro consumidores e uma linha a mais no injetor. Nenhuma mudança de comportamento para o usuário.</p>
+
+  <table>
+    <thead><tr><th>Arquivo</th><th>Tipo</th><th>Em uma frase</th></tr></thead>
+    <tbody>
+      <tr><td><code>client/lib.js</code></td><td class="sim">novo</td><td>Módulo UMD com a identidade da página e o wrapper de API.</td></tr>
+      <tr><td><code>client/reload.js</code></td><td class="talvez">consome</td><td>Troca o bloco local por <code>lib.me()</code> e <code>lib.isShell()</code>.</td></tr>
+      <tr><td><code>client/edit.js</code></td><td class="talvez">consome</td><td>Mesma troca; <code>save()</code> passa a usar <code>lib.api()</code>.</td></tr>
+      <tr><td><code>client/changes.js</code></td><td class="talvez">consome</td><td>Mesma troca; a chave de snapshot continua idêntica.</td></tr>
+      <tr><td><code>client/nav.js</code></td><td class="talvez">consome</td><td>A função <code>api()</code> local delega ao wrapper de <code>lib.js</code>.</td></tr>
+      <tr><td><code>inject.js</code></td><td class="talvez">1 linha</td><td>Adiciona a tag de <code>lib.js</code> antes das demais. A regex fica.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>client/lib.js (novo)</h3>
+  <p>O coração do plano. Uma IIFE com guard UMD que exporta três funções puras o suficiente para rodarem tanto no browser quanto num teste do <code>node --test</code>. A interface cabe num cartão postal:</p>
+  <pre><code>me(pathname?, base?)   // caminho relativo à raiz de docs
+api(path, body?)       // fetch(BASE normalizado + path)
+isShell()              // !!document.getElementById("docList")</code></pre>
+  <p>O corpo de <code>me()</code> é o bloco de oito linhas que hoje vive em três lugares, parametrizado: em vez de ler <code>location.pathname</code> e <code>window.DOCS_BASE</code> direto, recebe-os como argumentos com <em>defaults</em> vindos do browser — é isso que torna a lógica testável. <code>api()</code> centraliza o <code>BASE.replace(/\/+$/, "") + url</code>, o <code>Content-Type</code> JSON e o <code>JSON.stringify</code> do corpo, deixando o tratamento de resposta com cada chamador (o editor quer <code>alert</code> em falha; o nav quer traduzir 409). A normalização de <code>BASE_N</code> também mora aqui.</p>
+
+  <h3>client/reload.js</h3>
+  <p>As linhas 23 e 26–30 desaparecem em favor de <code>lib.isShell()</code> e <code>lib.me()</code>. O resto — eleição de líder por Web Locks, BroadcastChannel, filtro por root — fica intocado, porque é exatamente onde está a complexidade <em>própria</em> do reload, não a compartilhada. É a definição de uma boa extração: mover o que é comum, não o que é difícil.</p>
+
+  <h3>client/edit.js</h3>
+  <p>As linhas 6 e 12–16 dão lugar às mesmas duas chamadas; o guard inicial ("não editar a shell") vira <code>if (lib.isShell()) return;</code>. Em <code>save()</code> (linha ~99), o fetch manual com <code>BASE.replace(/\/+$/, "") + "/__save__"</code> vira uma chamada a <code>lib.api("/__save__", { path: lib.me(), html })</code> — o editor mantém seu próprio <code>.catch</code> com <code>alert</code>, pois a política de erro continua sendo local. Todo o resto (contenteditable, serialize, strip de <code>data-injected</code>) não muda.</p>
+
+  <h3>client/changes.js</h3>
+  <p>As linhas 27–31 são substituídas por <code>lib.me()</code>. Ponto de atenção que o plano trata explicitamente: a chave de localStorage — <code>"docs-in-html:snap:" + BASE + ":" + me</code> — deve continuar <strong>byte a byte igual</strong> à atual, ou o usuário "perde" o histórico de mudanças de todos os docs na primeira carga pós-deploy. O plano inclui verificação manual disso.</p>
+
+  <h3>client/nav.js</h3>
+  <p>O consumidor mais leve. A função <code>api()</code> local (linha ~136) passa a delegar ao wrapper de <code>lib.js</code>, mantendo seu mapeamento de erro 409 → mensagem amigável; o fetch de <code>/__manifest__</code> (linha ~236) usa o mesmo caminho. O nav não usa <code>me()</code> (a shell sabe quem é), então aqui o ganho é só o <em>leverage</em> do wrapper.</p>
+
+  <h3>inject.js</h3>
+  <p>Uma mudança de uma linha: a lista de tags ganha <code>lib.js</code> na frente, antes de <code>reload.js</code> e companhia, com <code>data-injected</code> como todo o resto (o editor já sabe estripá-la ao salvar). E o plano é explícito sobre o que <strong>não</strong> muda: a regex <code>/&lt;[^&gt;]+\bid\s*=\s*["']docList["']/i</code> da linha 50 permanece. Ela não pode usar <code>isShell()</code> porque opera sobre a string HTML crua, no servidor, antes de qualquer DOM existir — e o comentário do próprio arquivo avisa que é detecção por contexto de tag, imune a páginas que apenas <em>mencionam</em> <code>docList</code> em prosa. Forçar as duas camadas a compartilhar seria trocar duplicação controlada por acoplamento errado.</p>
+
+  <div class="callout warn">
+    <div class="title">Trade-off honesto: uma tag a mais por página</div>
+    <p>Cada página servida passa a carregar mais um script (uma requisição HTTP e alguns bytes, sem cache no dev server). Em troca: a regra de identidade vive num lugar, muda num lugar, e ganha testes de <code>node --test</code> com <code>me("/slug/a.html", "/slug/")</code>. Quatro call sites, uma interface — a dívida é paga na primeira mudança de regra de slug.</p>
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">4</span>Quiz</h2>
+  <p class="lead">Cinco questões para checar se a intuição ficou de pé. Clique para responder; pode mudar de ideia quantas vezes quiser.</p>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. Por que o <code>inject.js</code> não pode simplesmente usar <code>lib.isShell()</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque o inject.js roda em modo estático às vezes, e a função não existe no export</button>
+      <button class="opt" data-k="b">B) Porque o inject.js opera sobre a string HTML crua no servidor, antes de existir DOM — <code>getElementById</code> é impossível ali</button>
+      <button class="opt" data-k="c">C) Porque a regex é mais rápida que uma chamada de função</button>
+      <button class="opt" data-k="d">D) Porque o lib.js só é injetado depois da decisão de quem é a shell</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> A detecção do inject.js acontece no servidor (ou no export), sobre HTML puro; <code>isShell()</code> depende de <code>document</code>. São a mesma pergunta em camadas diferentes — e o plano mantém as duas.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. Qual o custo concreto do bloco de identidade duplicado verbatim em três arquivos?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Nenhum — código duplicado em IIFEs não afeta manutenção</button>
+      <button class="opt" data-k="b">B) Só bytes a mais no bundle servido</button>
+      <button class="opt" data-k="c">C) Uma mudança na regra de slug/base exige três edições sincronizadas, sem nenhum teste isolado para validar</button>
+      <button class="opt" data-k="d">D) O browser avalia a mesma regex três vezes, desperdiçando CPU</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> Três cópias = três lugares para errar; e como a lógica só roda no browser lendo <code>location</code>, nada é testável sem servidor. O custo é de manutenção, não de performance.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. Para que serve o guard UMD no <code>lib.js</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Publicar <code>window.docsLib</code> no browser e <code>module.exports</code> no Node, permitindo testar a lógica com <code>node --test</code></button>
+      <button class="opt" data-k="b">B) Evitar que o script rode duas vezes se injetado por engano</button>
+      <button class="opt" data-k="c">C) Minificar o módulo automaticamente no servidor de desenvolvimento</button>
+      <button class="opt" data-k="d">D) Garantir compatibilidade com navegadores sem EventSource</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> O mesmo arquivo funciona como script clássico (injetado por tag) e como módulo CommonJS dentro do teste — um adaptador barato que destrava a testabilidade.</div>
+  </div>
+
+  <div class="qcard" data-answer="d">
+    <p class="q-title">4. Qual cuidado especial a migração do <code>changes.js</code> exige?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Remover o try/catch do localStorage, já que lib.js captura erros</button>
+      <button class="opt" data-k="b">B) Migrar o LCS diff junto, pois depende da identidade</button>
+      <button class="opt" data-k="c">C) Desativar o cliente em modo export</button>
+      <button class="opt" data-k="d">D) Manter a chave de localStorage byte a byte igual, ou o histórico de mudanças "zera" na primeira carga</button>
+    </div>
+    <div class="q-feedback">✅ <b>D.</b> A chave <code>"docs-in-html:snap:" + BASE + ":" + me</code> é o contrato persistente com o usuário; qualquer variação (mesmo cosmética) faz os snapshots parecerem novos.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">5. Em <code>edit.js</code>, por que o tratamento de erro do <code>save()</code> (o <code>alert</code>) fica no cliente e não dentro de <code>lib.api()</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque alert não funciona dentro de módulos UMD</button>
+      <button class="opt" data-k="b">B) Porque a política de erro é local: o editor quer alertar, o nav quer traduzir 409 — o wrapper deve só construir a chamada</button>
+      <button class="opt" data-k="c">C) Porque o lib.js não pode conter try/catch</button>
+      <button class="opt" data-k="d">D) Porque o alert precisa do DOM, indisponível no lib.js</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Extração boa move o que é <em>comum</em> (URL, método, headers, corpo), não o que é <em>local</em>. Tratamento de resposta varia por chamador e deve ficar com ele.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Plano · client/lib.js — identidade, BASE e api() · docs-in-html</footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script>
+(function () {
+  var cards = document.querySelectorAll(".qcard");
+  cards.forEach(function (card) {
+    var ans = card.getAttribute("data-answer");
+    var fb = card.querySelector(".q-feedback");
+    card.querySelectorAll(".opt").forEach(function (opt) {
+      opt.addEventListener("click", function () {
+        card.querySelectorAll(".opt").forEach(function (o) { o.classList.remove("right", "wrong"); });
+        opt.classList.add(opt.getAttribute("data-k") === ans ? "right" : "wrong");
+        fb.classList.add("show");
+      });
+    });
+  });
+
+  var links = document.querySelectorAll(".toc a");
+  var sections = [];
+  links.forEach(function (a) {
+    var el = document.getElementById(a.getAttribute("href").slice(1));
+    if (el) sections.push({ link: a, el: el });
+  });
+  function onScroll() {
+    var y = window.scrollY + 120, best = 0;
+    sections.forEach(function (s, i) { if (s.el.offsetTop <= y) best = i; });
+    links.forEach(function (a) { a.classList.remove("active"); });
+    if (sections[best]) sections[best].link.classList.add("active");
+    document.querySelector(".top").classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
