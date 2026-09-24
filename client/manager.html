@@ -1,7 +1,8 @@
 <!doctype html>
-<!-- docs-in-html manager — cards page. One card per registered docs folder:
-     favicon + title from _config.json, served at /<slug>/. Pure HTML+JS,
-     zero build — same spirit as the shell. -->
+<!-- docs-in-html manager — cards page. Um card por docs registrada, organizados
+     num "mural": pastas (grupos) + um bloco único "Sem pasta" no final. Ordem e
+     pastas persistem no layout do registry (POST /api/layout). Pure HTML+JS,
+     zero build — mesmo espírito do shell. -->
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
@@ -31,33 +32,81 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
 button.primary:hover{filter:brightness(1.07)}
 input{font:inherit;border:1px solid var(--border);border-radius:8px;padding:8px 12px;
   min-width:260px;flex:1}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
-.card{border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;
-  display:flex;flex-direction:column;gap:8px;transition:box-shadow .15s,border-color .15s}
-.card:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);border-color:var(--accent)}
-.card .head{display:flex;align-items:center;gap:10px}
-.card .fav{font-size:1.6rem;line-height:1}
-.card a.title{font-size:1.05rem;font-weight:650;color:var(--text);text-decoration:none;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ── mural: pastas + sem pasta ── */
+.mural{display:flex;flex-direction:column}
+.block{border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px 14px;margin-bottom:16px}
+.block.dragging{opacity:.45}
+.block.gbefore{box-shadow:0 -4px 0 var(--accent)}
+.block.gafter{box-shadow:0 4px 0 var(--accent)}
+.block.loose{border:2px dashed var(--border);background:transparent;padding:10px 12px 12px}
+.block.loose > .lbl{font-size:.72rem;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px 2px}
+.ghead{display:flex;align-items:center;gap:9px;cursor:grab;user-select:none}
+.ghead:active{cursor:grabbing}
+.ghead .gicon{font-size:1rem;color:var(--amber)}
+.ghead .gname{font-weight:650;font-size:.98rem}
+.ghead .gname[contenteditable]{outline:2px solid var(--accent-soft);border-radius:4px;padding:0 4px}
+.ghead .count{font-size:.74rem;color:var(--soft);background:var(--panel2);border-radius:99px;padding:1px 9px}
+.ghead .sp{flex:1}
+.ghead .gact{border:none;background:transparent;color:var(--soft);cursor:pointer;font-size:.95rem;
+  border-radius:7px;padding:2px 7px;opacity:0;transition:opacity .12s}
+.block:hover .gact{opacity:1}
+.ghead .gact:hover{background:var(--panel2);color:var(--text)}
+.twist{display:inline-block;transition:transform .15s;color:var(--soft);font-size:.7rem}
+.block.collapsed .body{display:none}
+.block.collapsed .twist{transform:rotate(-90deg)}
+.body{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:10px;
+  border-radius:9px;transition:background .12s;outline:2px dashed transparent;min-height:20px;padding:2px}
+.body.droptarget{outline-color:var(--accent);background:var(--accent-soft)}
+
+/* ── card ── */
+.card{position:relative;border:1px solid var(--border);border-radius:10px;padding:14px 14px 12px;
+  background:#fff;display:flex;flex-direction:column;gap:6px;cursor:pointer;
+  transition:box-shadow .15s,border-color .15s}
+.card:hover{box-shadow:0 3px 10px rgba(0,0,0,.08);border-color:var(--accent)}
+.card.dragging{opacity:.45}
+.card.dropbefore{box-shadow:-4px 0 0 var(--accent)}
+.card.dropafter{box-shadow:4px 0 0 var(--accent)}
+.card .head{display:flex;align-items:center;gap:10px;padding-right:22px}
+.card .fav{font-size:1.35rem;line-height:1}
+.card a.title{font-size:1rem;font-weight:650;color:var(--text);text-decoration:none;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
 .card a.title:hover{color:var(--accent)}
-.card .dir{font-size:.78rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace;
+.card .dir{font-size:.74rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
-.card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:2px}
-.card .acts button{padding:4px 10px;font-size:.85rem;border-radius:7px}
-.card .acts .del{color:var(--red)}
-.card .acts .del:hover{background:var(--red-soft)}
+.card .pathnote{font-size:.7rem;color:var(--soft);margin:0;display:flex;align-items:center;gap:6px}
+.card .pathnote .chip{font-family:ui-monospace,Consolas,monospace;background:var(--panel2);
+  border-radius:4px;padding:1px 5px}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:6px;align-items:center}
+.card .acts button{padding:4px 10px;font-size:.8rem;border-radius:7px}
+.card .acts .primary{background:var(--accent);color:#fff;border:1px solid var(--accent);font-weight:600}
+.card .acts .primary:hover{background:var(--accent);filter:brightness(1.07)}
+.xbtn{position:absolute;top:7px;right:7px;width:26px;height:26px;border-radius:7px;border:none;
+  background:transparent;color:var(--soft);font-size:.9rem;line-height:1;cursor:pointer;
+  opacity:0;transition:opacity .12s}
+.card:hover .xbtn{opacity:1}
+.xbtn:hover{background:var(--panel2);color:var(--text)}
 .empty{color:var(--soft);text-align:center;padding:50px 0}
 .empty code{background:var(--panel);padding:2px 6px;border-radius:5px}
+
 #scanBox{display:none;border:1px solid var(--border);border-radius:12px;background:var(--panel);
   padding:16px;margin-bottom:22px}
 #scanBox h3{margin:0 0 8px;font-size:1rem}
 #scanBox .row{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:7px}
 #scanBox .row:hover{background:#fff}
 #scanBox .row code{font-size:.8rem;color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#scanBox .foot{display:flex;gap:8px;margin-top:10px}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:500;
-  max-width:80vw;padding:10px 18px;border-radius:9px;background:var(--text);color:#fff;
-  font-size:.9rem;display:none}
+
+/* ── modal + toast ── */
+.modal-bg{position:fixed;inset:0;background:rgba(31,35,41,.35);display:none;align-items:center;
+  justify-content:center;z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;border:1px solid var(--border);max-width:410px;width:calc(100% - 40px);
+  box-shadow:0 12px 40px rgba(0,0,0,.18);padding:20px 22px}
+.modal h4{margin:0 0 6px;font-size:1.05rem}
+.modal p{margin:0 0 16px;color:var(--soft);font-size:.9rem}
+.modal .row{display:flex;gap:8px;justify-content:flex-end}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+  padding:8px 16px;border-radius:8px;font-size:.85rem;display:none;z-index:60}
 .toast.err{background:var(--red)}
 </style>
 </head>
@@ -71,85 +120,339 @@ input{font:inherit;border:1px solid var(--border);border-radius:8px;padding:8px 
     <input id="addInput" placeholder="C:\caminho\para\docs  (adicionar pasta)">
     <button class="primary" id="addBtn">Adicionar</button>
     <button id="scanBtn">Escanear</button>
+    <button id="newFolder">＋ Nova pasta</button>
   </div>
   <div id="scanBox">
     <h3>Docs encontradas (pastas com <code>_config.json</code>)</h3>
     <div id="scanList"></div>
-    <div class="foot">
+    <div style="display:flex;gap:8px;margin-top:10px">
       <button class="primary" id="scanAdd">Adicionar selecionadas</button>
       <button id="scanCancel">Cancelar</button>
     </div>
   </div>
-  <div class="grid" id="grid"></div>
+  <div class="mural" id="mural"></div>
   <div class="empty" id="empty" style="display:none">
     Nenhuma docs registrada ainda.<br><br>
     Sirva uma pasta com <code>docs-in-html &lt;dir&gt;</code> — ela aparece aqui.<br>
     Ou use o campo acima / o botão <b>Escanear</b>.
   </div>
 </main>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h4 id="mTitle"></h4>
+    <p id="mMsg"></p>
+    <div class="row"><button id="mCancel">Cancelar</button><button class="primary" id="mOk" style="background:var(--red);border-color:var(--red)"></button></div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
+
 <script>
 function $(id){return document.getElementById(id)}
-function toast(msg, err){
+function toast(msg,err){
   var t=$("toast");t.textContent=msg;t.classList.toggle("err",!!err);t.style.display="block";
   clearTimeout(t._tm);t._tm=setTimeout(function(){t.style.display="none"},2600);
 }
-function api(url, body){
+function api(url,body){
   return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify(body||{})}).then(function(r){return r.json()});
 }
-var docs=[];
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]})}
-function render(){
-  var g=$("grid");g.innerHTML="";
-  $("empty").style.display=docs.length?"none":"block";
-  $("sub").textContent=docs.length+(docs.length===1?" docs":" docs")+" · clique para abrir";
-  docs.forEach(function(d){
-    var c=document.createElement("div");c.className="card";
-    c.innerHTML=
-      '<div class="head"><span class="fav">'+esc(d.favicon)+'</span>'+
-      '<a class="title" href="/'+encodeURIComponent(d.slug)+'/" title="'+esc(d.dir)+'">'+esc(d.title)+'</a></div>'+
-      '<div class="dir" title="'+esc(d.dir)+'">'+esc(d.dir)+'</div>'+
-      '<div class="acts">'+
-        '<button data-a="warp">⌨ Warp</button>'+
-        '<button data-a="reveal">📂 Revelar</button>'+
-        '<button data-a="del" class="del">✕ Remover</button>'+
-      '</div>';
-    // o card INTEIRO abre a docs (cursor pointer + navigate); botões e link param a propagação
-    c.style.cursor = "pointer";
-    c.onclick = function (ev) {
-      if (ev.target.closest("button") || ev.target.closest("a")) return;
-      location.href = "/" + encodeURIComponent(d.slug) + "/";
-    };
-    c.querySelector('[data-a="warp"]').onclick=function(ev){ev.stopPropagation();
-      api("/api/open-warp",{dir:d.dir}).then(function(j){
-        toast(j.ok?"abrindo Warp em "+d.title:(j.error||"falha ao abrir Warp"),!j.ok);refresh();});
-    };
-    c.querySelector('[data-a="reveal"]').onclick=function(ev){ev.stopPropagation();
-      api("/api/reveal",{dir:d.dir}).then(function(){toast("abrindo no gerenciador de arquivos")});
-    };
-    c.querySelector('[data-a="del"]').onclick=function(ev){ev.stopPropagation();
-      if(!confirm("Remover "+d.title+" do manager?\n(os arquivos não são tocados)"))return;
-      api("/api/remove",{dir:d.dir}).then(function(){toast("removida: "+d.title);refresh()});
-    };
-    g.appendChild(c);
+// "C:\a\projeto-x\docs" → "projeto-x\docs" — últimos dois segmentos, para o chip
+function shortDocsPath(dir){
+  var parts=String(dir).replace(/\//g,"\\").split("\\").filter(Boolean);
+  return parts.slice(-2).join("\\")||dir;
+}
+
+/* ── estado ── */
+var docs=[];                  // cards: {slug,dir,title,favicon}
+var L={order:[],groups:{},assign:{},collapsed:{}}; // layout do registry
+var byDir={};
+var drag=null;                // {type:'card'|'group', id}
+var modalOpen=false;
+var renaming=false;           // true enquanto o nome de uma pasta está em edição inline
+
+/* ── modal genérico de confirmação ── */
+var mOkFn=null;
+function modal(title,msg,okLabel,fn){
+  $("mTitle").textContent=title;$("mMsg").textContent=msg;$("mOk").textContent=okLabel;
+  mOkFn=fn;modalOpen=true;$("modalBg").classList.add("open");
+}
+$("mCancel").onclick=function(){modalOpen=false;$("modalBg").classList.remove("open")};
+$("modalBg").addEventListener("click",function(e){if(e.target===this){modalOpen=false;this.classList.remove("open")}});
+$("mOk").onclick=function(){modalOpen=false;$("modalBg").classList.remove("open");if(mOkFn)mOkFn()};
+
+/* ── helpers de layout ── */
+function groupIdOf(cid){return L.assign[cid]||null}
+function cardsOf(gid){return L.order.filter(function(x){return groupIdOf(x)===gid})}
+function commit(newLayout,msg,silent){
+  api("/api/layout",{layout:newLayout}).then(function(j){
+    if(j&&j.ok){L=j.layout;if(!silent)render();if(msg)toast(msg)}
+    else toast("falha ao salvar layout",true);
   });
 }
-function refresh(){
-  fetch("/api/docs",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
-    docs=j;render();}).catch(function(){});
+function moveTo(cid,gid,refId,before){
+  var order=L.order.filter(function(x){return x!==cid});
+  if(gid){
+    var sibs=cardsOf(gid).filter(function(x){return x!==cid});
+    var ref=refId&&sibs.indexOf(refId)>=0?refId:(sibs.length?sibs[sibs.length-1]:gid);
+    order.splice(order.indexOf(ref)+(before?0:1),0,cid);
+    L.assign[cid]=gid;
+  }else{
+    var loose=order.filter(function(x){return groupIdOf(x)===null});
+    var ref2=(refId&&groupIdOf(refId)===null)?refId:(loose.length?loose[loose.length-1]:null);
+    order.splice(ref2?order.indexOf(ref2)+(before?0:1):order.length,0,cid);
+    delete L.assign[cid];
+  }
+  L.order=order;
+  commit(L,"card movido");
 }
-refresh();
-setInterval(refresh, 5000);
+function dropGroupNext(targetGid,before){
+  var gid=drag.id;
+  if(gid===targetGid)return;
+  L.order=L.order.filter(function(x){return x!==gid});
+  var idx=L.order.indexOf(targetGid)+(before?0:1);
+  L.order.splice(idx,0,gid);
+  commit(L,"pasta «"+L.groups[gid].name+"» reordenada");
+}
+function clearMarks(){
+  document.querySelectorAll(".dropbefore,.dropafter").forEach(function(x){x.classList.remove("dropbefore","dropafter")});
+  document.querySelectorAll(".droptarget").forEach(function(x){x.classList.remove("droptarget")});
+  document.querySelectorAll(".dragging").forEach(function(x){x.classList.remove("dragging")});
+}
 
+/* ── render ── */
+function render(){
+  byDir={};docs.forEach(function(d){byDir[d.dir]=d});
+  var m=$("mural");m.innerHTML="";
+  $("empty").style.display=docs.length?"none":"block";
+  $("sub").textContent=docs.length+(docs.length===1?" docs":" docs")+" · clique para abrir · arraste para organizar";
+  L.order.filter(function(x){return L.groups[x]}).forEach(function(gid){renderGroup(m,gid)});
+  renderLoose(m,L.order.filter(function(x){return groupIdOf(x)===null})); // só cards SEM pasta
+}
+function innerGrid(gid){
+  // gid = grupo dono do grid (null = "Sem pasta"). Toda a lógica de
+  // reordenação card-a-card vive AQUI (uma única fonte de verdade): o
+  // dragover descobre o card sob o cursor via coordenadas, acende o indicador
+  // nele e guarda a mesma referência que o drop usará — indicador e ação
+  // nunca divergem. O fundo também aceita card VINDO DE FORA (realce + append).
+  var g=document.createElement("div");g.className="body";
+  function cardUnder(e){
+    var el=document.elementFromPoint(e.clientX,e.clientY);
+    var c=el&&el.closest?el.closest(".card"):null;
+    if(c&&drag&&c.dataset.cid===drag.id)return null; // o próprio arrastado não conta
+    return c;
+  }
+  function nearest(e){
+    var best=null;
+    g.querySelectorAll(".card").forEach(function(c){
+      if(drag&&c.dataset.cid===drag.id)return;
+      var r=c.getBoundingClientRect(),mid=r.left+r.width/2;
+      if(!best||Math.abs(e.clientX-mid)<Math.abs(e.clientX-best.mid))best={cid:c.dataset.cid,mid:mid};
+    });
+    return best;
+  }
+  function clearInd(){
+    g.querySelectorAll(".card.dropbefore,.card.dropafter").forEach(function(c){c.classList.remove("dropbefore","dropafter")});
+  }
+  g.addEventListener("dragover",function(e){
+    if(!drag||drag.type!=="card")return;
+    e.preventDefault();
+    if(groupIdOf(drag.id)!==gid){g.classList.add("droptarget");return}
+    clearInd();
+    var c=cardUnder(e);
+    if(c){
+      var r=c.getBoundingClientRect();
+      var before=e.clientX<r.left+r.width/2;
+      c.classList.add(before?"dropbefore":"dropafter");
+      g._ref=c.dataset.cid;g._before=before;
+    }else{
+      var n=nearest(e);
+      g._ref=n?n.cid:null;g._before=n?(e.clientX<n.mid):true;
+    }
+  });
+  g.addEventListener("dragleave",function(e){
+    if(!g.contains(e.relatedTarget)){g.classList.remove("droptarget");clearInd();g._ref=null}
+  });
+  g.addEventListener("drop",function(e){
+    e.preventDefault();g.classList.remove("droptarget");clearInd();
+    if(!drag||drag.type!=="card")return;
+    if(groupIdOf(drag.id)!==gid){moveTo(drag.id,gid,null);return}
+    if(g._ref)moveTo(drag.id,gid,g._ref,g._before); // mesma ref que o indicador mostrou
+  });
+  return g;
+}
+/* (a reordenação card-a-card ficou inteira no innerGrid — cardUnder por
+   coordenadas garante que indicador e drop usem sempre a mesma referência) */
+function cardEl(d){
+  var el=document.createElement("div");el.className="card";el.draggable=true;el.dataset.cid=d.dir;
+  el.innerHTML=
+    '<button class="xbtn" title="Remover do manager">✕</button>'+
+    '<div class="head"><span class="fav">'+esc(d.favicon)+'</span>'+
+    '<a class="title" href="/'+encodeURIComponent(d.slug)+'/" title="'+esc(d.dir)+'">'+esc(d.title)+'</a></div>'+
+    '<div class="dir" title="'+esc(d.dir)+'">'+esc(d.dir)+'</div>'+
+    '<p class="pathnote">📄 docs servida de <span class="chip">'+esc(shortDocsPath(d.dir))+'</span></p>'+
+    '<div class="acts">'+
+      '<button class="primary" data-a="warp">⌨ Abrir projeto no Warp</button>'+
+      '<button data-a="reveal" title="Revelar pasta da docs no gerenciador de arquivos">📂</button>'+
+    '</div>';
+  el.addEventListener("dragstart",function(e){
+    drag={type:"card",id:d.dir};el.classList.add("dragging");
+    e.dataTransfer.setData("text/plain",d.dir);e.dataTransfer.effectAllowed="move";
+  });
+  el.addEventListener("dragend",function(){drag=null;clearMarks()});
+  el.querySelector(".xbtn").addEventListener("click",function(e){e.stopPropagation();
+    var gid=groupIdOf(d.dir);
+    modal('Remover "'+d.title+'"?',
+      (gid?"Ela está na pasta «"+L.groups[gid].name+"». ":"")+
+      "Só tira a docs do manager — nenhum arquivo é apagado, e você pode adicioná-la de novo a qualquer momento.",
+      "Remover",function(){
+        api("/api/remove",{dir:d.dir}).then(function(){toast("removida: "+d.title);refresh(true)});
+      });
+  });
+  el.querySelector('[data-a="warp"]').addEventListener("click",function(e){e.stopPropagation();
+    api("/api/open-warp",{dir:d.dir}).then(function(j){
+      toast(j.ok?"abrindo "+(j.dir||"")+" no Warp":(j.error||"falha ao abrir Warp"),!j.ok);refresh(true);});
+  });
+  el.querySelector('[data-a="reveal"]').addEventListener("click",function(e){e.stopPropagation();
+    api("/api/reveal",{dir:d.dir}).then(function(){toast("abrindo no gerenciador de arquivos")});
+  });
+  return el;
+}
+function renderLoose(m,items){
+  var d=document.createElement("div");d.className="block loose";
+  d.innerHTML='<div class="lbl">Sem pasta — solte um card aqui para tirá-lo de qualquer pasta</div>';
+  var g=innerGrid(null);
+  g.style.minHeight="46px";
+  items.forEach(function(cid){
+    var cd=byDir[cid];if(!cd)return;
+    g.appendChild(cardEl(cd));
+  });
+  d.appendChild(g);m.appendChild(d);
+}
+function renderGroup(m,gid){
+  var grp=L.groups[gid];
+  var d=document.createElement("div");d.className="block"+(L.collapsed[gid]?" collapsed":"");
+  d.dataset.gid=gid;
+  var h=document.createElement("div");h.className="ghead";h.draggable=true;
+  h.innerHTML='<span class="twist">▼</span><span class="gicon">📁</span>'+
+    '<span class="gname" title="duplo-clique para renomear">'+esc(grp.name)+'</span>'+
+    '<span class="count">'+cardsOf(gid).length+'</span><span class="sp"></span>'+
+    '<button class="gact" title="Renomear pasta">✎</button>'+
+    '<button class="gact gx" title="Apagar pasta">✕</button>';
+  h.addEventListener("dragstart",function(e){
+    drag={type:"group",id:gid};d.classList.add("dragging");
+    e.dataTransfer.setData("text/plain",gid);e.dataTransfer.effectAllowed="move";
+  });
+  h.addEventListener("dragend",function(){drag=null;clearMarks()});
+  h.querySelector(".twist").addEventListener("click",function(e){e.stopPropagation();toggle(gid)});
+  h.addEventListener("click",function(e){if(e.target.closest(".gact")||e.target.closest(".gname"))return;toggle(gid)});
+  h.querySelector(".gname").addEventListener("dblclick",function(){rename(this,gid)});
+  h.querySelector('.gact:not(.gx)').addEventListener("click",function(e){e.stopPropagation();
+    rename(h.querySelector(".gname"),gid)});
+  h.querySelector(".gx").addEventListener("click",function(e){e.stopPropagation();
+    var n=cardsOf(gid).length;
+    modal('Apagar a pasta «'+grp.name+'»?',
+      n?"Os "+n+" cards dentro dela voltam para “Sem pasta” — nenhuma docs é removida do manager."
+       :"A pasta está vazia.",
+      "Apagar pasta",function(){
+        L.order=L.order.filter(function(x){return x!==gid});
+        Object.keys(L.assign).forEach(function(c){if(L.assign[c]===gid)delete L.assign[c]});
+        delete L.groups[gid];delete L.collapsed[gid];
+        commit(L,"pasta apagada — cards foram para “Sem pasta”");
+      });
+  });
+  d.appendChild(h);
+  var g=innerGrid(gid);
+  cardsOf(gid).forEach(function(cid){
+    var cd=byDir[cid];if(!cd)return;
+    g.appendChild(cardEl(cd));
+  });
+  d.appendChild(g);m.appendChild(d);
+  // drag no BLOCO: auto-expandir (card) + reordenar pastas (group)
+  d.addEventListener("dragover",function(e){
+    if(!drag)return;
+    if(drag.type==="card"){
+      if(L.collapsed[gid]){L.collapsed[gid]=false;d.classList.remove("collapsed");
+        commit(L,null,true)} // expande SEM re-render (só CSS muda) — o drag continua vivo
+      return;
+    }
+    if(drag.type==="group"&&drag.id!==gid){
+      e.preventDefault();
+      var r=d.getBoundingClientRect();
+      d._before=e.clientY<r.top+r.height/2;
+      d.classList.toggle("gbefore",d._before);
+      d.classList.toggle("gafter",!d._before);
+    }
+  });
+  d.addEventListener("dragleave",function(e){d.classList.remove("gbefore","gafter")});
+  d.addEventListener("drop",function(e){
+    if(drag&&drag.type==="group"&&drag.id!==gid){
+      e.preventDefault();d.classList.remove("gbefore","gafter");
+      dropGroupNext(gid,d._before!==false);
+    }
+  });
+}
+function toggle(gid){
+  L.collapsed[gid]=!L.collapsed[gid];
+  commit(L);
+}
+function rename(el,gid){
+  var head=el.closest(".ghead");
+  // o cabeçalho é draggable=true — e um contenteditable dentro de um container
+  // draggable perde o foco no 1º caractere no Chrome (blur dispara e "salva"
+  // pela metade). Desligamos o drag durante a edição.
+  head.draggable=false;
+  renaming=true; // polling não re-renderiza no meio da edição
+  el.contentEditable=true;el.focus();
+  document.getSelection().selectAllChildren(el);
+  var done=function(){
+    el.contentEditable=false;
+    head.draggable=true;renaming=false;
+    var v=el.textContent.trim();
+    if(v&&L.groups[gid])L.groups[gid].name=v;
+    commit(L,v?"pasta renomeada para «"+v+"»":null);
+  };
+  el.addEventListener("blur",done,{once:true});
+  el.addEventListener("keydown",function k(e){
+    if(e.key==="Enter"){e.preventDefault();el.blur()}
+    if(e.key==="Escape"){el.textContent=L.groups[gid]?L.groups[gid].name:"";el.blur()}
+  });
+}
+
+/* ── refresh + reconciliação (polling educado) ── */
+var lastJson="";
+function interacting(){return drag!==null||modalOpen||renaming}
+function refresh(force){
+  if(interacting())return; // não pisca/destrói interação em andamento
+  fetch("/api/docs",{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){
+    var s=JSON.stringify(j);
+    if(!force&&s===lastJson)return; // nada mudou por fora — não re-renderiza
+    lastJson=s;docs=j.docs;L=j.layout;render();
+  }).catch(function(){});
+}
+refresh(true);
+setInterval(function(){refresh(false)},5000);
+
+/* ── barra: adicionar / escanear / nova pasta ── */
 $("addBtn").onclick=function(){
   var v=$("addInput").value.trim();if(!v)return;
   api("/api/add",{dir:v}).then(function(j){
     if(j.error){toast("não foi possível: "+j.error,true);return}
-    toast("adicionada em /"+j.slug+"/");$("addInput").value="";refresh();
+    toast("adicionada em /"+j.slug+"/");$("addInput").value="";lastJson="";refresh(true);
   });
 };
 $("addInput").addEventListener("keydown",function(e){if(e.key==="Enter")$("addBtn").click()});
+$("newFolder").onclick=function(){
+  var gid="g"+Date.now().toString(36);
+  L.groups[gid]={name:"Nova pasta"};
+  L.order.push(gid);
+  commit(L,"pasta criada — duplo-clique no nome para renomear");
+  setTimeout(function(){
+    var el=document.querySelector('.block[data-gid="'+gid+'"] .gname');
+    if(el)rename(el,gid);
+  },300);
+};
 
 var scanFound=[];
 $("scanBtn").onclick=function(){
@@ -163,7 +466,7 @@ $("scanBtn").onclick=function(){
       row.innerHTML='<input type="checkbox" checked value="'+esc(d)+'"><code>'+esc(d)+'</code>';
       l.appendChild(row);
     });
-    $("scanBox").style.display=scanFound.length?"block":"block";
+    $("scanBox").style.display="block";
   });
 };
 $("scanCancel").onclick=function(){$("scanBox").style.display="none"};
@@ -171,9 +474,10 @@ $("scanAdd").onclick=function(){
   var dirs=[].slice.call(document.querySelectorAll("#scanList input:checked")).map(function(i){return i.value});
   if(!dirs.length){$("scanBox").style.display="none";return}
   Promise.all(dirs.map(function(d){return api("/api/add",{dir:d})})).then(function(){
-    toast(dirs.length+" docs adicionadas");$("scanBox").style.display="none";refresh();
+    toast(dirs.length+" docs adicionadas");$("scanBox").style.display="none";lastJson="";refresh(true);
   });
 };
+document.addEventListener("dragend",function(){drag=null;clearMarks()});
 </script>
 </body>
 </html>

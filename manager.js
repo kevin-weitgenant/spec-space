@@ -97,10 +97,12 @@ function start(opts = {}) {
   syncRoots();
 
   function apiDocs() {
-    return [...roots.entries()].map(([dir, r]) => {
+    const docs = [...roots.entries()].map(([dir, r]) => {
       const info = registry.cardInfo(dir);
       return { slug: r.slug, dir, title: info.title, favicon: info.favicon };
     });
+    // mural pronto: cards + layout saneado (ordem/pastas)
+    return { docs, layout: registry.getLayout() };
   }
 
   function readJsonBody(req, cb, cap = 1024 * 1024) {
@@ -139,6 +141,16 @@ function start(opts = {}) {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
       return res.end(JSON.stringify(apiDocs()));
     }
+    if (req.method === "POST" && raw === "/api/layout") {
+      // um único endpoint atômico: recebe o mural inteiro (order+groups+assign+collapsed),
+      // valida contra os docs registrados e devolve o layout saneado
+      return readJsonBody(req, (j) => {
+        if (!isJson || !j || typeof j.layout !== "object") { res.writeHead(400); return res.end("400 Bad Request"); }
+        const sane = registry.saveLayout(j.layout);
+        res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+        res.end(JSON.stringify({ ok: true, layout: sane }));
+      });
+    }
     if (req.method === "POST" && raw === "/api/add") {
       return readJsonBody(req, (j) => {
         if (!isJson || !j || typeof j.dir !== "string") { res.writeHead(400); return res.end("400 Bad Request"); }
@@ -171,6 +183,12 @@ function start(opts = {}) {
       const abs = path.resolve(p);
       return roots.has(abs) ? abs : null;
     }
+    // the PROJECT folder is the parent of the docs root. If the docs sits at
+    // a filesystem root (no useful parent), fall back to the docs dir itself.
+    function projectDir(dir) {
+      const parent = path.dirname(dir);
+      return parent && parent !== dir ? parent : dir;
+    }
     if (req.method === "POST" && raw === "/api/reveal") {
       return readJsonBody(req, (j) => {
         const dir = isJson ? registeredDir(j && j.dir) : null;
@@ -189,8 +207,9 @@ function start(opts = {}) {
       return readJsonBody(req, (j) => {
         const dir = isJson ? registeredDir(j && j.dir) : null;
         if (!dir) { res.writeHead(400); return res.end("400"); }
-        // warp <dir> — no shell: args as an array, and dir is a registered
-        // root, so nothing user-typed ever reaches a command line.
+        const proj = projectDir(dir); // open the PROJECT, not the docs folder
+        // warp <dir> — no shell: args as an array, and dir derives from a
+        // registered root, so nothing user-typed ever reaches a command line.
         resolveWarp((bin) => {
           if (!bin) {
             const searched = [
@@ -206,10 +225,10 @@ function start(opts = {}) {
           }
           // Windows Warp parses the positional arg as a URI — a bare "C:\\..."
           // reads as scheme "c" ("custom URI is invalid"). A file:// URL works.
-          const arg = process.platform === "win32" ? require("node:url").pathToFileURL(dir).href : dir;
-          spawn(bin, [arg], { detached: true, stdio: "ignore" }).unref();
+          const target = process.platform === "win32" ? require("node:url").pathToFileURL(proj).href : proj;
+          spawn(bin, [target], { detached: true, stdio: "ignore" }).unref();
           res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-          res.end(JSON.stringify({ ok: true, bin }));
+          res.end(JSON.stringify({ ok: true, bin, dir: proj }));
         });
       });
     }
