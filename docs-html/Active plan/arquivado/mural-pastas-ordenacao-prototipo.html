@@ -1,0 +1,411 @@
+<!doctype html>
+<!-- Protótipo FUNCIONAL do mural do manager: pastas, reordenação de cards e
+     de pastas, mover card para dentro/fora de pasta, deletar pasta, ✕ sutil
+     com modal. Estado persiste em localStorage (simula o registry.json). -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Mural do manager — pastas e ordenação</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🗂️%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe;
+  --green:#1a7f37; --green-soft:#e7f5ec; --red:#cf222e; --red-soft:#ffebe9;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));
+  border-bottom:1px solid var(--border);padding:30px 26px 18px}
+.hero h1{margin:0 0 4px;font-size:1.5rem;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--soft);max-width:78ch;font-size:.92rem}
+main{max-width:980px;margin:0 auto;padding:20px 24px 70px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.bar button{font:inherit;border:1px solid var(--border);background:#fff;border-radius:8px;
+  padding:7px 13px;cursor:pointer;color:var(--text)}
+.bar button:hover{background:var(--panel)}
+.bar button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.bar .hint{font-size:.8rem;color:var(--soft)}
+.mural{display:flex;flex-direction:column;gap:0}
+/* dropzone entre blocos (reordenar pastas/tiras) */
+.blockdrop{height:6px;border-radius:3px;margin:-3px 0;transition:height .12s,background .12s}
+.blockdrop.hot{height:26px;background:var(--accent-soft);border:2px dashed var(--accent)}
+/* bloco: pasta ou tiras de cards soltos */
+.block{border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px 14px}
+.block.loose{border:none;background:transparent;padding:2px 0}
+.block.loose > .lbl{font-size:.72rem;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin:0 0 6px 2px}
+.ghead{display:flex;align-items:center;gap:9px;cursor:grab;user-select:none}
+.ghead:active{cursor:grabbing}
+.ghead .gicon{font-size:1rem;color:var(--amber,#9a6700)}
+.ghead .gname{font-weight:650;font-size:.98rem}
+.ghead .gname[contenteditable]{outline:2px solid var(--accent-soft);border-radius:4px;padding:0 4px}
+.ghead .count{font-size:.74rem;color:var(--soft);background:var(--panel2);border-radius:99px;padding:1px 9px}
+.ghead .sp{flex:1}
+.ghead .gact{border:none;background:transparent;color:var(--soft);cursor:pointer;font-size:.95rem;
+  border-radius:7px;padding:2px 7px;opacity:0;transition:opacity .12s}
+.block:hover .gact{opacity:1}
+.ghead .gact:hover{background:var(--panel2);color:var(--text)}
+.block.dragging{opacity:.45}
+.block.gbefore{box-shadow:0 -4px 0 var(--accent)}
+.block.gafter{box-shadow:0 4px 0 var(--accent)}
+.body{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;margin-top:10px;
+  border-radius:9px;transition:background .12s,outline .12s;outline:2px dashed transparent;min-height:20px;padding:2px}
+.body.droptarget{outline-color:var(--accent);background:var(--accent-soft)}
+.block.collapsed .body{display:none}
+.block.collapsed .twist{transform:rotate(-90deg)}
+.twist{display:inline-block;transition:transform .15s;color:var(--soft);font-size:.7rem}
+/* card */
+.card{position:relative;border:1px solid var(--border);border-radius:10px;padding:13px 14px 12px;
+  background:#fff;cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .05s}
+.card:hover{box-shadow:0 3px 10px rgba(0,0,0,.08);border-color:var(--accent)}
+.card.dragging{opacity:.45}
+.card.dropbefore{box-shadow:-4px 0 0 var(--accent)}
+.card.dropafter{box-shadow:4px 0 0 var(--accent)}
+.card .fav{font-size:1.35rem;line-height:1;display:block}
+.card .title{display:block;font-weight:650;font-size:.95rem;margin-top:6px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.card .dir{font-size:.7rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left;margin-top:2px}
+.card .acts{display:flex;gap:6px;margin-top:10px;align-items:center}
+.card .acts .primary{background:var(--accent);color:#fff;border:1px solid var(--accent);border-radius:7px;
+  padding:3px 10px;font-size:.78rem;font-weight:600;cursor:pointer}
+.card .acts .ghost{border:1px solid var(--border);background:#fff;border-radius:7px;padding:3px 8px;cursor:pointer;color:var(--soft)}
+.xbtn{position:absolute;top:7px;right:7px;width:25px;height:25px;border-radius:7px;border:none;
+  background:transparent;color:var(--soft);font-size:.9rem;line-height:1;cursor:pointer;
+  opacity:0;transition:opacity .12s}
+.card:hover .xbtn{opacity:1}
+.xbtn:hover{background:var(--panel2);color:var(--text)}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(31,35,41,.35);display:none;align-items:center;
+  justify-content:center;z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;border:1px solid var(--border);max-width:410px;width:calc(100% - 40px);
+  box-shadow:0 12px 40px rgba(0,0,0,.18);padding:20px 22px}
+.modal h4{margin:0 0 6px;font-size:1.05rem}
+.modal p{margin:0 0 16px;color:var(--soft);font-size:.9rem}
+.modal .row{display:flex;gap:8px;justify-content:flex-end}
+.modal button{font:inherit;border:1px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;background:#fff}
+.modal button.danger{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+  padding:8px 16px;border-radius:8px;font-size:.85rem;display:none;z-index:60}
+.statebar{font-size:.74rem;color:var(--soft);background:var(--panel);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;margin-bottom:14px;white-space:pre-wrap;font-family:ui-monospace,Consolas,monospace}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>🗂️ Protótipo · Mural do manager</h1>
+  <p>Funciona de verdade: <b>arraste cards</b> para reordenar ou soltar dentro de uma pasta; <b>arraste o cabeçalho de uma pasta</b> para reordená-la; <b>duplo-clique</b> no nome renomeia; o <b>✕</b> (canto do card/pasta, no hover) remove com modal de confirmação. A escolha fica salva (localStorage simula o <code>registry.json</code>) — recarregue a página para conferir.</p>
+</header>
+<main>
+  <div class="bar">
+    <button class="primary" id="newFolder">＋ Nova pasta</button>
+    <button id="reset">↺ Resetar protótipo</button>
+    <span class="hint">← tudo persiste no localStorage (no real: <code>layout</code> do registry.json via <code>POST /api/layout</code>)</span>
+  </div>
+  <div class="statebar" id="statebar"></div>
+  <div class="mural" id="mural"></div>
+</main>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h4 id="mTitle"></h4>
+    <p id="mMsg"></p>
+    <div class="row"><button id="mCancel">Cancelar</button><button class="danger" id="mOk"></button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── dados mock ── */
+var CARDS={
+  c1:{fav:"📚",title:"Docs-html DOCS",dir:"C:\\Users\\kevin\\Desktop\\docs-in-html\\docs"},
+  c2:{fav:"🎙️",title:"Voice AI Avatar",dir:"D:\\code\\voice-ai-avatar\\docs"},
+  c3:{fav:"💼",title:"Find jobs in LinkedIn",dir:"D:\\code\\find-jobs\\docs"},
+  c4:{fav:"📖",title:"Claude Certification",dir:"D:\\code\\claude-cert\\docs"},
+  c5:{fav:"🖼️",title:"Story ElevenLabs",dir:"D:\\code\\story-11\\docs"},
+  c6:{fav:"🧮",title:"Lello Fopag",dir:"D:\\code\\lello\\docs"}
+};
+var DEF={order:["g1","c1","c4","g2","c3"],groups:{g1:{name:"Trabalho"},g2:{name:"Estudos"}},
+  assign:{c3:"g2",c6:"g2"},collapsed:{}};
+var KEY="mgr-mural-proto";
+var S=load();
+
+function load(){try{var s=JSON.parse(localStorage.getItem(KEY));if(s&&s.order)return s}catch(e){}return JSON.parse(JSON.stringify(DEF))}
+function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+
+/* ── modal genérico ── */
+var mOkFn=null;
+function modal(title,msg,okLabel,fn){
+  $("mTitle").textContent=title;$("mMsg").textContent=msg;$("mOk").textContent=okLabel;
+  mOkFn=fn;$("modalBg").classList.add("open");
+}
+$("mCancel").onclick=function(){$("modalBg").classList.remove("open")};
+$("modalBg").addEventListener("click",function(e){if(e.target===this)this.classList.remove("open")});
+$("mOk").onclick=function(){$("modalBg").classList.remove("open");if(mOkFn)mOkFn()};
+
+/* ── drag state ── */
+var drag=null; // {type:'card'|'group', id}
+
+function $(id){return document.getElementById(id)}
+var tm;function toast(m){var t=$("toast");t.textContent=m;t.style.display="block";clearTimeout(tm);tm=setTimeout(function(){t.style.display="none"},2000)}
+function groupIdOf(cid){return S.assign[cid]||null}
+function cardsOf(gid){return S.order.filter(function(x){return groupIdOf(x)===gid})}
+
+/* ordem interna de um grupo/tira = ordem em que aparecem em S.order */
+function moveTo(cid,gid,refId,before){
+  S.order=S.order.filter(function(x){return x!==cid});
+  if(gid){
+    var sibs=cardsOf(gid).filter(function(x){return x!==cid});
+    var ref=refId&&sibs.indexOf(refId)>=0?refId:(sibs.length?sibs[sibs.length-1]:gid);
+    S.order.splice(S.order.indexOf(ref)+(before?0:1),0,cid);
+    S.assign[cid]=gid;
+  }else{
+    // Sem pasta é um bloco único: insere antes/depois do card de referência
+    // (se for solto) ou no fim dos cards soltos
+    var loose=S.order.filter(function(x){return groupIdOf(x)===null});
+    var ref2=(refId&&groupIdOf(refId)===null)?refId:(loose.length?loose[loose.length-1]:null);
+    S.order.splice(ref2?S.order.indexOf(ref2)+(before?0:1):S.order.length,0,cid);
+    delete S.assign[cid];
+  }
+  commit("card movido");
+}
+function commit(msg){
+  hygiene();save();render();
+  if(msg)toast(msg);
+}
+function hygiene(){
+  var valid=S.order.filter(function(x){return CARDS[x]||S.groups[x]});
+  // ids que existem mas não estão na order → append
+  Object.keys(CARDS).forEach(function(c){if(valid.indexOf(c)<0)valid.push(c)});
+  Object.keys(S.groups).forEach(function(g){if(valid.indexOf(g)<0)valid.push(g)});
+  S.order=valid;
+  Object.keys(S.assign).forEach(function(c){
+    if(!CARDS[c]||!S.groups[S.assign[c]])delete S.assign[c];
+  });
+}
+
+/* ── render ── */
+function render(){
+  var m=$("mural");m.innerHTML="";
+  hygiene();
+  // UM único bloco "Sem pasta" no final: todas as pastas na ordem de S.order,
+  // depois TODOS os cards sem pasta (ordem relativa preservada)
+  var gblocks=S.order.filter(function(x){return S.groups[x]});
+  gblocks.forEach(function(gid){
+    renderGroup(m,{t:"g",id:gid});
+  });
+  renderLoose(m,{items:S.order.filter(function(x){return !S.groups[x]})});
+  renderState();
+}
+function renderState(){
+  var groups=S.order.filter(function(x){return S.groups[x]}).map(function(g){return "«"+S.groups[g].name+"» ("+cardsOf(g).length+")"});
+  var loose=S.order.filter(function(x){return !S.groups[x]}).map(function(c){return CARDS[c].title.slice(0,16)});
+  $("statebar").textContent="layout → pastas: ["+groups.join(", ")+"]\n  Sem pasta: ["+loose.join(", ")+"]\n  assign: "+JSON.stringify(S.assign);
+}
+/* (reordenação de pastas é feita direto nos blocos — hover na metade
+   superior/inferior de outra pasta mostra onde ela vai cair) */
+/* reordenação de pasta: remove e reinsere antes/depois da pasta alvo */
+function dropGroupNext(targetGid,before){
+  var gid=drag.id;
+  if(gid===targetGid)return;
+  S.order=S.order.filter(function(x){return x!==gid});
+  var idx=S.order.indexOf(targetGid)+(before?0:1);
+  S.order.splice(idx,0,gid);
+  commit("pasta «"+S.groups[gid].name+"» reordenada");
+}
+function cardEl(cid){
+  var c=CARDS[cid];
+  var el=document.createElement("div");el.className="card";el.draggable=true;el.dataset.cid=cid;
+  el.innerHTML='<button class="xbtn" title="Remover do manager">✕</button>'+
+    '<span class="fav">'+c.fav+'</span><span class="title">'+c.title+'</span>'+
+    '<div class="dir" title="'+c.dir+'">'+c.dir+'</div>'+
+    '<div class="acts"><span class="primary">⌨ Abrir projeto no Warp</span>'+
+    '<button class="ghost" title="Revelar pasta da docs">📂</button></div>';
+  el.addEventListener("dragstart",function(e){
+    drag={type:"card",id:cid};el.classList.add("dragging");
+    e.dataTransfer.setData("text/plain",cid);e.dataTransfer.effectAllowed="move";
+  });
+  el.addEventListener("dragend",function(){drag=null;clearMarks()});
+  el.querySelector(".xbtn").addEventListener("click",function(e){e.stopPropagation();
+    var gid=groupIdOf(cid);
+    modal('Remover "'+c.title+'"?',
+      (gid?"Ela está na pasta «"+S.groups[gid].name+"». ":"")+
+      "Só tira a docs do manager — nenhum arquivo é apagado, e você pode adicioná-la de novo a qualquer momento.",
+      "Remover",function(){S.order=S.order.filter(function(x){return x!==cid});delete S.assign[cid];commit("removida: "+c.title)});
+  });
+  el.addEventListener("click",function(){toast("→ abriria a docs "+c.title)});
+  el.querySelector(".ghost").addEventListener("click",function(e){e.stopPropagation();toast("→ gerenciador de arquivos")});
+  el.querySelector(".primary").addEventListener("click",function(e){e.stopPropagation();toast("→ abriria o PROJETO de "+c.title+" no Warp")});
+  return el;
+}
+/* grid interno (tira solta ou corpo de pasta) com reordenação entre cards */
+function innerGrid(gid){
+  // gid = grupo dono do grid (null = "Sem pasta"). Toda a lógica de
+  // reordenação card-a-card vive AQUI (única fonte de verdade): o dragover
+  // descobre o card sob o cursor via coordenadas, acende o indicador nele e
+  // guarda a mesma referência que o drop usará. Card DE FORA → realce + append.
+  var g=document.createElement("div");g.className="body";
+  function cardUnder(e){
+    var el=document.elementFromPoint(e.clientX,e.clientY);
+    var c=el&&el.closest?el.closest(".card"):null;
+    if(c&&drag&&c.dataset.cid===drag.id)return null;
+    return c;
+  }
+  function nearest(e){
+    var best=null;
+    g.querySelectorAll(".card").forEach(function(c){
+      if(drag&&c.dataset.cid===drag.id)return;
+      var r=c.getBoundingClientRect(),mid=r.left+r.width/2;
+      if(!best||Math.abs(e.clientX-mid)<Math.abs(e.clientX-best.mid))best={cid:c.dataset.cid,mid:mid};
+    });
+    return best;
+  }
+  function clearInd(){
+    g.querySelectorAll(".card.dropbefore,.card.dropafter").forEach(function(c){c.classList.remove("dropbefore","dropafter")});
+  }
+  g.addEventListener("dragover",function(e){
+    if(!drag||drag.type!=="card")return;
+    e.preventDefault();
+    if(groupIdOf(drag.id)!==gid){g.classList.add("droptarget");return}
+    clearInd();
+    var c=cardUnder(e);
+    if(c){
+      var r=c.getBoundingClientRect();
+      var before=e.clientX<r.left+r.width/2;
+      c.classList.add(before?"dropbefore":"dropafter");
+      g._ref=c.dataset.cid;g._before=before;
+    }else{
+      var n=nearest(e);
+      g._ref=n?n.cid:null;g._before=n?(e.clientX<n.mid):true;
+    }
+  });
+  g.addEventListener("dragleave",function(e){
+    if(!g.contains(e.relatedTarget)){g.classList.remove("droptarget");clearInd();g._ref=null}
+  });
+  g.addEventListener("drop",function(e){
+    e.preventDefault();g.classList.remove("droptarget");clearInd();
+    if(!drag||drag.type!=="card")return;
+    if(groupIdOf(drag.id)!==gid){moveTo(drag.id,gid,null);return}
+    if(g._ref)moveTo(drag.id,gid,g._ref,g._before);
+  });
+  return g;
+}
+/* (reordenação card-a-card inteira no innerGrid — sem handlers nos cards) */
+function clearMarks(){
+  document.querySelectorAll(".dropbefore,.dropafter").forEach(function(x){x.classList.remove("dropbefore","dropafter")});
+  document.querySelectorAll(".droptarget").forEach(function(x){x.classList.remove("droptarget")});
+  document.querySelectorAll(".dragging").forEach(function(x){x.classList.remove("dragging")});
+}
+function renderLoose(m,b){
+  var d=document.createElement("div");d.className="block loose";
+  d.innerHTML='<div class="lbl">Sem pasta — solte um card aqui para tirá-lo de qualquer pasta</div>';
+  var g=innerGrid(null);
+  g.style.minHeight="46px";g.style.outline="2px dashed var(--border)";g.style.borderRadius="9px";
+  b.items.forEach(function(cid){g.appendChild(cardEl(cid))});
+  d.appendChild(g);m.appendChild(d);
+}
+function renderGroup(m,b){
+  var grp=S.groups[b.id],gid=b.id;
+  var d=document.createElement("div");d.className="block"+(S.collapsed[gid]?" collapsed":"");
+  d.dataset.gid=gid;
+  var h=document.createElement("div");h.className="ghead";h.draggable=true;
+  h.innerHTML='<span class="twist">▼</span><span class="gicon">📁</span>'+
+    '<span class="gname" title="duplo-clique para renomear">'+grp.name+'</span>'+
+    '<span class="count">'+cardsOf(gid).length+'</span><span class="sp"></span>'+
+    '<button class="gact" title="Renomear pasta">✎</button>'+
+    '<button class="gact gx" title="Apagar pasta">✕</button>';
+  h.addEventListener("dragstart",function(e){
+    drag={type:"group",id:gid};d.classList.add("dragging");
+    e.dataTransfer.setData("text/plain",gid);e.dataTransfer.effectAllowed="move";
+  });
+  h.addEventListener("dragend",function(){drag=null;clearMarks()});
+  h.querySelector(".twist").addEventListener("click",function(e){e.stopPropagation();
+    S.collapsed[gid]=!S.collapsed[gid];commit()});
+  h.querySelector(".gname").addEventListener("dblclick",function(){rename(this,gid)});
+  h.addEventListener("click",function(e){if(e.target.closest(".gact")||e.target.closest(".gname"))return;
+    S.collapsed[gid]=!S.collapsed[gid];commit()});
+  h.querySelector('.gact:not(.gx)').addEventListener("click",function(e){e.stopPropagation();
+    rename(h.querySelector(".gname"),gid)});
+  h.querySelector(".gx").addEventListener("click",function(e){e.stopPropagation();
+    var n=cardsOf(gid).length;
+    modal('Apagar a pasta «'+grp.name+'»?',
+      n? "Os "+n+" cards dentro dela voltam para “Sem pasta” — nenhuma docs é removida do manager."
+        : "A pasta está vazia.",
+      "Apagar pasta",function(){
+        S.order=S.order.filter(function(x){return x!==gid});
+        Object.keys(S.assign).forEach(function(c){if(S.assign[c]===gid)delete S.assign[c]});
+        delete S.groups[gid];delete S.collapsed[gid];
+        commit("pasta apagada — cards foram para “Sem pasta”");
+      });
+  });
+  d.appendChild(h);
+  var g=innerGrid(gid);
+  cardsOf(gid).forEach(function(cid){g.appendChild(cardEl(cid))});
+  d.appendChild(g);m.appendChild(d);
+  // ── drag no BLOCO da pasta: auto-expandir (card) e reordenar pastas ──
+  d.addEventListener("dragover",function(e){
+    if(!drag)return;
+    if(drag.type==="card"){
+      // pasta recolhida + card em cima → expande na hora (sem re-render:
+      // só mostrar o corpo escondido mantém o drag vivo)
+      if(S.collapsed[gid]){S.collapsed[gid]=false;d.classList.remove("collapsed");save();renderState()}
+      return; // o resto do fluxo do card fica nos handlers do corpo/cards
+    }
+    if(drag.type==="group"&&drag.id!==gid){
+      e.preventDefault();
+      var r=d.getBoundingClientRect();
+      d._before=e.clientY<r.top+r.height/2;
+      d.classList.toggle("gbefore",d._before);
+      d.classList.toggle("gafter",!d._before);
+    }
+  });
+  d.addEventListener("dragleave",function(e){d.classList.remove("gbefore","gafter")});
+  d.addEventListener("drop",function(e){
+    if(drag&&drag.type==="group"&&drag.id!==gid){
+      e.preventDefault();d.classList.remove("gbefore","gafter");
+      dropGroupNext(gid,d._before!==false);
+    }
+  });
+}
+function rename(el,gid){
+  var head=el.closest(".ghead");
+  head.draggable=false; // contenteditable dentro de draggable perde foco no Chrome
+  el.contentEditable=true;el.focus();
+  document.getSelection().selectAllChildren(el);
+  var done=function(){
+    el.contentEditable=false;head.draggable=true;
+    var v=el.textContent.trim();
+    if(v&&S.groups[gid])S.groups[gid].name=v;
+    commit(v?"pasta renomeada para «"+v+"»":null);
+  };
+  el.addEventListener("blur",done,{once:true});
+  el.addEventListener("keydown",function k(e){
+    if(e.key==="Enter"){e.preventDefault();el.blur()}
+    if(e.key==="Escape"){el.textContent=S.groups[gid]?S.groups[gid].name:"";el.blur()}
+  });
+}
+/* (renderEnd foi absorvido pelo bloco único "Sem pasta" — renderLoose) */
+
+/* ── nova pasta ── */
+$("newFolder").onclick=function(){
+  var gid="g"+Date.now().toString(36);
+  S.groups[gid]={name:"Nova pasta"};
+  S.order.push(gid);
+  commit("pasta criada — duplo-clique no nome para renomear");
+  var el=document.querySelector('.block[data-gid="'+gid+'"] .gname');
+  if(el)setTimeout(function(){rename(el,gid)},50);
+};
+$("reset").onclick=function(){
+  modal("Resetar o protótipo?","Volta ao estado inicial de demonstração (só afeta o localStorage desta página).","Resetar",
+    function(){localStorage.removeItem(KEY);S=load();render();toast("protótipo resetado")});
+};
+
+document.addEventListener("dragend",function(){drag=null;clearMarks()});
+render();
+</script>
+</body>
+</html>

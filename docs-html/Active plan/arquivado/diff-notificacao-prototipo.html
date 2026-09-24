@@ -1,0 +1,328 @@
+<!doctype html>
+<!-- Protótipo v2 — notificação de mudança INTEGRADA ao documento. Sem modal:
+     mudanças aparecem inline (destaque + chip "novo" / word-diff riscado), minimap
+     estilo VS Code na lateral marca as regiões alteradas (clicável), e a bolinha
+     da TAB é demo REAL: trocamos o favicon por um com um ponto azul (truque do
+     canvas) — olhe a tab do seu browser depois de salvar. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>spec-foo.html</title>
+<link id="fav" rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E📄%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#e9ecf1;color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6}
+.hero{background:linear-gradient(180deg,var(--accent-soft),#fff);
+  border-bottom:1px solid var(--border);padding:28px 26px 16px}
+.hero-inner{max-width:1060px;margin:0 auto}
+.hero h1{margin:0 0 4px;font-size:1.4rem;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--soft);max-width:80ch}
+main{max-width:1060px;margin:0 auto;padding:18px 24px 60px}
+.hint{background:var(--amber-soft);border:1px solid #eadfb8;border-left:4px solid var(--amber);
+  border-radius:8px;padding:11px 15px;font-size:.92rem;margin:14px 0}
+
+/* ── controles ── */
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 10px}
+.controls button{font:inherit;font-size:.88rem;border:1px solid var(--border);background:#fff;
+  border-radius:8px;padding:7px 14px;cursor:pointer;color:var(--text)}
+.controls button:hover{border-color:var(--accent);color:var(--accent)}
+.controls button.robot{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.controls button.robot:hover{filter:brightness(1.07);color:#fff}
+.log{font-size:.78rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace;
+  background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-height:1.4em}
+
+/* ── mockup browser ── */
+.browser{border:1px solid #b9c0cb;border-radius:12px;overflow:hidden;background:#fff;
+  box-shadow:0 4px 18px rgba(0,0,0,.10)}
+.tabbar{display:flex;align-items:flex-end;gap:6px;background:var(--panel2);padding:8px 10px 0;border-bottom:1px solid #b9c0cb}
+.tab{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #b9c0cb;border-bottom:none;
+  border-radius:9px 9px 0 0;padding:7px 14px;font-size:.82rem;max-width:280px;color:var(--soft);position:relative}
+.tab.on{color:var(--text);font-weight:600}
+.tab .fav{width:14px;height:14px;background-size:contain;background-repeat:no-repeat}
+.tab .x{color:var(--soft);font-size:.8rem;margin-left:4px}
+.tab .dot{position:absolute;top:-5px;right:-3px;width:11px;height:11px;border-radius:50%;
+  background:var(--accent);border:2px solid #fff;display:none}
+.tab .dot.show{display:block}
+.omnibox{display:flex;align-items:center;gap:10px;padding:9px 14px;background:#fafbfc;border-bottom:1px solid var(--border)}
+.omnibox .url{flex:1;background:#fff;border:1px solid var(--border);border-radius:99px;
+  padding:4px 14px;font-size:.78rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace}
+
+/* ── página do doc + MINIMAP lado a lado (estilo VS Code) ── */
+.docwrap{display:flex}
+.docpage{flex:1;padding:26px 34px 80px;height:540px;overflow-y:auto;scroll-behavior:smooth}
+.docpage h2{margin:.3em 0;font-size:1.35rem;position:relative}
+.docpage h3{margin:1.4em 0 .4em;font-size:1.02rem;position:relative}
+.docpage p{color:#333;max-width:66ch}
+.docpage pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:.8rem;overflow-x:auto}
+
+/* ── MINIMAP ── */
+.minimap{width:72px;flex:none;border-left:1px solid var(--border);background:#fbfcfd;
+  position:relative;padding:14px 0;display:none;flex-direction:column;gap:3px;cursor:pointer}
+.minimap.show{display:flex}
+.minimap .mtitle{position:absolute;top:2px;left:0;right:0;text-align:center;font-size:.55rem;
+  letter-spacing:.08em;color:var(--soft);text-transform:uppercase}
+.mblock{border-radius:2px;background:#c8d0db;margin:0 10px;transition:background .2s}
+.mblock.h{background:#8a94a3;height:8px}
+.mblock.p{height:14px}
+.mblock.code{height:26px}
+.mblock:hover{background:var(--accent)}
+.mblock.changed{background:var(--green);box-shadow:0 0 0 2px var(--green-soft)}
+.mblock.changed.edited{background:var(--amber)}
+.mblock.changed::after{content:""}
+.mlegend{margin-top:auto;padding:8px 10px 4px;font-size:.6rem;color:var(--soft);line-height:1.7}
+.mlegend .sw{display:inline-block;width:7px;height:7px;border-radius:2px;vertical-align:middle;margin-right:4px}
+
+/* ── MUDANÇAS INLINE (a feature) ── */
+.new-block{position:relative;background:linear-gradient(90deg,var(--green-soft),transparent 90%);
+  border-left:3px solid var(--green);border-radius:0 6px 6px 0;padding:6px 12px 6px 14px;
+  margin-left:-17px;animation:glow 2.5s ease}
+.new-block .chip{position:absolute;top:-9px;left:10px;background:var(--green);color:#fff;
+  font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  border-radius:99px;padding:1px 9px}
+.edit-block{position:relative;border-left:3px solid var(--amber);border-radius:0 6px 6px 0;
+  padding:6px 12px 6px 14px;margin-left:-17px;background:linear-gradient(90deg,#fdf6e3,transparent 90%);
+  animation:glow 2.5s ease}
+.edit-block .chip{position:absolute;top:-9px;left:10px;background:var(--amber);color:#fff;
+  font-size:.62rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+  border-radius:99px;padding:1px 9px}
+@keyframes glow{0%{box-shadow:0 0 0 4px rgba(26,127,55,.25)}100%{box-shadow:0 0 0 0 rgba(26,127,55,0)}}
+.wdel{color:var(--red);text-decoration:line-through;background:var(--red-soft);border-radius:3px;padding:0 2px}
+.wadd{color:#0c5a26;background:#abf2bc;border-radius:3px;padding:0 2px;font-weight:600}
+
+/* ── barra "N mudanças" dentro do doc ── */
+.changebar{position:sticky;top:0;z-index:5;display:none;align-items:center;gap:10px;
+  background:rgba(255,255,255,.95);backdrop-filter:blur(4px);border:1px solid var(--green);
+  border-radius:99px;padding:5px 8px 5px 16px;margin:0 0 14px;font-size:.85rem;
+  box-shadow:0 2px 12px rgba(26,127,55,.18);width:fit-content}
+.changebar.show{display:flex}
+.changebar b{color:var(--green)}
+.changebar button{font:inherit;font-size:.78rem;border:1px solid var(--border);background:#fff;
+  border-radius:99px;padding:3px 12px;cursor:pointer;color:var(--text)}
+.changebar button:hover{border-color:var(--accent);color:var(--accent)}
+.changebar .done{border-color:var(--green);color:var(--green);font-weight:600}
+footer{padding:24px 0;text-align:center;color:var(--soft);font-size:.85rem}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Protótipo v2 · Mudança visível no próprio doc + minimap</h1>
+    <p>Sem modal, sem toast: o que o agente adicionou nasce <b>destacado no lugar</b> (borda verde + chip “novo”), o que editou mostra word-diff inline, e o <b>minimap lateral</b> marca as regiões alteradas — clique para pular. A bolinha na tab é <b>real</b>: <code>olhe a tab do seu browser</code> ao salvar (favicon dinâmico).</p>
+  </div>
+</header>
+<main>
+  <div class="hint"><b>Como usar:</b> clique em <b>🤖 agente salvou</b> (dá pra clicar 3× com conteúdos diferentes), role o doc pelo minimap, use “próxima mudança”, e clique “já vi tudo” pra limpar os destaques.</div>
+
+  <div class="controls">
+    <button class="robot" id="btnSave">🤖 agente salvou</button>
+    <button id="btnReset">↺ resetar protótipo</button>
+  </div>
+  <div class="log" id="log">pronto — (na feature real haveria um location.reload() e os destaques seriam aplicados pelo diff DOM contra o snapshot da versão anterior)</div>
+
+  <div class="browser">
+    <div class="tabbar">
+      <div class="tab on"><span class="fav" style="background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%220.9em%22 font-size=%2290%22%3E📄%3C/text%3E%3C/svg%3E')"></span> spec-foo.html <span class="x">✕</span><span class="dot" id="tabDot"></span></div>
+      <div class="tab"><span class="fav" style="background-image:url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%220.9em%22 font-size=%2290%22%3E📋%3C/text%3E%3C/svg%3E')"></span> outra-doc.html <span class="x">✕</span></div>
+    </div>
+    <div class="omnibox"><div class="url">localhost:8000/spec-foo.html</div></div>
+
+    <div class="docwrap">
+      <div class="docpage" id="docpage">
+        <div class="changebar" id="changebar">
+          <span><b id="cbCount">0</b> mudanças desde a última visita</span>
+          <button id="cbNext">↓ próxima</button>
+          <button class="done" id="cbDone">✓ já vi tudo</button>
+        </div>
+        <h2>Spec · Feature Foo</h2>
+
+        <h3>Visão geral</h3>
+        <p>A feature Foo faz X e Y, com os trade-offs discutidos em reunião. O documento segue a mesma estrutura dos outros planos: contexto, decisões e riscos.</p>
+
+        <h3>Decisão técnica</h3>
+        <p id="pB">Usar polling de 5s para atualizar a lista de itens. O polling é simples de implementar e não exige infraestrutura nova, mas adiciona latência perceptível.</p>
+
+        <h3>Arquitetura</h3>
+        <p>O cliente consulta <code>/api/items</code> a cada 5 segundos e re-renderiza a lista inteira. Não há estado no servidor além do próprio banco.</p>
+        <pre><code>setInterval(fetchItems, 5000);
+function fetchItems(){
+  fetch('/api/items').then(r =&gt; r.json()).then(render);
+}</code></pre>
+
+        <h3>Escopo da v1</h3>
+        <p>A v1 entrega a lista com atualização automática, ordenação por data e indicador de item novo. Filtros ficam para a v2.</p>
+
+        <h3>Abertos</h3>
+        <p>Nada por enquanto.</p>
+
+        <h3>Cronograma</h3>
+        <p>Duas semanas de implementação, uma de polimento e testes. Review contínua com o time de design.</p>
+
+        <h3>Alternativas consideradas</h3>
+        <p>WebSocket foi descartado pela complexidade de infra; long-polling por inconsistências de comportamento entre browsers.</p>
+      </div>
+
+      <div class="minimap" id="minimap">
+        <div class="mtitle">map</div>
+        <!-- blocos gerados por JS, espelhando o doc -->
+        <div class="mlegend">
+          <div><span class="sw" style="background:var(--green)"></span>novo</div>
+          <div><span class="sw" style="background:var(--amber)"></span>editado</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<footer>protótipo interativo v2 · plano: <a href="diff-notificacao-plano.html">diff-notificacao-plano.html</a></footer>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  function say(m) { $("log").textContent = m; }
+
+  var saveCount = 0;
+
+  // ── favicon dinâmico: a bolinha REAL na tab do browser ──
+  var BASE_FAV = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"%3E%3Ctext y="0.9em" font-size="90"%3E📄%3C/text%3E%3C/svg%3E';
+  function faviconDot(on) {
+    var img = new Image();
+    img.onload = function () {
+      var c = document.createElement("canvas"); c.width = c.height = 64;
+      var x = c.getContext("2d");
+      x.drawImage(img, 0, 0, 64, 64);
+      if (on) { // pontinho azul no canto, estilo Chrome
+        x.beginPath(); x.arc(50, 50, 16, 0, 7);
+        x.fillStyle = "#1f6feb"; x.fill();
+        x.lineWidth = 5; x.strokeStyle = "#fff"; x.stroke();
+      }
+      $("fav").href = c.toDataURL("image/png");
+    };
+    img.src = BASE_FAV;
+  }
+
+  // ── minimap: espelha os blocos do doc ──
+  var mm = $("minimap"), mmEls = {};
+  function buildMinimap() {
+    var legend = mm.querySelector(".mlegend");
+    mm.querySelectorAll(".mblock").forEach(function (b) { b.remove(); });
+    mmEls = {};
+    var blocks = $("docpage").querySelectorAll("h2,h3,p,pre");
+    blocks.forEach(function (el, i) {
+      var b = document.createElement("div");
+      b.className = "mblock " + (el.tagName === "H2" || el.tagName === "H3" ? "h" : el.tagName === "PRE" ? "code" : "p");
+      if (el.classList.contains("new-block")) b.classList.add("changed");
+      else if (el.classList.contains("edit-block")) { b.classList.add("changed", "edited"); }
+      b.title = (el.textContent || "").slice(0, 60);
+      b.onclick = function () { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.classList.add("flash"); setTimeout(function(){el.classList.remove('flash');},700); };
+      mm.insertBefore(b, legend);
+      mmEls[i] = { el: el, block: b };
+    });
+  }
+  function markChanged(el, edited) {
+    for (var k in mmEls) if (mmEls[k].el === el) {
+      mmEls[k].block.classList.add("changed"); if (edited) mmEls[k].block.classList.add("edited");
+    }
+  }
+
+  function chip(kind, label) {
+    var s = document.createElement("span"); s.className = "chip"; s.textContent = label; return s;
+  }
+  function countChanges() { return $("docpage").querySelectorAll(".new-block,.edit-block").length; }
+  function updateBar() {
+    var n = countChanges();
+    $("cbCount").textContent = n;
+    $("changebar").classList.toggle("show", n > 0);
+  }
+
+  function afterChange(msg) {
+    faviconDot(true);
+    document.title = "● spec-foo.html";           // prefixo na tab também
+    $("tabDot").classList.add("show");            // bolinha no mockup
+    $("minimap").classList.add("show");           // minimap só existe quando há o que ver
+    updateBar();
+    buildMinimap();
+    say(msg);
+  }
+
+  function agentSave() {
+    if (saveCount === 0) {
+      // 1) edição word-diff num parágrafo existente + seção nova inteira
+      var pB = $("pB");
+      pB.classList.add("edit-block");
+      pB.insertBefore(chip("edit", "editado"), pB.firstChild);
+      pB.innerHTML = '<span class="chip">editado</span>Usar <span class="wdel">polling de 5s</span><span class="wadd">SSE (uma conexão por browser, via Web Locks)</span> para atualizar a lista de itens. O <span class="wdel">polling é simples</span><span class="wadd">SSE mantém o servidor leve</span> e não exige infraestrutura nova.';
+      markChanged(pB, true);
+
+      var h = document.createElement("h3"); h.textContent = "Riscos";
+      h.classList.add("new-block"); h.appendChild(Object.assign(document.createElement("span"),{className:"chip",textContent:"novo"}));
+      var p1 = document.createElement("p"); p1.classList.add("new-block");
+      p1.appendChild(Object.assign(document.createElement("span"),{className:"chip",textContent:"novo"}));
+      p1.appendChild(document.createTextNode("Latência de até 5s entre mudança e refleção na UI (eliminada pelo SSE)."));
+      var p2 = document.createElement("p"); p2.classList.add("new-block");
+      p2.appendChild(Object.assign(document.createElement("span"),{className:"chip",textContent:"novo"}));
+      p2.appendChild(document.createTextNode("BroadcastChannel relay para não estourar o limite de ~6 conexões por origem."));
+      var abertos = $("docpage").querySelectorAll("h3")[4]; // "Abertos"
+      abertos.parentNode.insertBefore(h, abertos);
+      abertos.parentNode.insertBefore(p1, abertos);
+      abertos.parentNode.insertBefore(p2, abertos);
+      markChanged(h); markChanged(p1); markChanged(p2);
+      afterChange("salvada #1: 1 parágrafo editado (word-diff inline) + seção “Riscos” nova (3 blocos) — repare na tab do browser ●");
+    } else if (saveCount === 1) {
+      var pA = $("docpage").querySelectorAll("p")[0];
+      var novo = document.createElement("p"); novo.classList.add("new-block");
+      novo.appendChild(Object.assign(document.createElement("span"),{className:"chip",textContent:"novo"}));
+      novo.appendChild(document.createTextNode("A feature Foo também cobre o caso Z (pedido do time de design): itens compartilhados entre listas."));
+      pA.parentNode.insertBefore(novo, pA.nextSibling);
+      markChanged(novo);
+      afterChange("salvada #2: +1 parágrafo na “Visão geral” — o minimap ganhou mais um marcador verde; destaques anteriores continuam (acumulação)");
+    } else {
+      var cron = Array.prototype.find.call($("docpage").querySelectorAll("p"), function(p){return /duas semanas/i.test(p.textContent);});
+      cron.classList.add("edit-block");
+      cron.innerHTML = '<span class="chip">editado</span><span class="wadd">Uma</span> semana de implementação <span class="wadd">(SSE simplificou)</span>, uma de polimento e testes. Review contínua com o time de design.';
+      markChanged(cron, true);
+      afterChange("salvada #3: cronograma editado (word-diff) — 3 salvadas acumuladas, tudo visível de uma vez");
+    }
+    saveCount++;
+  }
+
+  // ── navegação entre mudanças ──
+  $("cbNext").onclick = function () {
+    var els = $("docpage").querySelectorAll(".new-block,.edit-block");
+    if (!els.length) return;
+    var idx = ($("cbNext").dataset.i || 0) % els.length;
+    els[idx].scrollIntoView({ behavior: "smooth", block: "center" });
+    $("cbNext").dataset.i = (+idx + 1) % els.length;
+  };
+  $("cbDone").onclick = function () {
+    // limpa destaques (mantém o conteúdo)
+    $("docpage").querySelectorAll(".new-block,.edit-block").forEach(function (el) {
+      el.classList.remove("new-block", "edit-block");
+      var c = el.querySelector(".chip"); if (c) c.remove();
+      // desfaz word-diff, mantendo apenas o texto novo
+      el.querySelectorAll(".wdel").forEach(function (w) { w.remove(); });
+      el.querySelectorAll(".wadd").forEach(function (w) {
+        var t = document.createTextNode(w.textContent); w.replaceWith(t);
+      });
+    });
+    faviconDot(false); document.title = "spec-foo.html"; $("tabDot").classList.remove("show");
+    $("minimap").classList.remove("show");       // sem mudanças pendentes, minimap some
+    buildMinimap(); updateBar();
+    say("destaques limpos — a partir da próxima salvada, tudo recomeça do zero");
+  };
+
+  $("btnSave").onclick = agentSave;
+  $("btnReset").onclick = function () { location.reload(); };
+  mm && buildMinimap(); // constrói a árvore em memória — só fica VISÍVEL quando há mudanças
+})();
+</script>
+</body>
+</html>

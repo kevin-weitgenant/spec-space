@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano · Manager: remover sutil, reordenar cards e pastas de projetos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🗂️%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{margin:0 0 6px;font-size:2rem;letter-spacing:-.02em}
+.lede{margin:0;font-size:1.1rem;color:var(--soft);max-width:68ch}
+.meta{margin:10px 0 0;font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:30}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;gap:8px;flex-wrap:wrap}
+.toc a{font-size:.86rem;color:var(--soft);text-decoration:none;border:1px solid var(--border);
+  border-radius:99px;padding:4px 13px}
+.toc a:hover{background:var(--panel)}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;margin:0 0 10px;letter-spacing:-.01em}
+h2 .num{color:var(--accent);margin-right:8px}
+.lead{color:var(--soft);margin:0 0 18px;max-width:70ch}
+h3{font-size:1.1rem;margin:26px 0 8px}
+p{max-width:76ch}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.86em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow:auto}
+pre code{border:none;background:none;padding:0;font-size:.84rem}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--panel);
+  border-radius:8px;padding:12px 16px;margin:18px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.92rem}
+th{background:var(--panel2);text-align:left;padding:8px 12px}
+td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sim{color:var(--green);font-weight:700}.nao{color:var(--red);font-weight:700}.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0}
+.node{border:1px solid var(--border);background:var(--panel);border-radius:99px;padding:6px 14px;font-size:.88rem}
+.node.dev{border-color:var(--green);background:var(--green-soft);color:var(--green)}
+.node.cut{border-color:var(--red);background:var(--red-soft);color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.cap{font-size:.8rem;color:var(--soft);text-align:center;margin:6px 0 14px}
+.ramp{border:1px dashed var(--border);border-radius:10px;padding:14px 18px;margin:16px 0;
+  background:var(--panel);color:var(--soft);font-size:.92rem}
+.ramp b{color:var(--text)}
+/* mini-mockup do card */
+.demo-card{position:relative;border:1px solid var(--border);border-radius:12px;padding:16px;background:#fff;
+  max-width:300px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.demo-card .head{display:flex;align-items:center;gap:10px}
+.demo-card .fav{font-size:1.5rem}
+.demo-card .title{font-weight:650}
+.demo-card .dir{font-size:.74rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.demo-card .acts{display:flex;gap:6px;margin-top:10px}
+.demo-card .acts .primary{background:var(--accent);color:#fff;border:1px solid var(--accent);
+  border-radius:7px;padding:4px 10px;font-size:.85rem;font-weight:600;cursor:pointer}
+.demo-card .acts .ghost{border:1px solid var(--border);background:#fff;border-radius:7px;padding:4px 8px;cursor:pointer;color:var(--soft)}
+.xbtn{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:7px;border:none;background:transparent;
+  color:var(--soft);font-size:.95rem;line-height:1;cursor:pointer;opacity:0;transition:opacity .12s}
+.demo-card:hover .xbtn{opacity:1}
+.xbtn:hover{background:var(--panel2);color:var(--text)}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(31,35,41,.35);display:none;align-items:center;
+  justify-content:center;z-index:50}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:12px;border:1px solid var(--border);max-width:400px;width:calc(100% - 40px);
+  box-shadow:0 12px 40px rgba(0,0,0,.18);padding:20px 22px}
+.modal h4{margin:0 0 6px;font-size:1.05rem}
+.modal p{margin:0 0 16px;color:var(--soft);font-size:.9rem;max-width:none}
+.modal .row{display:flex;gap:8px;justify-content:flex-end}
+.modal button{font:inherit;border:1px solid var(--border);border-radius:8px;padding:7px 14px;cursor:pointer;background:#fff}
+.modal button.danger{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+/* quiz */
+.qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);
+  border-radius:10px;padding:16px 18px;margin:14px 0}
+.q-title{margin:0 0 10px;font-weight:600}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{font:inherit;text-align:left;border:1px solid var(--border);background:#fff;border-radius:8px;
+  padding:9px 14px;cursor:pointer}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
+.opt.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+.q-feedback{display:none;margin-top:12px;font-size:.92rem;color:var(--soft);border-top:1px solid var(--border);padding-top:10px}
+.q-feedback.show{display:block}
+footer{padding:26px 0;text-align:center;color:var(--soft);font-size:.85rem}
+.top{position:fixed;right:20px;bottom:20px;width:42px;height:42px;border-radius:50%;background:var(--accent);
+  color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.1rem;
+  opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:0 4px 14px rgba(31,111,235,.4)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano · Manager: remover sutil, reordenar cards e pastas de projetos</h1>
+    <p class="lede">Três evoluções na página inicial do manager: um ✕ discreto no canto do card com modal de confirmação, reordenação de cards por arrastar-e-soltar persistida no registry, e "pastas" visuais para agrupar projetos — tudo vivendo em <code>registry.json</code>, sem banco nem build.</p>
+    <p class="meta">docs-html/Active plan/manager-ordenar-pastas-remocao-plan.html · docs-in-html</p>
+  </div>
+</header>
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#s1">1 · Contexto</a>
+    <a href="#s2">2 · Intuição</a>
+    <a href="#s3">3 · Mudanças</a>
+    <a href="#s4">4 · Quiz</a>
+  </div>
+</nav>
+<main class="wrap">
+
+<section id="s1">
+  <h2><span class="num">1</span>Contexto</h2>
+  <p class="lead">Como a página de cards funciona hoje — do registry ao HTML — e onde as três features vão se apoiar.</p>
+
+  <div class="ramp"><b>Rampa para iniciante (pode pular).</b> O manager é um servidor Node (<code>manager.js</code>) que lê uma lista de pastas de docs do arquivo <code>~/.docs-in-html/registry.json</code> e serve cada uma em <code>/&lt;slug&gt;/</code>. A página inicial é um único HTML estático (<code>client/manager.html</code>) com JS puro, sem build. Um card por pasta, renderizado a partir de <code>GET /api/docs</code>.</div>
+
+  <h3>O registry é o estado do manager</h3>
+  <p>Hoje o <code>registry.json</code> tem exatamente uma chave útil, <code>docs</code>: um array plano de caminhos absolutos. A ordem dos cards é, na prática, a ordem desse array — que só muda quando algo é adicionado ou removido. Não existe noção de agrupamento, e o loader é tolerante por design: chaves desconhecidas são preservadas, arquivo ausente vira registry vazio, arquivo corrompido é backupeado e resetado. Essa tolerância é a nossa porta de entrada para estender o formato.</p>
+
+  <h3>O ciclo de vida da página</h3>
+  <div class="flow">
+    <span class="node">GET /api/docs</span><span class="arr">→</span>
+    <span class="node">render() monta os cards</span><span class="arr">→</span>
+    <span class="node">setInterval re-fetch a cada 5s</span><span class="arr">→</span>
+    <span class="node">render() de novo (innerHTML)</span>
+  </div>
+  <p class="cap">O loop de polling — importante: ele <b>reconstrói todo o grid</b> a cada 5 segundos.</p>
+
+  <div class="callout warn"><div class="title">O inimigo oculto: o polling de 5 segundos</div>
+    Como <code>render()</code> limpa e refaz o <code>innerHTML</code> do grid a cada refresh, qualquer estado que more só no DOM (um drag em andamento, um modal aberto, um card arrastado visualmente) é destruído no meio da interação. Hoje isso é invisível porque a página quase não tem estado. Este plano adiciona estado de interação — então o polling precisa aprender a se comportar: <b>pausar enquanto o usuário está arrastando ou com um modal aberto</b>, e reconciliar (não recarregar do zero) quando os dados mudam por fora.</p>
+  </div>
+
+  <h3>A remoção hoje</h3>
+  <p>O card tem um botão <code>✕ Remover</code> vermelho na fileira de ações, que chama o <code>confirm()</code> nativo do navegador — funcional, mas feio, e o vermelho fixo chama mais atenção do que a ação merece: remover uma docs do manager é uma operação reversível e rara, não uma destruição.</p>
+
+  <h3>Endpoints existentes</h3>
+  <table>
+    <tr><th>Endpoint</th><th>Papel</th><th>Muda neste plano?</th></tr>
+    <tr><td><code>GET /api/docs</code></td><td>Lista os cards (slug, dir, título, favicon)</td><td class="sim">Sim — passa a incluir grupo e ordem</td></tr>
+    <tr><td><code>POST /api/add</code> / <code>/api/remove</code></td><td>Registro de pastas</td><td class="talvez">Só indireto (remoção limpa o layout)</td></tr>
+    <tr><td><code>POST /api/reveal</code> / <code>/api/open-warp</code></td><td>Abrir pastas</td><td class="nao">Não</td></tr>
+    <tr><td><code>POST /api/scan</code></td><td>Descobrir pastas com <code>_config.json</code></td><td class="nao">Não</td></tr>
+  </table>
+</section>
+
+<section id="s2">
+  <h2><span class="num">2</span>Intuição</h2>
+  <p class="lead">Uma ideia unifica as três features: <b>a lista plana de pastas vira uma lista de "cartões em um mural"</b> — com posição própria e com prateleiras (pastas) onde podem ser guardados.</p>
+
+  <h3>Layout, não banco</h3>
+  <p>Pense no registry como um quadro de cortiço: hoje cada pasta ocupa o próximo buraco livre, na ordem em que chegou. A mudança dá a cada card duas novas liberdades — <b>posição</b> (onde no mural) e <b>prateleira</b> (em qual pasta visual) — e ambas são <i>metadados de apresentação</i>, não de registro. Uma docs continua registrada ou não, independentemente de estar na "prateleira Trabalho" ou solta no topo. Por isso o novo estado mora numa chave separada (<code>layout</code>) dentro do mesmo arquivo: se ela sumir ou for inválida, os cards simplesmente voltam ao comportamento atual, sem nada quebrado.</p>
+
+  <div class="flow">
+    <span class="node cut">docs: [a, b, c, d, e, f]</span>
+    <span class="arr">→</span>
+    <span class="node">docs: [a, b, c, d, e, f]</span>
+    <span class="node dev">layout: { ordem + grupos }</span>
+  </div>
+  <p class="cap">O array <code>docs</code> continua sendo a fonte da verdade do registro; o <code>layout</code> só diz como exibi-lo.</p>
+
+  <h3>Dados de exemplo</h3>
+  <p>Com seis docs e duas pastas criadas ("Trabalho" e "Estudos"), o registry fica assim — note que <code>e</code> e <code>f</code> não estão em nenhuma pasta e aparecem na área "Sem pasta":</p>
+<pre><code>{
+  "docs": ["C:\\…\\projeto-a\\docs", "C:\\…\\projeto-b\\docs", …],
+  "layout": {
+    "order": ["g1", "a", "b", "g2", "c", "d", "e", "f"],
+    "groups": { "g1": { "name": "Trabalho" }, "g2": { "name": "Estudos" } },
+    "assign": { "a": "g1", "b": "g1", "c": "g2", "d": "g2" }
+  }
+}</code></pre>
+  <p>A chave <code>order</code> intercala ids de grupos e chaves de docs (o caminho absoluto serve de id estável — pastas não mudam de lugar sem serem re-registradas). É uma "playlist" única: reordenar cards e pastas é editar a mesma lista; mover um card para dentro de uma pasta é uma atribuição em <code>assign</code>.</p>
+
+  <h3>O ✕ e o modal: coerência com a raridade da ação</h3>
+  <p>Remover é raro e reversível (é só adicionar de novo). A UI deve refletir isso: o ✕ some no cotovelo do card — visível apenas no hover, cinza, sem moldura — e o vermelho só aparece no momento da decisão, dentro do modal. O <code>confirm()</code> nativo sai de cena por não ser estilizável e por bloquear a thread.</p>
+
+  <div style="display:flex;gap:24px;flex-wrap:wrap;margin:14px 0">
+    <div>
+      <div class="demo-card" id="demoCard">
+        <button class="xbtn" title="Remover do manager" id="demoX">✕</button>
+        <div class="head"><span class="fav">📚</span><span class="title">Docs-html DOCS</span></div>
+        <div class="dir">C:\Users\kevin\Desktop\docs-in-html\docs</div>
+        <div class="acts">
+          <span class="primary">⌨ Abrir projeto no Warp</span>
+          <button class="ghost" title="Revelar pasta da docs">📂</button>
+        </div>
+      </div>
+      <p class="cap">Passe o mouse e clique no ✕ — é o card real do plano.</p>
+    </div>
+    <div class="modal-bg" id="demoModalBg">
+      <div class="modal">
+        <h4>Remover "Docs-html DOCS"?</h4>
+        <p>Só tira a docs do manager — nenhum arquivo é apagado, e você pode adicioná-la de novo a qualquer momento.</p>
+        <div class="row">
+          <button id="demoCancel">Cancelar</button>
+          <button class="danger" id="demoConfirm">Remover</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="s3">
+  <h2><span class="num">3</span>Mudanças</h2>
+  <p class="lead">Quatro arquivos, na ordem em que as peças se apoiam: primeiro o modelo de dados, depois a API, depois a página.</p>
+
+  <h3>registry.js — o modelo de layout</h3>
+  <p>Um novo conjunto de funções de leitura/escrita da chave <code>layout</code> (carregar, salvar, criar/renomear/apagar grupo, mover doc para grupo, reordenar). A disciplina central é a <b>higiene</b>: toda escrita revalida o layout contra os docs realmente registrados — caminhos que não estão mais em <code>docs</code> são podados de <code>order</code> e <code>assign</code>; ids de grupo referenciados sem definição geram o grupo de novo ou são limpos. Docs novas que ainda não constam no layout entram no fim, fora de qualquer pasta. Apagar um grupo não remove os docs: eles voltam para "Sem pasta".</p>
+
+  <h3>manager.js — endpoints e enriquecimento da lista</h3>
+  <p>Dois pontos de mudança. Primeiro, <code>GET /api/docs</code> passa a devolver, junto de cada card, o id/nome do grupo a que pertence, e a ordem global — a página recebe o mural pronto. Segundo, um endpoint único <code>POST /api/layout</code> recebe o layout inteiro (order + groups + assign) e o salva — em vez de meia dúzia de endpoints granulares. Isso é seguro porque o servidor valida: só aceita caminhos registrados e descarta o resto, e responde com o layout saneado de volta, que a página adota como nova verdade. A remoção existente ganha um detalhe: ao tirar um doc do registry, o <code>layout</code> é limpo junto (a função de higiene cuida disso de graça).</p>
+
+  <h3>client/manager.html — o mural de verdade</h3>
+  <p>É onde quase toda a experiência mora, em quatro blocos:</p>
+  <ul>
+    <li><b>✕ e modal:</b> o botão vira um ícone fantasma absoluto no canto superior direito (opacidade 0 → 1 no hover do card); o clique abre um modal em HTML/CSS com título, a mesma mensagem tranquilizadora do <code>confirm()</code> atual ("nenhum arquivo é tocado") e os botões Cancelar / Remover. O modal de confirmação é reaproveitado como <i>componente</i> para as ações destrutivas de pastas (renomear não precisa; apagar grupo sim).</li>
+    <li><b>Drag & drop:</b> cada card e cada cabeçalho de pasta é arrastável (drag & drop nativo do HTML5, sem bibliotecas). Os alvos são: qualquer posição entre cards (indicador de inserção), e o corpo de qualquer pasta. Soltar dispara o POST do layout e atualiza otimisticamente a tela. Alvos válidos ganham destaque visual; arrastar um card para a área "Sem pasta" tira ele do grupo.</li>
+    <li><b>Pastas:</b> um botão "＋ Nova pasta" cria o grupo (nome editável inline na hora, e depois por duplo-clique no título). Cada pasta renderiza como uma seção com cabeçalho, contador de docs e corpo que aceita drops; pode ser recolhida (estado aberto/fechado também persistido no layout). Pastas vazias são permitidas e podem ser apagadas via seu próprio ✕ (com o mesmo modal).</li>
+    <li><b>Reconciliação com o polling:</b> o refresh de 5 segundos não toca no DOM enquanto há um drag ativo ou modal aberto; ao retomar, compara os dados novos com os atuais e só re-renderiza se algo realmente mudou por fora — suas pastas e ordem não "piscam" a cada tick.</li>
+  </ul>
+
+  <div class="callout tip"><div class="title">Sem biblioteca de drag</div>
+  O drag & drop nativo (<code>draggable</code>, <code>dragover</code>, <code>drop</code>) cobre tudo o que o mural precisa e mantém a página com zero dependências — o espírito do projeto (HTML+JS puro, sem build). A única fineza é <code>e.preventDefault()</code> em <code>dragover</code> para o drop ser permitido, e um marcador de posição para indicar onde o card cairia.</p>
+  </div>
+
+  <h3>Compatibilidade e migração</h3>
+  <p>Não há migração: um registry antigo simplesmente não tem <code>layout</code>, e o primeiro carregamento o trata como "tudo solto, na ordem do array <code>docs</code>" — exatamente o comportamento de hoje. O primeiro drag do usuário escreve o layout pela primeira vez. Versões antigas do pacote lendo o mesmo arquivo ignoram a chave (o loader já preserva desconhecidas).</p>
+
+  <table>
+    <tr><th>Cenário</th><th>Registry antigo + UI nova</th><th>Registry novo + UI antiga</th></tr>
+    <tr><td>Exibição</td><td class="sim">Funciona — tudo em "Sem pasta", ordem do array</td><td class="sim">Funciona — chave estranha é preservada e ignorada</td></tr>
+    <tr><td>Adicionar docs</td><td class="sim">Funciona</td><td class="talvez">Layout não é atualizado, mas a higiene resolve no próximo load</td></tr>
+    <tr><td>Remover docs</td><td class="sim">Funciona</td><td class="sim">Higiene poda o caminho do layout depois</td></tr>
+  </table>
+</section>
+
+<section id="s4">
+  <h2><span class="num">4</span>Quiz</h2>
+  <p class="lead">Cinco perguntas para checar se o design ficou claro.</p>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. Por que a ordem e os grupos moram numa chave <code>layout</code> separada, em vez de o array <code>docs</code> virar uma estrutura aninhada com pastas?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Porque JSON não suporta arrays aninhados de forma estável.</button>
+      <button class="opt" data-k="b">Porque o registro (quais docs existem) e a apresentação (como são exibidas) são preocupações diferentes — um layout inválido ou ausente degrada para o comportamento atual sem quebrar nada.</button>
+      <button class="opt" data-k="c">Porque o endpoint /api/add só aceita arrays planos.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> A separação torna o layout puramente cosmético: qualquer problema nele é podado pela higiene e o manager continua servindo todas as docs normalmente. Uma estrutura aninhada misturaria as duas responsabilidades — e um erro de agrupamento poderia "perder" uma docs da lista.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. Qual o papel da função de "higiene" na escrita do layout?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Impedir que dois usuários editem o registry ao mesmo tempo.</button>
+      <button class="opt" data-k="b">Fazer backup do registry antes de cada escrita.</button>
+      <button class="opt" data-k="c">Revalidar o layout contra os docs realmente registrados, podando caminhos que saíram e grupos órfãos.</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> Como o registry muda por várias vias (API, CLI, edição manual, polling), o layout pode referenciar coisas que já não existem. A higiene garante que ele sempre volte consistente — é o que torna o formato tolerante como o resto do arquivo.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. Por que um único <code>POST /api/layout</code> recebendo o mural inteiro, em vez de endpoints granulares (mover, renomear, reordenar…)?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Porque o gesto do usuário (um drop) pode envolver ordem E grupo ao mesmo tempo — um payload único atômico evita estados intermediários, e a validação server-side devolve o layout saneado como fonte de verdade.</button>
+      <button class="opt" data-k="b">Porque menos endpoints deixam o servidor mais rápido em produção.</button>
+      <button class="opt" data-k="c">Porque o método POST não permite corpos parciais.</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> O drop é uma operação composta. Grava-la de uma vez simplifica o cliente (não precisa orquestrar chamadas) e o servidor (um ponto único de validação), e a resposta saneada elimina divergência entre o que a UI acha e o que ficou salvo.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">4. O que precisa acontecer com o polling de 5 segundos quando este plano for implementado?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">Nada — render() já é idempotente.</button>
+      <button class="opt" data-k="b">Ele deve ser removido, pois com layout não faz sentido.</button>
+      <button class="opt" data-k="c">Ele deve pausar durante drags/modais e, ao retomar, só re-renderizar quando os dados mudarem por fora — senão destrói interações em andamento e faz a tela piscar.</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O polling existe para pegar mudanças externas (CLI, outro terminal) e continua útil. O problema novo é que render() por innerHTML apaga estado de interação; a solução é torná-lo educado: espera e reconcilia, em vez de refazer às cegas.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">5. O usuário arrasta um card para DENTRO de uma pasta chamada "Trabalho". O que muda no registry?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">O caminho do doc sai de docs e entra numa chave groups.</button>
+      <button class="opt" data-k="b">docs continua igual; assign ganha doc → id do grupo, e order pode ser reescrito para refletir a nova posição.</button>
+      <button class="opt" data-k="c">Nada é gravado até o manager reiniciar.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> O registro nunca muda com um gesto de organização. O que muda é a apresentação: a atribuição em <code>layout.assign</code> e, se a posição também mudou, a playlist <code>layout.order</code>. Gravação é imediata via POST /api/layout.</div>
+  </div>
+</section>
+
+</main>
+<footer>Plano · Manager: remover sutil, reordenar cards e pastas de projetos · docs-in-html</footer>
+<a class="top" href="#" title="Voltar ao topo">↑</a>
+
+<script>
+document.querySelectorAll(".qcard").forEach(c=>{
+  const ans=c.dataset.answer,fb=c.querySelector(".q-feedback");
+  c.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+    c.querySelectorAll(".opt").forEach(o=>o.classList.remove("right","wrong"));
+    if(b.dataset.k===ans){b.classList.add("right");}
+    else{
+      b.classList.add("wrong");
+      const cor=c.querySelector('.opt[data-k="'+ans+'"]');cor&&cor.classList.add("right");
+    }
+    fb.classList.add("show");
+  }));
+});
+// modal demo
+var bg=document.getElementById("demoModalBg");
+document.getElementById("demoX").addEventListener("click",function(e){e.stopPropagation();bg.classList.add("open")});
+document.getElementById("demoCancel").addEventListener("click",function(){bg.classList.remove("open")});
+document.getElementById("demoConfirm").addEventListener("click",function(){bg.classList.remove("open")});
+bg.addEventListener("click",function(e){if(e.target===bg)bg.classList.remove("open")});
+// toc + back-to-top
+var links=[].slice.call(document.querySelectorAll(".toc a"));
+var secs=links.map(function(a){return document.querySelector(a.getAttribute("href"))});
+window.addEventListener("scroll",function(){
+  var y=window.scrollY+90,i=secs.length-1;
+  while(i>0&&secs[i].offsetTop>y)i--;
+  links.forEach(function(a,j){a.classList.toggle("active",j===i)});
+  document.querySelector(".top").classList.toggle("show",window.scrollY>600);
+},{passive:true});
+</script>
+</body>
+</html>

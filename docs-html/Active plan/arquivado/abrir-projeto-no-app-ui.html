@@ -1,0 +1,264 @@
+<!doctype html>
+<!-- Protótipo — variações de UI para o card do manager: abrir a pasta DO PROJETO
+     (pai da docs) no app (Warp) em vez da pasta da docs. Mockups interativos:
+     escolha a variação nas abas e clique nos botões dos cards. -->
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo · Abrir projeto no app — docs-in-html</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E🎨%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1; --red:#cf222e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.6}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));
+  border-bottom:1px solid var(--border);padding:34px 26px 20px}
+.hero h1{margin:0 0 4px;font-size:1.6rem;letter-spacing:-.02em}
+.hero p{margin:0;color:var(--soft);max-width:72ch}
+main{max-width:1020px;margin:0 auto;padding:22px 24px 60px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.tabs button{font:inherit;font-size:.92rem;border:1px solid var(--border);background:#fff;
+  border-radius:99px;padding:6px 14px;cursor:pointer;color:var(--soft)}
+.tabs button:hover{background:var(--panel)}
+.tabs button.on{background:var(--accent-soft);color:var(--accent);border-color:var(--accent);font-weight:600}
+.variant{display:none}
+.variant.on{display:block}
+.verdict{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;border:1px solid var(--border);
+  border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;padding:12px 16px;margin:0 0 16px}
+.verdict .t{font-weight:700;margin-bottom:2px}
+.verdict .p{font-size:.92rem;margin:0}
+.verdict .pro{color:var(--green);font-weight:600}
+.verdict .con{color:var(--amber);font-weight:600}
+
+/* ── mockup da página do manager (comum às variantes) ── */
+.mock{border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(0,0,0,.06)}
+.mhero{padding:16px 22px 10px;border-bottom:1px solid var(--border);background:#fff}
+.mhero .h{font-weight:650;font-size:1.05rem}
+.mhero .s{color:var(--soft);font-size:.82rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:18px 22px}
+.card{border:1px solid var(--border);border-radius:10px;padding:14px;background:#fff;cursor:pointer}
+.card:hover{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.card .head{display:flex;align-items:center;gap:8px}
+.card .fav{font-size:1.2rem}
+.card .title{font-weight:650;color:var(--accent);text-decoration:none}
+.card .dir{font-family:ui-monospace,Consolas,monospace;font-size:.72rem;color:var(--soft);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:4px 0 10px}
+.card .acts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.card .acts button{font:inherit;font-size:.78rem;border:1px solid var(--border);background:#fff;
+  border-radius:99px;padding:3px 12px;cursor:pointer;color:var(--text)}
+.card .acts button:hover{border-color:var(--accent);color:var(--accent)}
+.card .acts button.primary{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.card .acts button.primary:hover{filter:brightness(1.07)}
+.card .acts button.danger{color:var(--red)}
+.card .acts .caret{border-left:1px solid var(--border);border-radius:0 99px 99px 0;margin-left:-6px;padding:3px 8px}
+.card .pathnote{font-size:.72rem;color:var(--soft);margin:0 0 10px;display:flex;align-items:center;gap:6px}
+.card .pathnote .chip{font-family:ui-monospace,Consolas,monospace;background:var(--panel2);
+  border-radius:4px;padding:1px 5px}
+.card .pathnote .arrow{color:var(--accent);font-weight:700}
+.split{display:inline-flex}
+.split button{border-radius:99px}
+.split .main{border-radius:99px 0 0 99px;border-right:none}
+.menu{position:relative;display:inline-block}
+.menu .pop{display:none;position:absolute;bottom:calc(100% + 6px);left:0;background:#fff;border:1px solid var(--border);
+  border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:6px;min-width:210px;z-index:20}
+.menu.open .pop{display:block}
+.pop button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;font:inherit;font-size:.8rem;
+  border:none;background:none;padding:7px 10px;border-radius:6px;cursor:pointer;color:var(--text)}
+.pop button:hover{background:var(--panel2)}
+.pop .sep{height:1px;background:var(--border);margin:4px 2px}
+.pop small{display:block;color:var(--soft);font-size:.68rem;margin-left:22px}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--text);color:#fff;
+  padding:8px 16px;border-radius:8px;font-size:.85rem;display:none;z-index:50}
+</style>
+</head>
+<body>
+<header class="hero">
+  <h1>🎨 Protótipo · "Abrir projeto" no card do manager</h1>
+  <p>Hoje o botão <b>⌨ Warp</b> abre a <b>pasta da docs</b> (ex.: <code>projeto-x\docs</code>). O objetivo: abrir a <b>pasta do projeto</b> (o pai da docs, ex.: <code>projeto-x</code>) no Warp, deixando claro o nome da pasta da docs. Quatro variações — clique nos botões dos cards para sentir o fluxo. Prós e contras no fim de cada uma.</p>
+</header>
+<main>
+  <div class="tabs" id="tabs">
+    <button data-v="a" class="on">A · Dois botões lado a lado</button>
+    <button data-v="b">B · Botão único (projeto) + nota da docs</button>
+    <button data-v="c">C · Split button com menu</button>
+    <button data-v="d">D · Preferência global (radio)</button>
+  </div>
+
+  <!-- ═══ VARIANTE A ═══ -->
+  <div class="variant on" id="v-a">
+    <div class="verdict"><div><div class="t">A — Dois botões explícitos no card</div>
+      <p class="p"><span class="pro">+ máxima clareza: cada botão diz exatamente o que abre; zero ambiguidade</span> · <span class="con">− mais um botão em TODOS os cards; o caso raro (abrir a docs em si) ocupa tanto espaço quanto o comum</span></p></div></div>
+    <div class="mock">
+      <div class="mhero"><div class="h">🛰️ docs-in-html manager</div><div class="s">4 docs · clique para abrir</div></div>
+      <div class="grid">
+        <div class="card" onclick="openDocs('Projeto X')">
+          <div class="head"><span class="fav">📚</span><a class="title">Projeto X</a></div>
+          <div class="dir">C:\Users\kevin\Desktop\projeto-x\docs</div>
+          <div class="acts">
+            <button onclick="event.stopPropagation();toast('→ abriria C:\\Users\\kevin\\Desktop\\projeto-x no Warp')">⌨ Abrir projeto</button>
+            <button onclick="event.stopPropagation();toast('→ abriria ...\\projeto-x\\docs no Warp')">⌨ Abrir docs</button>
+            <button onclick="event.stopPropagation();toast('→ gerenciador de arquivos')"><span title="Revelar">📂</span></button>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+        <div class="card" onclick="openDocs('Voice AI Avatar')">
+          <div class="head"><span class="fav">🎙️</span><a class="title">Voice AI Avatar</a></div>
+          <div class="dir">D:\code\voice-ai-avatar\docs</div>
+          <div class="acts">
+            <button onclick="event.stopPropagation();toast('→ abriria D:\\code\\voice-ai-avatar no Warp')">⌨ Abrir projeto</button>
+            <button onclick="event.stopPropagation();toast('→ abriria D:\\code\\voice-ai-avatar\\docs no Warp')">⌨ Abrir docs</button>
+            <button onclick="event.stopPropagation();toast('→ gerenciador de arquivos')"><span title="Revelar">📂</span></button>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VARIANTE B ═══ -->
+  <div class="variant" id="v-b">
+    <div class="verdict"><div><div class="t">B — Um botão só: projeto no Warp + nota indicando a pasta da docs</div>
+      <p class="p"><span class="pro">+ casos comuns em 1 clique; card limpo; a nota "docs em …\docs" resolve a ambiguidade de qual pasta é a docs; "Revelar" continua disponível para a pasta da docs via gerenciador</span> · <span class="con">− abrir a pasta da docs NO WARP vira impossível (só no gerenciador de arquivos) — caso raro, mas some</span></p></div></div>
+    <div class="mock">
+      <div class="mhero"><div class="h">🛰️ docs-in-html manager</div><div class="s">4 docs · clique para abrir</div></div>
+      <div class="grid">
+        <div class="card" onclick="openDocs('Projeto X')">
+          <div class="head"><span class="fav">📚</span><a class="title">Projeto X</a></div>
+          <div class="dir">C:\Users\kevin\Desktop\projeto-x\docs</div>
+          <p class="pathnote">📄 docs servida de <span class="chip">projeto-x\docs</span></p>
+          <div class="acts">
+            <button class="primary" onclick="event.stopPropagation();toast('→ abriria C:\\Users\\kevin\\Desktop\\projeto-x no Warp')">⌨ Abrir projeto no Warp</button>
+            <button onclick="event.stopPropagation();toast('→ gerenciador de arquivos em ...\\projeto-x\\docs')" title="Revelar pasta da docs">📂</button>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+        <div class="card" onclick="openDocs('Voice AI Avatar')">
+          <div class="head"><span class="fav">🎙️</span><a class="title">Voice AI Avatar</a></div>
+          <div class="dir">D:\code\voice-ai-avatar\docs</div>
+          <p class="pathnote">📄 docs servida de <span class="chip">voice-ai-avatar\docs</span></p>
+          <div class="acts">
+            <button class="primary" onclick="event.stopPropagation();toast('→ abriria D:\\code\\voice-ai-avatar no Warp')">⌨ Abrir projeto no Warp</button>
+            <button onclick="event.stopPropagation();toast('→ gerenciador de arquivos em D:\\code\\voice-ai-avatar\\docs')" title="Revelar pasta da docs">📂</button>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ VARIANTE C ═══ -->
+  <div class="variant" id="v-c">
+    <div class="verdict"><div><div class="t">C — Split button: ação principal (projeto) + caret com secundárias</div>
+      <p class="p"><span class="pro">+ 1 clique para o comum, sem esconder as opções raras (docs no Warp, gerenciador); visual compacto e "profissional"</span> · <span class="con">− padrão menos óbvio para alguns usuários; menu pequeno demais para alvo de clique confortável em telas touch</span></p></div></div>
+    <div class="mock">
+      <div class="mhero"><div class="h">🛰️ docs-in-html manager</div><div class="s">4 docs · clique para abrir</div></div>
+      <div class="grid">
+        <div class="card" onclick="openDocs('Projeto X')">
+          <div class="head"><span class="fav">📚</span><a class="title">Projeto X</a></div>
+          <div class="dir">C:\Users\kevin\Desktop\projeto-x\docs</div>
+          <div class="acts">
+            <span class="split">
+              <button class="primary main" onclick="event.stopPropagation();toast('→ abriria C:\\Users\\kevin\\Desktop\\projeto-x no Warp')">⌨ Abrir projeto</button>
+              <button class="primary caret" onclick="event.stopPropagation();toggleMenu(this)">▾</button>
+            </span>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+        <div class="card" onclick="openDocs('Voice AI Avatar')">
+          <div class="head"><span class="fav">🎙️</span><a class="title">Voice AI Avatar</a></div>
+          <div class="dir">D:\code\voice-ai-avatar\docs</div>
+          <div class="acts">
+            <span class="split">
+              <button class="primary main" onclick="event.stopPropagation();toast('→ abriria D:\\code\\voice-ai-avatar no Warp')">⌨ Abrir projeto</button>
+              <button class="primary caret" onclick="event.stopPropagation();toggleMenu(this)">▾</button>
+            </span>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="color:var(--soft);font-size:.85rem">↑ clique no <b>▾</b> para ver o menu.</p>
+  </div>
+
+  <!-- ═══ VARIANTE D ═══ -->
+  <div class="variant" id="v-d">
+    <div class="verdict"><div><div class="t">D — Botão único cujo alvo depende de uma preferência global</div>
+      <p class="p"><span class="pro">+ card idêntico ao atual, zero ruído visual; você configura uma vez ("abrir: projeto") e todos os cards obedecem</span> · <span class="con">− alvo do botão fica oculto (sabe-se só pelo texto/rótulo); trocar alvo exige ir às configurações; estado extra para persistir</span></p></div></div>
+    <div class="mock">
+      <div class="mhero"><div class="h">🛰️ docs-in-html manager</div>
+        <div class="s" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:6px">
+          <span>⌨ Warp abre:</span>
+          <label><input type="radio" name="tgt" checked onchange="setTarget('projeto-x')"> a pasta do <b>projeto</b></label>
+          <label><input type="radio" name="tgt" onchange="setTarget('docs')"> a pasta da <b>docs</b></label>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="card" onclick="openDocs('Projeto X')">
+          <div class="head"><span class="fav">📚</span><a class="title">Projeto X</a></div>
+          <div class="dir">C:\Users\kevin\Desktop\projeto-x\docs</div>
+          <div class="acts">
+            <button onclick="event.stopPropagation();warp()">⌨ Abrir projeto no Warp</button>
+            <button onclick="event.stopPropagation();toast('→ gerenciador de arquivos')"><span title="Revelar">📂</span></button>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+        <div class="card" onclick="openDocs('Voice AI Avatar')">
+          <div class="head"><span class="fav">🎙️</span><a class="title">Voice AI Avatar</a></div>
+          <div class="dir">D:\code\voice-ai-avatar\docs</div>
+          <div class="acts">
+            <button onclick="event.stopPropagation();warp()">⌨ Abrir projeto no Warp</button>
+            <button onclick="event.stopPropagation();toast('→ gerenciador de arquivos')"><span title="Revelar">📂</span></button>
+            <button class="danger" onclick="event.stopPropagation();toast('→ removeria do manager')">✕</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="color:var(--soft);font-size:.9rem;margin-top:22px">
+    <b>Nota de implementação:</b> o manager já resolve o diretório da docs (<code>d.dir</code>); a pasta do projeto é só <code>path.dirname(d.dir)</code>.
+    A escolha deveria considerar o caso da docs estar na <i>raiz</i> de um drive (sem pai útil) — nesses casos, cair de volta para <code>d.dir</code>.
+    Variantes combináveis: ex. <b>B + C</b> (botão primário projeto, caret para casos raros, nota da docs).
+  </p>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+var tabs=document.getElementById("tabs");
+tabs.addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b)return;
+  tabs.querySelectorAll("button").forEach(function(x){x.classList.toggle("on",x===b)});
+  document.querySelectorAll(".variant").forEach(function(v){v.classList.toggle("on",v.id==="v-"+b.dataset.v)});
+});
+function toggleMenu(btn){
+  var m=btn.closest(".split");
+  var pop=m.querySelector(".pop")||makePop(m);
+  var was=pop.parentNode.classList.contains("open");
+  document.querySelectorAll(".menu.open").forEach(function(x){x.classList.remove("open")});
+  if(!was)m.classList.add("open");
+}
+function makePop(m){
+  m.classList.add("menu");
+  var pop=document.createElement("span");pop.className="pop";
+  pop.innerHTML=
+    '<button onclick="event.stopPropagation();toast(\'→ abriria ...\\\\projeto-x\\\\docs no Warp\')">⌨ Abrir pasta da docs <small>projeto-x\\docs</small></button>'+
+    '<div class="sep"></div>'+
+    '<button onclick="event.stopPropagation();toast(\'→ gerenciador em ...\\\\projeto-x\')">📂 Revelar projeto</button>'+
+    '<button onclick="event.stopPropagation();toast(\'→ gerenciador em ...\\\\projeto-x\\\\docs\')">📂 Revelar docs</button>';
+  m.appendChild(pop);return pop;
+}
+document.addEventListener("click",function(){document.querySelectorAll(".menu.open").forEach(function(x){x.classList.remove("open")})});
+var target="projeto-x";
+function setTarget(t){target=t;toast("preferência: Warp abrirá a pasta do "+(t==="docs"?"docs":"projeto"))}
+function warp(){toast("→ abriria "+(target==="docs"?"...\\projeto-x\\docs":"C:\\Users\\kevin\\Desktop\\projeto-x")+" no Warp")}
+function openDocs(t){toast("→ abriria a docs "+t)}
+var tm;function toast(m){var t=document.getElementById("toast");t.textContent=m;t.style.display="block";clearTimeout(tm);tm=setTimeout(function(){t.style.display="none"},2200)}
+</script>
+</body>
+</html>

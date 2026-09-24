@@ -3,8 +3,7 @@
   "favicon": "📚",
   "sidebarAnim": "guide",
   "icons": {
-    "arquitetura": "layers",
-    "features-dificeis": "wrench"
+    "arquitetura": "layers"
   },
   "order": {
     "New folder": [
@@ -18,6 +17,10 @@
       "export-command-plan.html",
       "sidebar-visual-plan.html",
       "New folder2"
+    ],
+    "arquitetura": [
+      "features.html",
+      "arquitetura-do-pacote.html"
     ]
   }
 }
