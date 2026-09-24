@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano: tabela de endpoints no root module</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.65;color:var(--text);background:var(--bg)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:.85em;line-height:1.5}
+pre code{background:none;border:none;padding:0}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;gap:8px;flex-wrap:wrap}
+.toc a{color:var(--soft);text-decoration:none;font-size:.88rem;padding:4px 12px;border-radius:999px;border:1px solid var(--border)}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{border-bottom:1px solid var(--border);padding:34px 0}
+section:last-of-type{border-bottom:none}
+h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 14px}
+h2 .num{color:var(--accent);font-weight:700;margin-right:10px}
+.lead{color:var(--soft);margin-top:-6px}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:6px;background:var(--panel);padding:12px 16px;margin:16px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+.ramp{border:2px dashed var(--border);border-radius:10px;padding:16px 20px;margin:18px 0;background:var(--panel)}
+.ramp .title{font-weight:700;margin-bottom:6px}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.93em}
+th{background:var(--panel2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+.sim{color:var(--green);font-weight:700}
+.nao{color:var(--red);font-weight:700}
+.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.node{background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:5px 13px;font-size:.88rem}
+.node.dev{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.node.cut{background:var(--red-soft);border-color:var(--red);color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.figcap{text-align:center;color:var(--soft);font-size:.85rem;margin:4px 0 18px}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:12px;margin:16px 0;display:flex;justify-content:center}
+footer{max-width:920px;margin:0 auto;padding:26px 24px;text-align:center;color:var(--soft);font-size:.88rem}
+.top{position:fixed;bottom:22px;right:22px;background:var(--accent);color:#fff;border-radius:999px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.top.show{opacity:1;pointer-events:auto}
+.qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:14px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 12px;font-size:.95rem;cursor:pointer;font-family:inherit}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+.q-feedback{display:none;background:var(--panel);border-radius:6px;padding:10px 12px;margin-top:10px;font-size:.93rem}
+.q-feedback.show{display:block}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano: tabela de endpoints no root module</h1>
+    <p class="lede">Extrair as guardas de segurança e os oito endpoints POST de dentro do closure gigante de <code>handle()</code> em <code>roots.js</code>, transformando o despacho numa tabela método→função testável sem servidor.</p>
+    <p class="meta">Candidato 1 da revisão de arquitetura · docs-in-html · roots.js (293 linhas) + manager.js + novo teste</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#intuicao">2 · Intuição</a>
+    <a href="#mudancas">3 · Mudanças</a>
+    <a href="#quiz">4 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+<h2><span class="num">1</span>Contexto</h2>
+
+<div class="ramp">
+<p class="title">Rampa para iniciante (pode pular)</p>
+<p>O docs-in-html é um servidor de desenvolvimento sem build: você aponta para uma pasta de HTMLs e ele serve os arquivos, gera uma barra lateral automática e recarrega a página quando algo muda. O coração disso é o módulo <code>roots.js</code>: a função <code>createRoot(root, opts)</code> devolve um "contexto" por pasta — <code>{ root, base, handle, reload }</code> — onde <code>handle(req, res)</code> é a função que o Node chama a cada requisição HTTP, igual a um listener de servidor. Dois consumidores montam sobre essa mesma interface: o <code>serve.js</code> serve uma única pasta em <code>/</code>, e o <code>manager.js</code> serve N pastas, cada uma em <code>/&lt;slug&gt;/</code>, reescrevendo a URL antes de delegar ao mesmo <code>handle</code>. Além de servir arquivos, <code>handle</code> responde a pequenos endpoints de gerenciamento (criar pasta, renomear, salvar, deletar…) usados pela barra lateral do navegador.</p>
+</div>
+
+<p>No código atual, <code>handle</code> é um único closure de ~170 linhas que acumula responsabilidades bem distintas. Lendo <code>roots.js</code> de cima a baixo, encontramos nesta ordem:</p>
+
+<ul>
+<li><strong>Guardas de segurança</strong> — <code>readJsonBody</code> (limite de tamanho no corpo JSON), <code>safeRelPath</code> (rejeita <code>..</code>, caminhos absolutos, nomes com <code>&lt;&gt;:"|?*</code> ou que começam com <code>.</code>/<code>_</code>) e <code>resolveIn</code> (resolve dentro do root e confere com <code>abs.startsWith(root + path.sep)</code>). Elas são declaradas <em>dentro</em> de <code>handle</code> — privadas ao closure, invisíveis ao resto do módulo.</li>
+<li><strong>Oito handlers POST inline</strong> — <code>/__delete__</code>, <code>/__rename__</code>, <code>/__mkdir__</code>, <code>/__save__</code>, <code>/__reveal__</code>, <code>/__order__</code>, <code>/__title__</code>, mais o GET <code>/__manifest__</code>. Cada um é um bloco <code>if (req.method === "POST" && raw === "/__x__")</code> aninhando callbacks de fs.</li>
+<li><strong>Contabilidade de config</strong> — <code>shiftIcons</code> e <code>pruneIcons</code> mantêm as chaves de <code>config.icons</code> em sincronia quando arquivos são renomeados ou apagados.</li>
+<li><strong>Serviço estático</strong> — <code>serveShell</code> (index.html do usuário ou shell embutido, com <code>&lt;base&gt;</code> e injeção de scripts), <code>serveFile</code> + tabela <code>MIME</code>, e o endpoint <code>/__docs__</code> que serve os clients com seu próprio prefix-check.</li>
+<li><strong>Lógica de deep-link</strong> — se a requisição de um HTML vem com <code>Sec-Fetch-Dest: document</code> (navegação de topo, não iframe), embrulha no shell.</li>
+</ul>
+
+<div class="callout danger">
+<div class="title">O problema central</div>
+<p>As guardas de segurança são críticas e, ao mesmo tempo, intrinsecamente intestáveis: por viverem dentro do closure de <code>handle</code>, a única forma de exercitá-las é com um servidor HTTP real, uma requisição real e um sistema de arquivos real. Um <code>resolveIn("../../etc/passwd")</code> nunca pode ser testado diretamente — só indiretamente, através de uma resposta 400 vinda da rede.</p>
+</div>
+
+<p>Há ainda uma duplicação: <code>readJsonBody</code> aparece praticamente idêntica em <code>roots.js</code> (dentro de <code>handle</code>, cap padrão 4096) e em <code>manager.js</code> por volta da linha 108 (cap padrão 1 MB), com os mesmos comentários sobre abort de cliente. Dois corpos, um comportamento — clássico convite a drift.</p>
+
+<p>Os dois call sites concretos:</p>
+<ul>
+<li><strong><code>serve.js</code></strong> (modo single): <code>createRoot(ROOT, { base: "" })</code> e <code>http.createServer(ctx.handle)</code>.</li>
+<li><strong><code>manager.js</code></strong> (multi-root): <code>makeRoot</code> chama <code>createRoot(dir, { base: "/" + slug, onReload: ... })</code>; o servidor do manager casa o primeiro segmento da URL com o slug, reescreve <code>req.url</code> e delega a <code>r.ctx.handle</code>.</li>
+</ul>
+
+<p>O contrato externo — <code>createRoot(root, opts)</code> devolvendo algo com <code>handle(req, res)</code> — é o <em>seam</em> que ambos os consumidores usam. A refatoração abaixo não mexe nesse seam; ela reorganiza o interior.</p>
+</section>
+
+<section id="intuicao">
+<h2><span class="num">2</span>Intuição</h2>
+<p class="lead">A intuição é simples: segurança que só pode ser testada por HTTP é segurança que ninguém testa. Coloque a guarda num lugar onde um teste comum possa chamá-la.</p>
+
+<p>Pense num aeroporto. Hoje a inspeção de bagagem acontece <em>no meio do corredor de embarque</em>, misturada com o anúncio de voos, a venda de café e o embarque em si. Para verificar se a inspeção detecta uma faca, você teria que comprar uma passagem e embarcar de verdade. O plano é construir uma sala própria para a inspeção — e, de quebra, dar a cada portão de embarque uma placa com seu nome, em vez de um corredor único onde os funcionários gritam os destinos.</p>
+
+<h3>Exemplo concreto: o que muda ao testar path traversal</h3>
+<p>Hoje, verificar que <code>../../etc/passwd</code> é rejeitado exige subir um servidor, escutar numa porta, disparar um <code>fetch</code> POST e inspecionar que veio 400. Depois da mudança, o teste importa a guarda do módulo e chama:</p>
+<pre><code>resolveIn(root, "../../etc/passwd")   // → null
+resolveIn(root, "guides/v2")          // → { rel: "guides/v2", abs: ... }</code></pre>
+<p>Sem rede, sem servidor, sem sequer arquivo em disco. A mesma chamada que o handler de delete faz internamente, agora visível.</p>
+
+<h3>Exemplo concreto: o que muda ao adicionar um endpoint</h3>
+<p>Hoje, um nono endpoint significa mais um bloco <code>if</code> dentro do closure, repetindo o padrão <code>readJsonBody</code> → <code>resolveIn</code> → fs-callback → resposta. Depois, significa escrever uma função <code>endpointFoo(ctx, req, res)</code> e registrar uma linha na tabela. O despacho vira dado, não código:</p>
+<pre><code>const ENDPOINTS = {
+  "/__delete__": { method: "POST", fn: endpointDelete },
+  "/__rename__": { method: "POST", fn: endpointRename },
+  // ...
+};</code></pre>
+
+<h3>Antes e depois</h3>
+<div class="flow">
+<span class="node cut">guardas escondidas no closure</span>
+<span class="arr">→</span>
+<span class="node cut">8 ifs inline em handle()</span>
+<span class="arr">→</span>
+<span class="node cut">readJsonBody ×2 (drift)</span>
+</div>
+<div class="flow">
+<span class="node dev">guardas exportadas do módulo</span>
+<span class="arr">→</span>
+<span class="node dev">tabela método→função</span>
+<span class="arr">→</span>
+<span class="node dev">readJsonBody única, importada</span>
+</div>
+<p class="figcap">O closure monolítico vira despacho por dados + funções nomeadas por endpoint.</p>
+
+<p>E o fluxo de uma requisição continua o mesmo por fora — só o interior de <code>handle</code> fica raso:</p>
+
+<div class="mermaid">
+flowchart TD
+  A["handle(req, res)"] --> B{"reload.handle<br/>(SSE)?"}
+  B -- sim --> C["responde canal de reload"]
+  B -- não --> D["raw = url sem query"]
+  D --> E{"raw está na tabela<br/>ENDPOINTS?"}
+  E -- "sim, método bate" --> F["fn(root, config, req, res)<br/>guarda interna: readJsonBody + resolveIn"]
+  E -- não --> G{"/__docs__/ ?"}
+  G -- sim --> H["serveClient<br/>(prefix-check próprio)"]
+  G -- não --> I["decode + slash-check<br/>Sec-Fetch-Dest deep-link"]
+  I --> J["serveShell ou serveFile"]
+</div>
+
+<p>As três vitórias, no vocabulário de design: <strong>locality</strong> (as guardas de segurança passam a viver num único lugar, e mudanças nelas ficam visíveis e revisáveis), <strong>leverage</strong> (uma interface de endpoints serve os dois consumidores — serve.js e manager.js — e o manager deixa de carregar sua cópia de <code>readJsonBody</code>), e <strong>testabilidade</strong> (path traversal vira um teste de unidade, não um teste de integração com HTTP + fs).</p>
+</section>
+
+<section id="mudancas">
+<h2><span class="num">3</span>Mudanças</h2>
+<p class="lead">Três arquivos, sem quebra do contrato <code>{ root, base, handle, reload }</code>. Nenhuma mudança de comportamento esperada — o shell, o live-reload e a barra lateral continuam idênticos do ponto de vista do navegador.</p>
+
+<h3>1. roots.js — do closure monolítico à tabela de endpoints</h3>
+<p><strong>Guardas sobem para o escopo do módulo.</strong> <code>safeRelPath</code> e <code>resolveIn</code> saem de dentro de <code>handle</code> e passam a receber <code>root</code> como parâmetro explícito (hoje elas o capturam do closure de <code>createRoot</code>). <code>readJsonBody</code> também sai, virando um utilitário do módulo — exportado, para que o manager possa importá-lo. Nada da lógica muda: mesmas rejeições, mesmo cap padrão de 4096, mesmo comportamento de <code>req.destroy()</code> acima do limite. O que muda é a profundidade do aninhamento e a visibilidade.</p>
+<p><strong>Um endpoint, uma função nomeada.</strong> Cada bloco <code>if</code> inline vira uma função <code>endpointDelete</code>, <code>endpointRename</code>, <code>endpointMkdir</code>, <code>endpointSave</code>, <code>endpointReveal</code>, <code>endpointOrder</code>, <code>endpointTitle</code> — todas com a mesma assinatura, recebendo o contexto do root (o diretório e o que for preciso de config) mais <code>req</code>/<code>res</code>. Cada função contém exatamente o corpo que hoje vive no seu <code>if</code>, incluindo o cap especial de 10 MB do <code>/__save__</code>. <code>shiftIcons</code>/<code>pruneIcons</code> continuam sendo usadas por delete/rename, agora como helpers visíveis no módulo em vez de vizinhas acidentais.</p>
+<p><strong>O despacho vira dados.</strong> Uma constante <code>ENDPOINTS</code> mapeia caminho → { método, função }. O novo <code>handle</code> fica raso: tenta o reload/SSE, consulta a tabela, e caso não encontre cai no caminho de sempre (manifest, <code>/__docs__/</code>, shell, arquivo estático). ServeShell, serveFile, a tabela MIME e a lógica de <code>Sec-Fetch-Dest</code> ficam exatamente onde estão — atrás do seam de <code>handle</code>, intocadas por fora.</p>
+<p><strong>Exports crescem.</strong> O módulo passa a exportar <code>readJsonBody</code>, <code>safeRelPath</code> e <code>resolveIn</code> (ou uma pequena fachada de guardas), para consumo do manager e dos testes. <code>createRoot</code> continua devolvendo <code>{ root, base, handle, reload }</code>.</p>
+
+<div class="callout tip">
+<div class="title">Por que nenhuma mudança de comportamento?</div>
+<p>É uma refatoração de estrutura, não de semântica. Cada handler preserva seus status codes (400, 404, 409, 500), suas validações e a ordem de despacho. Isso reduz o risco e torna o diff essencialmente mecânico de mover blocos para funções.</p>
+</div>
+
+<h3>2. manager.js — remover a cópia de readJsonBody</h3>
+<p>A <code>readJsonBody</code> local (~linha 108, cap 1 MB) é deletada, e o módulo passa a importar a de <code>roots.js</code>. Como a diferença entre as duas versões era só o cap padrão — e todos os call sites do manager já dependem do cap maior —, os pontos de uso do manager que precisam do 1 MB passam o cap explicitamente por argumento, mantendo o comportamento atual byte a byte. O restante do manager (resolveWarp, hubBroadcast, syncRoots, endpoints <code>/api/*</code>) não muda em nada.</p>
+
+<h3>3. Novo arquivo de teste — exercitar as guardas sem servidor</h3>
+<p>Um teste novo (ex.: <code>roots.test.js</code>) que importa <code>safeRelPath</code>/<code>resolveIn</code> e as cobre como funções puras: rejeição de <code>..</code>, caminho absoluto, backslash, nomes com caracteres proibidos, segmentos vazios; aceitação de caminhos normais aninhados. Um segundo bloco cobre a tabela de endpoints no nível de unidade — por exemplo, que o teste de delete sobre um caminho malicioso sequer chega ao fs (a guarda devolve null antes), usando um diretório temporário. Não há servidor, porta ou fetch: o teste chama as funções diretamente. É o payoff de todo o plano.</p>
+
+<table>
+<tr><th>Arquivo</th><th>Muda?</th><th>O quê</th></tr>
+<tr><td>roots.js</td><td class="sim">sim</td><td>Guardas para o escopo do módulo + funções por endpoint + tabela ENDPOINTS + exports novos; handle fica raso</td></tr>
+<tr><td>manager.js</td><td class="sim">sim</td><td>Deleta readJsonBody local; importa de roots.js; caps explícitos onde precisa de 1 MB</td></tr>
+<tr><td>serve.js</td><td class="nao">não</td><td>Nenhum — o contrato <code>createRoot(ROOT, { base: "" })</code> é preservado</td></tr>
+<tr><td>novo roots.test.js</td><td class="dev" style="color:var(--green);font-weight:700">novo</td><td>Testes de unidade das guardas e da rejeição nos endpoints, sem HTTP</td></tr>
+</table>
+
+<div class="callout warn">
+<div class="title">Ponto de atenção</div>
+<p>Ao mover <code>safeRelPath</code>/<code>resolveIn</code> para o escopo do módulo, o parâmetro <code>root</code> passa a ser explícito — fácil errar a ordem dos argumentos em oito call sites recém-criados. O revisor deve conferir cada handler com atenção redobrada, pois essas duas funções são a linha de defesa contra path traversal.</p>
+</div>
+</section>
+
+<section id="quiz">
+<h2><span class="num">4</span>Quiz</h2>
+
+<div class="qcard" data-answer="c">
+<p class="q-title">1. Por que as guardas de segurança (<code>safeRelPath</code>, <code>resolveIn</code>) são difíceis de testar hoje?</p>
+<div class="opts">
+<button class="opt" data-k="a">A) Porque dependem da plataforma (path.sep muda entre Windows e Linux)</button>
+<button class="opt" data-k="b">B) Porque usam callbacks de fs assíncronas difíceis de mockar</button>
+<button class="opt" data-k="c">C) Porque são declaradas dentro do closure de handle(), então só podem ser exercitadas via uma requisição HTTP real a um servidor de verdade</button>
+<button class="opt" data-k="d">D) Porque o cap de 4096 bytes do readJsonBody é pequeno demais para testes</button>
+</div>
+<div class="q-feedback">✅ <b>C.</b> As guardas vivem privadas dentro do closure; sem exportá-las, a única forma de alcançá-las é atravessar todo o caminho HTTP → handle → endpoint, com servidor e fs reais.</div>
+</div>
+
+<div class="qcard" data-answer="b">
+<p class="q-title">2. O que o novo teste de delete sobre um caminho malicioso (ex.: <code>../../etc/passwd</code>) demonstra?</p>
+<div class="opts">
+<button class="opt" data-k="a">A) Que o fs.rmdir recusa caminhos fora do root nativamente</button>
+<button class="opt" data-k="b">B) Que a guarda (resolveIn) devolve null antes de qualquer operação de filesystem acontecer — a rejeição é testável sem servidor e sem arquivo em disco</button>
+<button class="opt" data-k="c">C) Que o endpoint responde 409 em vez de 400 para path traversal</button>
+<button class="opt" data-k="d">D) Que pruneIcons remove a entrada do _config.json corretamente</button>
+</div>
+<div class="q-feedback">✅ <b>B.</b> O valor central do plano: a defesa fica visível como função pura; o teste comprova que o caminho malicioso morre na guarda, sem efeitos colaterais.</div>
+</div>
+
+<div class="qcard" data-answer="d">
+<p class="q-title">3. O que permanece atrás do seam de <code>handle</code> — ou seja, continua dentro do fluxo do handler e não vira endpoint na tabela?</p>
+<div class="opts">
+<button class="opt" data-k="a">A) Os endpoints POST /__order__ e /__title__, que só escrevem config</button>
+<button class="opt" data-k="b">B) shiftIcons e pruneIcons, que passam a ser endpoints independentes</button>
+<button class="opt" data-k="c">C) O despacho da tabela ENDPOINTS em si</button>
+<button class="opt" data-k="d">D) serveShell, serveFile, a tabela MIME e a lógica de deep-link via Sec-Fetch-Dest — todo o serviço de arquivos estáticos</button>
+</div>
+<div class="q-feedback">✅ <b>D.</b> O plano extrai guardas e endpoints de gerenciamento; o serviço estático (shell, arquivos, MIME, deep-link) fica onde está, atrás do mesmo contrato <code>handle(req, res)</code>.</div>
+</div>
+
+<div class="qcard" data-answer="a">
+<p class="q-title">4. Por que o manager.js pode simplesmente importar o <code>readJsonBody</code> de roots.js sem mudar de comportamento?</p>
+<div class="opts">
+<button class="opt" data-k="a">A) Porque a diferença entre as duas cópias era só o cap padrão (4096 vs 1 MB), e os call sites do manager que precisam do cap maior passam a passá-lo explicitamente como argumento</button>
+<button class="opt" data-k="b">B) Porque as duas cópias eram byte a byte idênticas</button>
+<button class="opt" data-k="c">C) Porque o manager não usa readJsonBody, só o roots.js</button>
+<button class="opt" data-k="d">D) Porque o cap do roots.js (10 MB, do /__save__) é maior que o do manager</button>
+</div>
+<div class="q-feedback">✅ <b>A.</b> Os corpos são idênticos exceto pelo cap default; explicitá-lo por call site preserva o comportamento e elimina a duplicação sujeita a drift.</div>
+</div>
+
+<div class="qcard" data-answer="c">
+<p class="q-title">5. Qual das alternativas descreve corretamente o que muda para os dois consumidores do root (serve.js e manager.js)?</p>
+<div class="opts">
+<button class="opt" data-k="a">A) O manager deixa de reescrever req.url antes de delegar ao handle</button>
+<button class="opt" data-k="b">B) Ambos passam a despachar os endpoints /__*__ eles mesmos, antes de chamar handle</button>
+<button class="opt" data-k="c">C) Nada muda para eles: createRoot ainda devolve { root, base, handle, reload } com handle(req, res) — só o interior do handle foi reorganizado</button>
+<button class="opt" data-k="d">D) O serve.js passa a usar base "/<slug>/" em vez de ""</button>
+</div>
+<div class="q-feedback">✅ <b>C.</b> O contrato externo (o seam) é preservado; serve.js nem precisa ser tocado, e o manager só troca sua cópia de readJsonBody por um import.</div>
+</div>
+</section>
+
+</main>
+
+<footer>Plano · tabela de endpoints no root module · docs-in-html</footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+mermaid.initialize({ startOnLoad: true });
+</script>
+<script>
+(function () {
+  document.querySelectorAll(".qcard").forEach(function (card) {
+    var answer = card.dataset.answer;
+    var feedback = card.querySelector(".q-feedback");
+    card.querySelectorAll(".opt").forEach(function (opt) {
+      opt.addEventListener("click", function () {
+        card.querySelectorAll(".opt").forEach(function (o) {
+          o.classList.remove("right", "wrong");
+        });
+        var k = opt.dataset.k;
+        if (k === answer) opt.classList.add("right");
+        else {
+          opt.classList.add("wrong");
+          var correct = card.querySelector('.opt[data-k="' + answer + '"]');
+          if (correct) correct.classList.add("right");
+        }
+        feedback.classList.add("show");
+      });
+    });
+  });
+
+  var tocLinks = document.querySelectorAll(".toc a");
+  var sections = [];
+  tocLinks.forEach(function (a) {
+    var id = a.getAttribute("href").slice(1);
+    var el = document.getElementById(id);
+    if (el) sections.push({ el: el, link: a });
+  });
+  function onScroll() {
+    var y = window.scrollY + 120;
+    var active = sections[0];
+    sections.forEach(function (s) { if (s.el.offsetTop <= y) active = s; });
+    tocLinks.forEach(function (a) { a.classList.remove("active"); });
+    if (active) active.link.classList.add("active");
+    var top = document.querySelector(".top");
+    if (top) top.classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
