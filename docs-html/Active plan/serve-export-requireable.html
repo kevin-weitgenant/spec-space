@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano: serve.js e export.js requireable</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65;color:var(--text);background:var(--bg)}
+.hero{width:100%;background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{display:inline-block;padding:4px 12px;border-radius:999px;text-decoration:none;
+  color:var(--soft);font-size:.88rem;border:1px solid transparent}
+.toc a:hover{background:var(--panel)}
+.toc a.active{background:var(--accent-soft);color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{border-bottom:1px solid var(--border);padding:34px 0}
+section:last-of-type{border-bottom:none}
+h2{font-size:1.45rem;margin:0 0 14px}
+h2 .num{color:var(--accent);margin-right:10px}
+h3{font-size:1.1rem;margin:24px 0 8px}
+.lead{color:var(--soft);margin-top:0}
+p{margin:10px 0}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:.86rem;line-height:1.5}
+pre code{border:none;padding:0;background:none}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;
+  background:var(--panel);padding:12px 16px;margin:16px 0}
+.callout .title{font-weight:600;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.tip .title{color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.warn .title{color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+.callout.danger .title{color:var(--red)}
+.ramp{border:1.5px dashed var(--accent);border-radius:10px;background:var(--accent-soft);
+  padding:14px 18px;margin:16px 0}
+.ramp .title{font-weight:600;color:var(--accent);margin-bottom:6px}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:.94rem}
+th{background:var(--panel2);text-align:left;padding:8px 10px}
+td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.sim{color:var(--green);font-weight:700}
+.nao{color:var(--red);font-weight:700}
+.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:14px 0}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:5px 14px;font-size:.88rem}
+.node.dev{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
+.node.cut{background:var(--red-soft);border-color:var(--red);color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.caption{text-align:center;color:var(--soft);font-size:.85rem;margin:4px 0 10px}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0;overflow-x:auto}
+.qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);
+  border-radius:8px;padding:14px 18px;margin:16px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{width:100%;text-align:left;border:1px solid var(--border);border-radius:8px;background:#fff;
+  padding:8px 12px;font-size:.94rem;cursor:pointer;font-family:inherit}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-soft);border-color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.q-feedback{display:none;margin-top:10px;padding:10px 12px;background:var(--panel);
+  border:1px solid var(--border);border-radius:8px;font-size:.92rem}
+.q-feedback.show{display:block}
+footer{text-align:center;color:var(--soft);font-size:.86rem;padding:26px 24px;border-top:1px solid var(--border)}
+.top{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--accent);
+  color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;
+  opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano: serve.js e export.js requireable</h1>
+    <p class="lede">Hoje, <code>require("./serve.js")</code> num teste ou inicia um servidor de verdade, mata o processo, ou os dois. Este plano separa o que <em>decide</em> (parse de argumentos) do que <em>faz</em> (rede, arquivos, exit), tornando os dois entrypoints da CLI importáveis e testáveis — sem mudar nada para quem usa o bin.</p>
+    <p class="meta">Candidato 5 · docs-in-html · serve.js + export.js + testes novos</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#intuicao">2 · Intuição</a>
+    <a href="#mudancas">3 · Mudanças</a>
+    <a href="#quiz">4 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+
+  <div class="ramp">
+    <p class="title">Rampa para iniciante (pode pular)</p>
+    <p>No Node, um arquivo pode ser duas coisas ao mesmo tempo: um <strong>programa</strong> (quando você o executa direto, <code>node serve.js</code> ou via bin do <code>package.json</code>) e um <strong>módulo</strong> (quando outro arquivo faz <code>require("./serve.js")</code> para reaproveitar suas funções). O Node expõe uma forma de distinguir os dois casos: dentro do módulo, <code>require.main === module</code> vale <code>true</code> apenas quando o arquivo foi executado direto. A receita clássica de CLI bem-comportada é: funções puras e exportadas no corpo do módulo; efeitos colaterais (abrir servidor, sair do processo) numa "footer" guardada por <code>if (require.main === module)</code>. Assim o mesmo arquivo serve aos dois públicos.</p>
+    <p>Outra peça: <code>process.exit(n)</code> encerra o processo <em>inteiro</em> imediatamente. Num teste (que roda dentro do mesmo processo), isso mata o runner. Bibliotecas testáveis preferem lançar <code>Error</code> — o chamador decide se vira exit code.</p>
+  </div>
+
+  <p class="lead">O que existe hoje, nos arquivos reais:</p>
+
+  <h3>serve.js — tudo acontece no corpo do módulo</h3>
+  <p>O parse de argumentos roda no top level: em <code>serve.js</code>, logo após o <code>help()</code>, o laço <code>for</code> (linhas ~45–65) varre <code>process.argv.slice(2)</code> em variáveis soltas — <code>dir</code>, <code>port</code> (default <code>Number(process.env.PORT) || 8000</code>), <code>mode</code>, <code>portWasExplicit</code>, <code>doOpen</code>, <code>outDir</code>, <code>noRegister</code>, <code>unregister</code>. E o corpo do módulo contém <strong>quatro pontos de <code>process.exit()</code></strong> que disparam no momento do <code>require</code>:</p>
+  <table>
+    <tr><th>Ponto</th><th>Gatilho</th><th>Efeito no require</th></tr>
+    <tr><td><code>-h / --help</code></td><td>imprime ajuda</td><td class="nao">mata o processo com exit 0</td></tr>
+    <tr><td>mode <code>init</code></td><td>scaffold de starter</td><td class="nao">exit 0 logo após</td></tr>
+    <tr><td>mode <code>export</code></td><td>delega a export.js</td><td class="nao">exit 0</td></tr>
+    <tr><td><code>--unregister</code></td><td>remove do registry</td><td class="nao">exit 0</td></tr>
+  </table>
+  <p>No caminho padrão (<code>serveSingle</code>), há mais <code>process.exit(1)</code> nos handlers de erro de porta (explícita ocupada, EACCES, fallbacks esgotados). Ou seja: um <code>require("./serve.js")</code> num teste ou morre, ou sobe um servidor HTTP de verdade com watch de filesystem — nada reutilizável, nada testável. O módulo <strong>não exporta nada</strong>.</p>
+
+  <p>Dentro desse bloco vive lógica que <em>mereceria</em> teste: a semântica de porta (<code>MAX_FALLBACKS = 20</code>; <code>--port</code> explícito é ordem — deve estar livre ou morre com mensagem clara; sem <code>--port</code>, cai para a próxima livre com aviso), a delegação ao manager (<code>pingManager()</code>/<code>addToManager()</code> via <code>delegation.js</code>), o auto-scaffold de <code>_config.json</code> (<code>writeConfig(ROOT, defaultConfig(ROOT))</code> quando não existe), o <code>registry.add(ROOT)</code> silencioso, e a abertura de browser por SO (<code>start</code>/<code>open</code>/<code>xdg-open</code> via <code>exec</code>).</p>
+
+  <h3>export.js — quase lá</h3>
+  <p><code>export.js</code> já é um módulo de verdade: exporta <code>run(root, outDir)</code>. Mas na entrada há <code>if (!fs.existsSync(src)) { console.error(...); process.exit(1); }</code> (~linha 44): pasta inexistente derruba o processo em vez de sinalizar o erro ao chamador. Todo o resto de <code>run</code> é trabalho de disco (copiar pasta, gerar <code>manifest.json</code>, <code>client/ → __docs__/</code>, reescrever HTMLs com <code>injectScripts</code>) e permanece intocado.</p>
+
+  <div class="callout tip">
+    <div class="title">O precedente já existe no codebase</div>
+    <p><code>registry.js</code> faz exatamente o certo: <code>saneLayout(data)</code> (linhas 83–111) é uma função pura — revalida layout contra docs registradas, poda grupos órfãos, acrescenta o que falta — e entra em <code>module.exports = { slugify, load, save, add, remove, ..., }</code> (linha 163). Por isso dá para testar a higiene do layout chamando a função com um objeto qualquer, sem tocar disco. Este plano copia o mesmo padrão para <code>serve.js</code> e <code>export.js</code>.</p>
+  </div>
+</section>
+
+<section id="intuicao">
+  <h2><span class="num">2</span>Intuição</h2>
+
+  <p class="lead">A intuição é a de sempre: separar a <em>decisão</em> da <em>ação</em>. Decisões são baratas de testar; ações têm o mundo inteiro acoplado.</p>
+
+  <p>Pense em <code>serve.js</code> como dois programas colados num arquivo. O primeiro é um tradutor: recebe <code>["mydocs", "--port", "8123", "--no-open"]</code> e produz um fato estruturado — <em>"quero servir a pasta X, na porta 8123, explícita, sem abrir browser"</em>. Esse tradutor é pura aritmética de strings: dado o mesmo argv, o mesmo resultado, zero rede, zero exit. O segundo programa recebe esse fato e age: sobre HTTP, escreve <code>_config.json</code>, chama o manager, abre o navegador, e — quando algo dá errado — encerra o processo. Hoje os dois rodam em sequência no corpo do módulo, e é por isso que importar o arquivo é sinônimo de executar a CLI.</p>
+
+  <p>Exemplo concreto do que fica testável. Hoje a matriz de flags só pode ser exercitada rodando o bin de verdade:</p>
+<pre><code>parseArgs(["--port", "9000"])        // → { mode:"serve", port:9000, portWasExplicit:true, ... }
+parseArgs(["docs", "export", "--out", "d"]) // → { mode:"export", dir:"docs", outDir:"d", ... }
+parseArgs(["-p", "80"])             // Number("80") || port → porta explícita 80
+parseArgs(["--port", "abc"])        // Number("abc") = NaN → falsy → mantém default (8080)</code></pre>
+
+  <p>Já a semântica de porta pede uma abstração extra. "Tentar porta 8000, se ocupada tentar 8001… até 20 vezes, a menos que a porta tenha sido explícita" é uma máquina de estados pequena e deliciosa de testar — desde que <code>main</code> aceite as dependências injetadas (um <code>listen</code> falso que falha com <code>EADDRINUSE</code> nas duas primeiras chamadas, um <code>openUrl</code> que só registra que foi chamado, um <code>delegation</code> falso). O mesmo vale para o export: um erro lançado é um valor que o teste captura com <code>assert.throws</code>; um <code>process.exit</code> é um processo morto.</p>
+
+  <div class="flow">
+    <span class="node cut">argv → parse no corpo do módulo</span>
+    <span class="arr">→</span>
+    <span class="node cut">process.exit() no meio</span>
+    <span class="arr">→</span>
+    <span class="node cut">server real no require</span>
+  </div>
+  <p class="caption">Antes: require("./serve.js") = executar a CLI inteira</p>
+  <div class="flow">
+    <span class="node">parseArgs(argv)</span>
+    <span class="arr">→</span>
+    <span class="node">main(options, deps?) async</span>
+    <span class="arr">→</span>
+    <span class="node">exit code (return)</span>
+    <span class="arr">·</span>
+    <span class="node dev">require.main === module → CLI</span>
+  </div>
+  <p class="caption">Depois: pureza no corpo, side effects só na footer do bin</p>
+
+  <p>Para o <code>main</code>, o fluxo de decisão fica assim:</p>
+
+  <div class="mermaid">
+flowchart TD
+  A["main(args)"] --> B{mode?}
+  B -- help --> C["help(); return 0"]
+  B -- init --> D["init.js init(); return 0"]
+  B -- export --> E["export.js run(); catch → return 1"]
+  B -- manager --> F["manager.js start()"]
+  B -- unregister --> G["registry.remove(); return 0"]
+  B -- serve --> H{"pingManager ok e !noRegister?"}
+  H -- sim --> I["addToManager; return 0"]
+  H -- não --> J{"_config.json existe?"}
+  J -- não --> K["writeConfig default"]
+  J -- sim --> L
+  K --> L["registry.add; createRoot; listen"]
+  L --> M{"porta explícita?"}
+  M -- sim, ocupada --> N["erro claro; return 1"]
+  M -- não, ocupada --> O["próxima livre (até 20), com aviso"]
+  M -- livre --> P["banner + open browser"]
+  O --> P
+  </div>
+  <p class="caption">Fluxo de main() — cada losango vira um caso de teste; as setas para "exit code" são returns, não process.exit.</p>
+</section>
+
+<section id="mudancas">
+  <h2><span class="num">3</span>Mudanças</h2>
+  <p class="lead">Três frentes, ordenadas para que cada uma se apoie na anterior: primeiro o parse puro, depois o main com deps injetáveis, por último o contrato de erro do export.</p>
+
+  <h3>serve.js</h3>
+  <p>O coração da mudança. Todo o bloco de top level (laço de argv, os <code>if (mode === …)</code> com <code>process.exit</code>, e a chamada a <code>serveSingle()</code>) sai do corpo do módulo e vira duas funções exportadas:</p>
+  <ul>
+    <li><strong><code>parseArgs(argv)</code></strong> — pura. Recebe o array de argumentos (não lê <code>process.argv</code> nem <code>process.env</code> direto; o default de porta fica como parâmetro opcional) e devolve o objeto de opções <code>{ mode, dir, port, portWasExplicit, doOpen, noRegister, unregister, outDir }</code>. O caso <code>-h/--help</code> passa a ser um <code>mode: "help"</code> em vez de imprimir-e-matar — a decisão vira dado.</li>
+    <li><strong><code>main(args, deps)</code></strong> — assíncrona, retorna o código de saída (número), nunca chama <code>process.exit</code>. Recebe as opções já parseadas (ou um argv) e um objeto opcional de dependências para tudo que toca o mundo: delegação ao manager (<code>pingManager</code>/<code>addToManager</code>), abertura de browser (<code>openUrl</code>), e a criação do servidor. Isso torna a máquina de fallback de porta (a recursão <code>start(attemptPort, attemptsLeft)</code> com <code>MAX_FALLBACKS = 20</code> e a distinção explícita-vs-implícita) exercitável com um <code>listen</code> de mentira que simula <code>EADDRINUSE</code>.</li>
+  </ul>
+  <p>No rodapé do arquivo, o guarda:</p>
+<pre><code>if (require.main === module) {
+  main(parseArgs(process.argv.slice(2))).then(code => process.exit(code));
+}</code></pre>
+  <p>Tudo que o usuário do bin vê — mensagens, ordem de prints, códigos de saída, comportamento idêntico — permanece: os <code>process.exit</code> só mudam de endereço, do meio do módulo para a footer. A seção <code>serveSingle</code> é reabsorvida por <code>main</code> quase sem mudança de lógica (auto-scaffold de <code>_config.json</code>, <code>registry.add</code>, banner, <code>open</code> por SO); só os exits viram <code>return 1</code> (com o cuidado de fechar o servidor antes, nos erros de porta).</p>
+
+  <h3>export.js</h3>
+  <p>Mudança mínima e cirúrgica: em <code>run()</code>, o ramo de pasta inexistente deixa de fazer <code>console.error + process.exit(1)</code> e passa a <code>throw new Error(...)</code> com a mesma mensagem. O arquivo ganha uma footer <code>require.main === module</code> que faz o inverso: chama <code>run()</code>, captura, imprime <code>erro: …</code> e <code>process.exit(1)</code> — o comportamento CLI que já existia, apenas formalizado. O resto do pipeline (copy, manifest, <code>__docs__</code>, injeção) é intocado.</p>
+
+  <h3>Novos arquivos de teste</h3>
+  <p>Sem framework novo (o projeto é zero-deps): testes em <code>test/</code> rodando com <code>node --test</code>, seguindo a filosofia já validada por <code>registry.saneLayout</code>:</p>
+  <ul>
+    <li><strong>test/serve-args.test.js</strong> — matriz de flags contra <code>parseArgs</code>: defaults, <code>-p/--port</code> explícito, <code>--port abc</code> mantendo default, subcomandos, <code>--out</code>, flags booleanas, <code>-h</code> virando <code>mode:"help"</code>.</li>
+    <li><strong>test/serve-port.test.js</strong> — o fallback: sem <code>--port</code>, um listen falso que falha 2× em <code>EADDRINUSE</code> deve pousar na terceira porta; com <code>--port</code> explícito e porta ocupada, <code>main</code> resolve com código 1 e a mensagem certa; a 21ª tentativa esgota <code>MAX_FALLBACKS</code>. Também cobre o caminho da delegação: com um <code>pingManager</code> falso que responde, nada de servidor é criado — só <code>addToManager</code>.</li>
+    <li><strong>test/export.test.js</strong> — <code>assert.throws</code> para pasta inexistente (o caminho que antes matava o runner), e um export happy-path em pasta temporária verificando <code>manifest.json</code> e <code>__docs__/</code>.</li>
+  </ul>
+
+  <table>
+    <tr><th>Arquivo</th><th>Muda?</th><th>Usuário do bin nota?</th><th>Chamador/ teste ganha?</th></tr>
+    <tr><td>serve.js</td><td class="sim">reestruturado</td><td class="nao">nada</td><td class="sim">parseArgs + main importáveis</td></tr>
+    <tr><td>export.js</td><td class="sim">throw no lugar de exit</td><td class="nao">nada (footer repõe)</td><td class="sim">erro testável via assert.throws</td></tr>
+    <tr><td>test/*</td><td class="sim">novos</td><td class="talvez">—</td><td class="sim">3 suítes novas</td></tr>
+    <tr><td>registry.js</td><td class="nao">intocado</td><td class="nao">—</td><td class="nao">só é citado como padrão</td></tr>
+  </table>
+
+  <div class="callout tip">
+    <div class="title">Ganhos resumidos</div>
+    <p>parseArgs testável diretamente (matriz de flags sem subprocesso); lógica de fallback de porta testável com listen falso; caminho de erro do export testável com assert.throws; e o bin fica exatamente como estava — os quatro <code>process.exit</code> apenas se mudam para trás do guarda <code>require.main === module</code>.</p>
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">4</span>Quiz</h2>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. O que a expressão <code>require.main === module</code> significa dentro de um arquivo do Node?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Que o módulo já foi carregado antes e está no cache do require.</button>
+      <button class="opt" data-k="b">B) Que o arquivo foi executado diretamente (node arquivo.js ou bin), e não importado por outro módulo.</button>
+      <button class="opt" data-k="c">C) Que o módulo é o ponto de entrada definido no "main" do package.json.</button>
+      <button class="opt" data-k="d">D) Que o módulo não tem exports e só pode rodar como script.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> <code>require.main</code> aponta para o módulo de entrada do processo; a comparação dá <code>true</code> apenas na execução direta. É o idiomático "sou programa ou sou biblioteca?".</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. Por que <code>process.exit()</code> no corpo de serve.js impede testes com <code>require("./serve.js")</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque process.exit não funciona dentro de módulos CommonJS.</button>
+      <button class="opt" data-k="b">B) Porque o require cacheia o resultado e o exit vira undefined no segundo require.</button>
+      <button class="opt" data-k="c">C) Porque o exit roda imediatamente no load do módulo e encerra o processo do runner de testes inteiro.</button>
+      <button class="opt" data-k="d">D) Porque o exit desabilita o hot reload durante os testes.</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O código do corpo executa no momento do <code>require</code> — com <code>serve.js</code> atual, <code>--help</code> ou <code>init</code> matam o processo de teste no ato; no modo padrão, sobe um servidor real com fs.watch. O runner morre junto.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. Na semântica atual de portas do serve.js, qual a diferença entre passar e não passar <code>--port</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Com --port explícito a porta deve estar livre ou o servidor sai com erro; sem --port, cai para a próxima porta livre (até 20 tentativas) com aviso.</button>
+      <button class="opt" data-k="b">B) Em ambos os casos há fallback automático; --port só define a porta inicial.</button>
+      <button class="opt" data-k="c">C) Sem --port o servidor tenta se registrar no manager; com --port ele sobe um servidor próprio.</button>
+      <button class="opt" data-k="d">D) --port exige privilégios de root para portas abaixo de 1024; sem ele não há restrição.</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> É exatamente o papel de <code>portWasExplicit</code>: porta explícita é "request, not a hint" — morre com mensagem clara se ocupada; implícita é hint, com <code>MAX_FALLBACKS = 20</code>.</div>
+  </div>
+
+  <div class="qcard" data-answer="d">
+    <p class="q-title">4. Por que <code>main()</code> no plano aceita dependências injetadas (delegação, openUrl, listen) em vez de usar os módulos reais?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Por performance: versões falsas são mais rápidas que node:http.</button>
+      <button class="opt" data-k="b">B) Para permitir alternar implementações em produção (ex.: abrir Firefox em vez do browser padrão).</button>
+      <button class="opt" data-k="c">C) Porque node:http não funciona em processos de teste.</button>
+      <button class="opt" data-k="d">D) Para que o teste controle os efeitos: simular EADDRINUSE, um manager respondendo, ou capturar a abertura do browser — sem rede nem subprocessos.</button>
+    </div>
+    <div class="q-feedback">✅ <b>D.</b> Injeção transforma efeitos em observações: um listen falso que falha duas vezes permite testar o fallback determinísticamente; um pingManager falso permite testar a delegação sem um manager real rodando.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">5. No plano para export.js, como fica o tratamento de "pasta não encontrada" e por quê?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Mantém process.exit(1), mas só quando chamado de teste; a CLI recebe throw.</button>
+      <button class="opt" data-k="b">B) run() lança Error com a mesma mensagem; a footer CLI (require.main === module) captura, imprime e faz exit 1 — comportamento do bin idêntico, erro testável com assert.throws.</button>
+      <button class="opt" data-k="c">C) run() passa a retornar null e o chamador verifica.</button>
+      <button class="opt" data-k="d">D) run() cria a pasta vazia e segue o export normalmente.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Lançar devolve a decisão ao chamador; o bin continua imprimindo <code>erro: pasta não encontrada: …</code> e saindo com 1, mas o teste captura a exceção sem morrer — o mesmo contrato que registry.js já pratica com saneLayout.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Plano · serve.js e export.js requireable · docs-in-html</footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true });
+</script>
+
+<script>
+(function(){
+  // Quiz: click-to-answer, never locks
+  document.querySelectorAll(".qcard").forEach(function(card){
+    var answer = card.getAttribute("data-answer");
+    var feedback = card.querySelector(".q-feedback");
+    card.querySelectorAll(".opt").forEach(function(opt){
+      opt.addEventListener("click", function(){
+        card.querySelectorAll(".opt").forEach(function(o){ o.classList.remove("right","wrong"); });
+        var k = opt.getAttribute("data-k");
+        opt.classList.add(k === answer ? "right" : "wrong");
+        feedback.classList.add("show");
+      });
+    });
+  });
+
+  // TOC highlight
+  var links = document.querySelectorAll(".toc a");
+  var sections = document.querySelectorAll("main section");
+  function onScroll(){
+    var current = null;
+    sections.forEach(function(s){ if (s.getBoundingClientRect().top < 120) current = s.id; });
+    links.forEach(function(l){ l.classList.toggle("active", l.getAttribute("href") === "#" + current); });
+    var top = document.querySelector(".top");
+    top.classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // Back to top
+  document.querySelector(".top").addEventListener("click", function(e){
+    e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+})();
+</script>
+</body>
+</html>
