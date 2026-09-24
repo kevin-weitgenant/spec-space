@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano: extrair o núcleo puro do diff (changes.js)</title>
+<style>
+  :root{
+    --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+    --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+    --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+    --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg)}
+  code,pre{font:0.9em/1.5 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace}
+  code{background:var(--code-bg);padding:1px 5px;border-radius:4px}
+  pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow:auto}
+
+  .hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+  .hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+  .hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+  .lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+  .meta{font-size:.86rem;color:var(--soft)}
+
+  .toc{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);z-index:20}
+  .toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+  .toc a{display:inline-block;padding:4px 12px;border:1px solid var(--border);border-radius:99px;text-decoration:none;color:var(--soft);font-size:.86rem;background:#fff}
+  .toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px}
+  section{padding:34px 0;border-bottom:1px solid var(--border)}
+  h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 14px}
+  h2 .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:1.05rem;margin-right:10px;vertical-align:-4px}
+  .lead{color:var(--soft);margin-top:-4px}
+  h3{font-size:1.1rem;margin:26px 0 8px}
+
+  .callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--panel);border-radius:0 8px 8px 0;padding:12px 16px;margin:18px 0}
+  .callout .title{font-weight:700;margin-bottom:4px}
+  .callout.tip{border-left-color:var(--green)}
+  .callout.tip .title{color:var(--green)}
+  .callout.warn{border-left-color:var(--amber)}
+  .callout.warn .title{color:var(--amber)}
+  .callout.danger{border-left-color:var(--red)}
+  .callout.danger .title{color:var(--red)}
+
+  .ramp{border:1.5px dashed var(--border);border-radius:10px;padding:14px 18px;margin:18px 0;background:var(--panel)}
+
+  table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95rem}
+  th{background:var(--panel2);text-align:left;padding:8px 12px;border-bottom:2px solid var(--border)}
+  td{padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top}
+  .sim{color:var(--green);font-weight:700}
+  .nao{color:var(--red);font-weight:700}
+  .talvez{color:var(--amber);font-weight:700}
+
+  .flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:8px;margin:18px 0}
+  .node{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.9rem}
+  .node.dev{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
+  .node.cut{text-decoration:line-through;background:var(--red-soft);border-color:var(--red);color:var(--red)}
+  .arr{color:var(--soft)}
+  .figcap{text-align:center;color:var(--soft);font-size:.88rem;margin-top:-6px}
+
+  .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:18px 0;overflow:auto}
+
+  footer{max-width:920px;margin:0 auto;padding:26px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+
+  .top{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .25s;z-index:50}
+  .top.show{opacity:1;pointer-events:auto}
+
+  .qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:18px 0}
+  .q-title{font-weight:600;margin:0 0 10px}
+  .opts{display:flex;flex-direction:column;gap:8px}
+  .opt{width:100%;text-align:left;border:1px solid var(--border);border-radius:8px;background:#fff;padding:9px 12px;font:inherit;cursor:pointer}
+  .opt:hover{background:var(--panel)}
+  .opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+  .opt.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+  .q-feedback{display:none;margin-top:10px;font-size:.95rem;color:var(--soft)}
+  .q-feedback.show{display:block}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano: extrair o núcleo puro do diff (changes.js)</h1>
+    <p class="lede">O <code>changes.js</code> esconde, atrás de uma IIFE sem exports, ~150 linhas de diff puro — o código que decide o que o leitor vê de novo. Este plano tira esse núcleo para <code>client/diff.js</code>, testável com <code>node:test</code> e intacto no navegador.</p>
+    <p class="meta">Candidato 3 · extração de módulo puro · impacto: testabilidade + localidade · escopo: 1 arquivo novo + 2 ajustados</p>
+  </div>
+</header>
+
+<nav class="toc" id="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#intuicao">2 · Intuição</a>
+    <a href="#mudancas">3 · Mudanças</a>
+    <a href="#quiz">4 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ═══════════════ 1 · CONTEXTO ═══════════════ -->
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+
+  <div class="ramp">
+    <b>Rampa para iniciante (pode pular).</b>
+    Quando você revisita uma doc do projeto, o navegador compara o texto de <i>hoje</i> com um retrato salvo da <i>sua última visita</i> (em <code>localStorage</code>) e pinta o que mudou: blocos novos ganham um chip verde "novo", blocos editados ganham word-diff âmbar, e aparece um minimapa lateral. Para decidir "o que mudou" entre duas listas de parágrafos, usa-se um algoritmo clássico chamado <b>LCS</b> (Longest Common Subsequence): a maior sequência de itens que aparece, na mesma ordem, nas duas listas — tudo que sobra é inserção ou remoção. Esse cálculo é matemática pura: duas listas entram, uma lista de operações sai. Não precisa de navegador, DOM nem rede.
+  </div>
+
+  <p>O <code>client/changes.js</code> é um arquivo de 335 linhas que roda inteiro dentro de uma IIFE com <b>zero exports</b> — ele toca <code>window</code>, <code>document</code> e <code>localStorage</code> no momento em que carrega. A linha 25 do arquivo (<code>if (window.DOCS_EXPORT) return;</code>) já mostra o quão "plugado ao navegador" ele é. Mas, logo depois da coleta de blocos, moram ali quatro funções que não tocam DOM nenhum:</p>
+
+  <table>
+    <tr><th>Função (em client/changes.js)</th><th>O que faz</th><th>Pura?</th></tr>
+    <tr><td><code>diffOps(a, b)</code></td><td>LCS com trim de prefixo/sufixo comuns sobre listas de blocos achatados; emite ops <code>{t:' '|'-'|'+', a?, b?}</code>; desiste (<code>null</code>) se <code>n*m &gt; 4e6</code></td><td class="sim">sim</td></tr>
+    <tr><td><code>wordDiff(oldS, newS)</code></td><td>quebra strings em tokens por <code>\s+</code>, roda <code>diffOps</code> de novo no nível de palavra — é o word-diff dos blocos editados</td><td class="sim">sim</td></tr>
+    <tr><td><code>similarity(a, b)</code></td><td>similaridade por bolsa-de-palavras (interseção multiconjunto / tamanho máximo)</td><td class="sim">sim</td></tr>
+    <tr><td><code>marks(ops, oldTexts)</code></td><td>converte ops em marcas <code>{b, kind:'new'|'edit', old?}</code>: emparelha execuções adjacentes de −/+ quando parecidas, e detecta <i>movidos</i> via um pool de textos antigos não usados</td><td class="talvez">quase*</td></tr>
+    <tr><td><code>collectBlocks</code>, <code>applyUI</code>, <code>faviconDot</code>, CSS do minimap</td><td>DOM, localStorage, canvas do favicon, pill flutuante</td><td class="nao">não</td></tr>
+  </table>
+
+  <p>*o <code>marks</code> atual lê a variável <code>texts</code> do closure (a lista nova), o que o acopla sutilmente ao resto do arquivo — detalhe que a extração conserta passando <code>newTexts</code> como argumento.</p>
+
+  <div class="callout danger">
+    <div class="title">Por que isso importa</div>
+    Esse é o código com maior potencial de bug <i>visível ao usuário</i> do repositório: os chips "novo", os destaques de word-diff e os marcadores do minimap saem todos dali. E ele é <b>intestável hoje</b> — sem exports e com efeitos de DOM no load, não há como chamar <code>diffOps</code> de dentro de um <code>node:test</code> sem carregar um navegador inteiro. Um off-by-one no LCS, hoje, só é descoberto por um leitor humano.
+  </div>
+
+  <p>Como o script chega à página: <code>inject.js</code> monta a lista de tags injetadas e, para toda doc não-shell em modo dev, empurra <code>&lt;script src="${base}/__docs__/changes.js" data-injected defer&gt;</code> antes do <code>&lt;/body&gt;</code>. O servidor dev e o <code>export.js</code> compartilham essa mesma heurística — um ajuste ali vale para os dois destinos. É nessa lista que o novo <code>diff.js</code> ganhará sua própria tag, imediatamente antes de <code>changes.js</code>.</p>
+
+  <p>O projeto não tem dependências (<code>package.json</code> vazio de deps, Node ≥ 18, CommonJS). Isso não é acaso: a tática aqui é um <i>adapter</i> de módulo — uma guarda UMD — para que o <b>mesmo arquivo</b> sirva aos dois mundos, sem bundler, semdependência nova.</p>
+</section>
+
+<!-- ═══════════════ 2 · INTUIÇÃO ═══════════════ -->
+<section id="intuicao">
+  <h2><span class="num">2</span>Intuição</h2>
+  <p class="lead">A intuição central: um arquivo pode ter dois rostos. No navegador, ele se anexa ao <code>window</code>; no Node, ele exporta via <code>module.exports</code>. O mesmo texto, dois carregadores, zero duplicação.</p>
+
+  <h3>O LCS em miniatura</h3>
+  <p>Pense no doc como uma lista achatada de blocos (é literalmente o que <code>collectBlocks</code> produz: texto normalizado de cada <code>h1..h4, p, pre, li, blockquote</code>). Suponha sua última visita e a de hoje:</p>
+<pre>velho = ["Intro", "Setup", "Uso"]
+novo  = ["Intro", "Setup", "Auth", "Uso"]</pre>
+  <p>O <code>diffOps</code> primeiro apar o prefixo comum (<code>["Intro","Setup"]</code>) e o sufixo (<code>["Uso"]</code>), e difa só o miolo — aqui, nada contra algo. As operações saem:</p>
+<pre>[ {t:" ", a:0, b:0}, {t:" ", a:1, b:1}, {t:"+", b:2}, {t:" ", a:2, b:3} ]</pre>
+  <p>Um único op <code>+</code> — e é exatamente ele que o <code>marks</code> transforma em <code>{b:2, kind:"new"}</code>: um chip <b>novo</b> no bloco de Auth. Agora um caso de edição:</p>
+<pre>velho = ["Instale com npm install"]
+novo  = ["Instale com pnpm install"]</pre>
+  <p>LCS de blocos não casa nada (strings diferentes), então <code>marks</code> vê um par −/+ adjacente, <code>similarity</code> dá nota alta (só uma palavra difere), e nasce <code>{b:0, kind:"edit", old:"Instale com npm install"}</code>. O <code>wordDiff</code> então re-roda o diff <i>no nível de token</i>: <code>"npm"</code> sai riscado em vermelho (<code>dih-wdel</code>), <code>"pnpm"</code> entra sublinhado em verde (<code>dih-wadd</code>).</p>
+
+  <h3>A seam: puro vs. DOM</h3>
+  <p>Visualize a linha de costura que o plano abre no arquivo atual:</p>
+
+  <div class="flow">
+    <span class="node cut">diffOps / wordDiff / similarity / marks</span>
+    <span class="arr">→</span>
+    <span class="node dev">client/diff.js (puro, UMD)</span>
+    <span class="arr">→</span>
+    <span class="node">changes.js (só DOM)</span>
+  </div>
+  <p class="figcap">Antes: tudo dentro de uma IIFE. Depois: o núcleo migra para um módulo puro; o changes.js consome.</p>
+
+  <p>A profundidade dessa seam é o que dá o ganho: todo bug de diff passa a ser reproduzível com duas strings num teste, sem abrir página. E o inverso também — mexer no CSS do minimap nunca mais pode quebrar o LCS, porque não moram mais no mesmo fechamento.</p>
+
+  <h3>Por que a guarda UMD funciona</h3>
+  <p>No navegador, <code>&lt;script&gt;</code> clássico não define <code>module</code>, então a guarda cai no ramo <code>window</code> e o <code>changes.js</code> encontra <code>window.diffOps</code> à sua espera. No Node, <code>require("./diff.js")</code> define <code>module</code>, e o <code>node:test</code> recebe o objeto com as quatro funções. Um <code>if</code> de quatro linhas compra os dois mundos:</p>
+<pre>if (typeof module !== "undefined" &amp;&amp; module.exports)
+  module.exports = { diffOps, wordDiff, similarity, marks };
+else
+  window.DIFF = { diffOps, wordDiff, similarity, marks };</pre>
+
+  <div class="callout tip">
+    <div class="title">Leverage</div>
+    O <code>wordDiff</code> já reutiliza <code>diffOps</code> internamente (diff de blocos e diff de palavras são o mesmo algoritmo em duas escalas). Ao extrair, essa reutilização fica explícita e visível — o módulo puro é uma pequena biblioteca de diff com dois clientes dentro do próprio arquivo.
+  </div>
+
+  <div class="mermaid">
+flowchart LR
+  subgraph browser["Navegador (&lt;script&gt; clássico)"]
+    A["inject.js injeta<br/>diff.js ANTES de changes.js"] --> B["diff.js<br/>window.module undefined<br/>→ anexa window.DIFF"]
+    B --> C["changes.js lê window.DIFF<br/>e segue só com DOM"]
+  end
+  subgraph node["Node (node:test)"]
+    D["require('./client/diff.js')"] --> E["module definido<br/>→ module.exports = {diffOps, ...}"]
+    E --> F["testes de LCS/wordDiff<br/>zero deps, zero DOM"]
+  end
+  G["client/diff.js (mesmo arquivo)"] -.-> B
+  G -.-> E
+  </div>
+</section>
+
+<!-- ═══════════════ 3 · MUDANÇAS ═══════════════ -->
+<section id="mudancas">
+  <h2><span class="num">3</span>Mudanças</h2>
+  <p class="lead">Três arquivos, uma ideia: separar o cálculo da pintura. A ordem abaixo é a ordem de implementação — cada passo compõe sobre o anterior.</p>
+
+  <h3>client/diff.js <span class="node dev" style="font-size:.75rem;padding:2px 8px">novo</span></h3>
+  <p>Um arquivo novo, pequeno e sem surpresas: recebe as quatro funções puras <code>diffOps</code>, <code>wordDiff</code>, <code>similarity</code> e <code>marks</code> copiadas <i>ipsis litteris</i> de <code>changes.js</code> (sem reescrever nada — esta extração é movimento, não refatoração de algoritmo). Duas diferenças conscientes: (1) a guarda UMD no final, como acima, para o mesmo arquivo servir a <code>&lt;script&gt;</code> e a <code>require()</code>; (2) <code>marks</code> recebe a lista nova por parâmetro em vez de ler o <code>texts</code> do closure, fechando a única fresta de impureza que ele tinha. Nenhum import, nenhum acesso a <code>window</code> fora da guarda, nenhum <code>document</code>.</p>
+
+  <h3>client/changes.js</h3>
+  <p>Emagrece de ~335 para ~185 linhas e vira explicitamente a camada de DOM: <code>collectBlocks</code>, o snapshot em <code>localStorage</code>, o CSS, <code>applyUI</code> (chips, word-diff renderizado, pill, minimap) e o <code>faviconDot</code> com canvas. Onde hoje chama <code>diffOps(oldTexts, texts)</code> passa a resolver o núcleo por <code>window.DIFF</code> (com um fallback defensivo: se o core não carregou, a feature simplesmente não marca — consistente com a filosofia do arquivo de "toda falha = feature silenciosamente off"). A IIFE continua existindo; só o conteúdo dela muda de natureza.</p>
+
+  <h3>inject.js</h3>
+  <p>Uma linha nova na lista de tags: a tag de <code>diff.js</code> entra <b>imediatamente antes</b> da de <code>changes.js</code> — sem <code>defer</code> entre os dois ou com <code>defer</code> em ambos, desde que a ordem de execução preserve diff-antes-de-changes. Como o bloco inteiro é inserido antes do <code>&lt;/body&gt;</code> e compartilhado por servidor dev e export, o <i>seam</i> de injeção já existia; só o estamos usando mais uma vez.</p>
+
+  <div class="callout warn">
+    <div class="title">Cuidado com a ordem de scripts</div>
+    As tags com <code>defer</code> executam na ordem em que aparecem no documento. Se <code>diff.js</code> for injetado com <code>defer</code> e <code>changes.js</code> sem (ou vice-versa), a ordem quebra e o changes roda antes do core existir. A regra simples: mesma flag, ordem certa — diff.js primeiro.
+  </div>
+
+  <table>
+    <tr><th>Arquivo</th><th>Ação</th><th>Risco</th></tr>
+    <tr><td><code>client/diff.js</code></td><td>novo: núcleo puro + guarda UMD</td><td class="sim">baixo (código copiado, não reescrito)</td></tr>
+    <tr><td><code>client/changes.js</td></td><td>remove as 4 funções; consome <code>window.DIFF</code></td><td class="talvez">médio-baixo (verificar ordem de injeção)</td></tr>
+    <tr><td><code>inject.js</code></td><td>+1 tag de script</td><td class="sim">baixo</td></tr>
+  </table>
+
+  <p>Ganho imediato: com o núcleo exposto, escreve-se <code>test/diff.test.js</code> usando <code>node:test</code> puro (sem framework, sem jsdom) cobrindo os casos da Intuição — bloco novo, edição pareável, movido não marcado, word-diff de uma palavra, e o limite <code>4e6</code> que retorna <code>null</code>. Zero dependências novas: o compromisso zero-deps do projeto permanece.</p>
+</section>
+
+<!-- ═══════════════ 4 · QUIZ ═══════════════ -->
+<section id="quiz">
+  <h2><span class="num">4</span>Quiz</h2>
+  <p class="lead">Clique para responder — pode tentar de novo à vontade.</p>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. Por que a guarda UMD (<code>if (typeof module !== "undefined")</code>) em vez de simplesmente usar <code>module.exports</code> direto?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque o Node 18 não suporta CommonJS sem polyfill.</button>
+      <button class="opt" data-k="b">B) Porque o mesmo arquivo carrega via <code>&lt;script&gt;</code> no navegador, onde <code>module</code> não existe — a guarda escolhe <code>window</code> lá e <code>module.exports</code> no Node.</button>
+      <button class="opt" data-k="c">C) Para permitir tree-shaking no bundle de produção.</button>
+      <button class="opt" data-k="d">D) Para que o export.js congele uma versão diferente do diff.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Um <code>&lt;script&gt;</code> clássico não define <code>module</code>; a guarda é o adapter que deixa o mesmo arquivo puro servir aos dois carregadores, sem bundler nem dependência.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. No exemplo da Intuição, <code>["Intro","Setup"]</code> → <code>["Intro","Setup","Auth"]</code>: quantos e quais ops o <code>diffOps</code> produz no miolo (após o trim de prefixo/sufixo)?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Nenhum — listas iguais.</button>
+      <button class="opt" data-k="b">B) Três ops <code>-</code> seguidos de três <code>+</code>.</button>
+      <button class="opt" data-k="c">C) Um único op <code>{t:"+", b:2}</code>.</button>
+      <button class="opt" data-k="d">D) Um op <code>{t:"-"}</code> para "Setup" e um <code>+</code> para "Auth".</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O trim casa "Intro" e "Setup" na frente e nada atrás; sobra miolo vazio contra <code>["Auth"]</code> — exatamente um <code>+</code>, que vira o chip "novo".</div>
+  </div>
+
+  <div class="qcard" data-answer="d">
+    <p class="q-title">3. Qual destes fica em <code>changes.js</code> (a camada DOM) após a extração?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) <code>diffOps</code> (o LCS).</button>
+      <button class="opt" data-k="b">B) <code>similarity</code>.</button>
+      <button class="opt" data-k="c">C) <code>marks</code>.</button>
+      <button class="opt" data-k="d">D) <code>collectBlocks</code>, o snapshot em localStorage e o <code>faviconDot</code>.</button>
+    </div>
+    <div class="q-feedback">✅ <b>D.</b> Tudo que lê <code>document</code>/<code>window</code>/<code>localStorage</code>/canvas permanece na camada de apresentação; as três primeiras são puras e migram.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">4. Ao mover <code>marks</code> para o módulo puro, que ajuste de interface ele exige?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Receber a lista de textos novos (<code>newTexts</code>) como parâmetro, em vez de ler a variável <code>texts</code> do closure.</button>
+      <button class="opt" data-k="b">B) Passar a retornar elementos do DOM em vez de índices.</button>
+      <button class="opt" data-k="c">C) Deixar de receber <code>oldTexts</code>, recalculando-o do localStorage.</button>
+      <button class="opt" data-k="d">D) Nenhum — ele já era 100% puro.</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> O acesso ao <code>texts</code> do closure era a única fresta de impureza; transformá-lo em argumento fecha a interface e torna a função honestamente testável.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">5. No <code>inject.js</code>, qual é a regra crítica para as tags de <code>diff.js</code> e <code>changes.js</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) changes.js deve vir primeiro, pois é o que injeta o diff.</button>
+      <button class="opt" data-k="b">B) diff.js entra imediatamente antes de changes.js, com a mesma flag de defer — scripts defer executam na ordem do documento.</button>
+      <button class="opt" data-k="c">C) Ambos devem ser async para carregarem em paralelo.</button>
+      <button class="opt" data-k="d">D) Só o diff.js deve ser injetado em modo estático (export).</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Se a ordem (ou a flag defer) divergir, o changes executa antes do core existir em <code>window</code> — e os destaques somem silenciosamente.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Plano · extrair o núcleo puro do diff (changes.js) · docs-in-html</footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true });
+</script>
+<script>
+(function () {
+  // quiz
+  document.querySelectorAll(".qcard").forEach(function (card) {
+    var ans = card.getAttribute("data-answer");
+    var opts = card.querySelectorAll(".opt");
+    var fb = card.querySelector(".q-feedback");
+    opts.forEach(function (b) {
+      b.addEventListener("click", function () {
+        opts.forEach(function (o) { o.classList.remove("right", "wrong"); });
+        if (b.getAttribute("data-k") === ans) b.classList.add("right");
+        else {
+          b.classList.add("wrong");
+          opts.forEach(function (o) { if (o.getAttribute("data-k") === ans) o.classList.add("right"); });
+        }
+        fb.classList.add("show");
+      });
+    });
+  });
+  // toc highlight
+  var links = document.querySelectorAll("#toc a");
+  var sections = [];
+  links.forEach(function (a) { var s = document.querySelector(a.getAttribute("href")); if (s) sections.push([a, s]); });
+  function onScroll() {
+    var y = window.scrollY + 120, idx = 0;
+    sections.forEach(function (p, i) { if (p[1].offsetTop <= y) idx = i; });
+    links.forEach(function (a) { a.classList.remove("active"); });
+    if (sections[idx]) sections[idx][0].classList.add("active");
+    document.querySelector(".top").classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
