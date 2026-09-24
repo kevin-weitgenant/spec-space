@@ -81,7 +81,7 @@ function createRoot(root, opts = {}) {
         ? html.replace(/<head[^>]*>/i, (m) => m + `\n<base href="${(base || "")}/">`)
         : `<base href="${(base || "")}/">\n` + html;
     }
-    send(res, 200, injectScripts(html, { base }), { "Content-Type": "text/html; charset=utf-8" });
+    send(res, 200, injectScripts(html, { base }), { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
   }
 
   function serveFile(filePath, res) {
@@ -92,7 +92,11 @@ function createRoot(root, opts = {}) {
       fs.readFile(filePath, (e, data) => {
         if (e) return send(res, 500, "500 Internal Server Error");
         const body = ext === ".html" ? injectScripts(data.toString("utf8"), { base }) : data;
-        send(res, 200, body, { "Content-Type": type });
+        // Dev server: HTML must never come from the browser's heuristic cache,
+        // or a live-reload can show a stale doc (no validators to revalidate).
+        const headers = { "Content-Type": type };
+        if (ext === ".html" || ext === ".htm") headers["Cache-Control"] = "no-store";
+        send(res, 200, body, headers);
       });
     });
   }
@@ -257,7 +261,8 @@ function createRoot(root, opts = {}) {
       const f = path.join(CLIENT_DIR, path.normalize(raw.slice("/__docs__/".length)));
       if (f !== CLIENT_DIR && !f.startsWith(CLIENT_DIR + path.sep)) return send(res, 404, "404");
       if (!fs.existsSync(f) || !fs.statSync(f).isFile()) return send(res, 404, "404");
-      return send(res, 200, fs.readFileSync(f), { "Content-Type": MIME[path.extname(f).toLowerCase()] || "application/octet-stream" });
+      // dev clients change with the package — never let the browser cache them
+      return send(res, 200, fs.readFileSync(f), { "Content-Type": MIME[path.extname(f).toLowerCase()] || "application/octet-stream", "Cache-Control": "no-store" });
     }
 
     let urlPath;

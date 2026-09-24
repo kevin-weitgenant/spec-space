@@ -98,6 +98,12 @@ dev-only, by design.
 - **URL sync** — the address bar always shows the current doc; back/forward and deep
   links work (F5 on `/docs/foo.html` reopens the shell around that doc)
 - **Live reload** — edit a doc, only that one reloads (sidebar state preserved)
+- **Change highlights** — after a reload, what's **new** since your last visit is tinted
+  green with a “novo” chip; **edited** paragraphs show a word-diff (old struck, new
+  highlighted); a minimap on the right marks the changed regions (click to jump), and
+  the browser tab gets a dot via dynamic favicon. All client-side (localStorage snapshot
+  per doc), so it works even if the change happened while no tab was open. “✓ já vi tudo”
+  clears it.
 - **Pan/zoom/lightbox for diagrams** — Mermaid blocks **and** standalone inline SVGs
   (any `<svg>` inside a `<figure>`, or anything marked `.panzoom` / `.diagram` / `.zoomable`).
   Injected automatically; clicks inside buttons/links are never hijacked. The lightbox

@@ -36,6 +36,8 @@
       "#docList a{display:block;position:relative;padding:7px 10px;border-radius:6px;text-decoration:none;color:#1f2329;cursor:pointer;font-size:.95rem;-webkit-user-drag:none;user-select:none}" +
       "#docList a:hover{background:#f6f7f9}" +
       "#docList a.active{background:#e8f0fe;color:#1f6feb;font-weight:600}" +
+      // change badge: doc changed while not being viewed (docs-in-html:change)
+      "#docList a.dl-changed::after{content:\"\";position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:#1a7f37;box-shadow:0 0 0 2px #fff}" +
       "#dl-toggle{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:1px solid #d9dee6;background:#fff;border-radius:7px;cursor:pointer;font-size:14px;line-height:1;color:#1f2329}" +
       "#dl-toggle:hover{background:#f6f7f9}" +
       "#dl-toggle img{display:block;width:18px;height:18px}" +
@@ -640,7 +642,11 @@
 
   // ── tree rendering ───────────────────────────────────────────────────────
   var collapsed = {};
-  try { collapsed = JSON.parse(localStorage.getItem("docs-in-html:collapsed") || "{}"); } catch (e) { collapsed = {}; }
+  var hadSavedState = false;
+  try {
+    collapsed = JSON.parse(localStorage.getItem("docs-in-html:collapsed") || "{}");
+    hadSavedState = !!localStorage.getItem("docs-in-html:collapsed");
+  } catch (e) { collapsed = {}; }
   function save() { try { localStorage.setItem("docs-in-html:collapsed", JSON.stringify(collapsed)); } catch (e) {} }
   function isOpen(p) { return !collapsed[p]; }
 
@@ -842,12 +848,76 @@
     });
   }
 
+  // default: everything collapsed (first visit / no saved state)
+  function markAllCollapsed(n) {
+    if (n.type === "folder") { collapsed[n.path] = true; (n.children || []).forEach(markAllCollapsed); }
+  }
+
   function build(nodes) {
+    if (!hadSavedState) nodes.forEach(markAllCollapsed);
     var frag = document.createDocumentFragment();
     nodes.forEach(function (n) { frag.appendChild(renderNode(n)); });
     list.innerHTML = "";
     list.appendChild(frag);
+    applyChangeDots(); // a rebuild must not lose pending change badges
   }
+
+  // ── change badges: docs that changed since you last saw them ───────────
+  // Two sources, merged into `changedDocs` (re-applied on sidebar rebuilds):
+  //  1. mtime (authoritative, survives closed tabs): the manifest carries each
+  //     file's mtime; we compare against "last time this browser OPENED the doc"
+  //     (localStorage). New file you never opened → compared against the first
+  //     time this browser saw the manifest (epoch) — so only files created/
+  //     changed after you started using this get the dot.
+  //  2. live SSE events (docs-in-html:change) — instant dot, no manifest round-trip.
+  // The doc being viewed never gets a dot: its own inline highlights take over.
+  var changedDocs = new Set();
+  var activePath = null;
+  var mtimes = {}; // path → mtime from the manifest
+  var SEEN_KEY = "docs-in-html:seen:" + BASE;
+  var EPOCH_KEY = "docs-in-html:epoch:" + BASE;
+  function lsJson(k, fb) { try { return JSON.parse(localStorage.getItem(k) || "null") || fb; } catch (e) { return fb; } }
+  function seenMap() { return lsJson(SEEN_KEY, {}); }
+  function markSeen(path) {
+    if (!path) return;
+    var s = seenMap(); s[path] = Date.now();
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify(s)); } catch (e) {}
+    changedDocs.delete(path);
+    applyChangeDots();
+  }
+  function collectMtimes(nodes, out) {
+    (nodes || []).forEach(function (n) {
+      if (n.type === "folder") collectMtimes(n.children, out);
+      else if (typeof n.mtime === "number") out[n.path] = n.mtime;
+    });
+  }
+  function syncMtimeDots(tree) {
+    if (!tree) return;
+    mtimes = {};
+    collectMtimes(tree, mtimes);
+    var epoch = Number(localStorage.getItem(EPOCH_KEY) || 0);
+    if (!epoch) { try { localStorage.setItem(EPOCH_KEY, String(Date.now())); } catch (e) {} return; }
+    var seen = seenMap();
+    for (var p in mtimes) {
+      if (p === activePath) continue;
+      var last = seen[p] || epoch; // never opened → dot only if newer than our first day here
+      if (mtimes[p] > last + 1000) changedDocs.add(p); // +1s: same-save races
+    }
+    applyChangeDots();
+  }
+  function applyChangeDots() {
+    var links = list.querySelectorAll("a");
+    for (var i = 0; i < links.length; i++) {
+      var p = links[i].dataset.path;
+      links[i].classList.toggle("dl-changed", p !== activePath && changedDocs.has(p));
+    }
+  }
+  window.addEventListener("docs-in-html:change", function (e) {
+    var p = e.detail && e.detail.path;
+    if (!p || !/\.html?$/i.test(p) || p === activePath) return; // non-doc / already viewing it
+    changedDocs.add(p);
+    applyChangeDots();
+  });
 
   var skipSyncPush = false; // suppress URL push when go() itself caused the iframe load
   function go(path, push) {
@@ -862,10 +932,12 @@
   }
 
   function setActive(path) {
+    activePath = path;
+    markSeen(path); // viewing it = its own inline highlights take over
     var links = list.querySelectorAll("a");
     var found = null;
     for (var i = 0; i < links.length; i++) {
-      if (links[i].dataset.path === path) { links[i].classList.add("active"); found = links[i]; }
+      if (links[i].dataset.path === path) { links[i].classList.add("active"); links[i].classList.remove("dl-changed"); found = links[i]; }
       else links[i].classList.remove("active");
     }
     if (!found) return;
@@ -891,6 +963,7 @@
       var p = stripBase(decPath(iframe.contentWindow.location.pathname.replace(/^\/+/, "")));
       if (!p) return;
       setActive(p);
+      markSeen(p); // a reload while viewing (SSE) counts as "seen" too
       // the doc navigated itself (link inside the iframe) → keep the URL in sync
       if (!skipSyncPush && BASEP + "/" + p !== location.pathname) {
         try { history.pushState({ docsPath: p }, "", BASEP + "/" + p); } catch (e) {}
@@ -925,6 +998,7 @@
   }
   function applyTree(tree) {
     if (!tree) return;
+    syncMtimeDots(tree); // mtime-based dots run on EVERY manifest refresh (not just rebuilds)
     var sig = signature(tree);
     if (sig === currentSignature) return;       // only content changed → keep sidebar state
     currentSignature = sig;

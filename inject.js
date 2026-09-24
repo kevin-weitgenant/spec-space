@@ -42,7 +42,12 @@ function injectScripts(html, opts = {}) {
   if (staticMode) tags.push(`<script>window.DOCS_EXPORT=true</script>`);
   else tags.push(`<script src="${base}/__docs__/reload.js" data-injected></script>`);
   if (isShell) tags.push(`<script src="${base}/__docs__/nav.js" data-injected></script>`);
-  else if (!staticMode) tags.push(`<script src="${base}/__docs__/edit.js" data-injected defer></script>`);
+  else if (!staticMode) {
+    tags.push(`<script src="${base}/__docs__/edit.js" data-injected defer></script>`);
+    // change highlights: marks what's new/edited since the last visit (diff
+    // vs the localStorage snapshot) — see client/changes.js
+    tags.push(`<script src="${base}/__docs__/changes.js" data-injected defer></script>`);
+  }
   const wantsZoom =
     /\bclass\s*=\s*["'][^"']*\bmermaid\b/.test(html) ||
     /<figure[\s>]/i.test(html) ||

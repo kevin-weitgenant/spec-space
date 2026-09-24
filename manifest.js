@@ -40,7 +40,9 @@ function buildTree(root) {
         nodes.push(node);
       } else if (e.isFile() && /\.html?$/i.test(e.name)) {
         if (e.name.toLowerCase() === "index.html") continue; // the shell itself
-        nodes.push({ type: "doc", name: humanize(e.name), path: childRel });
+        let mtime = 0;
+        try { mtime = fs.statSync(path.join(dir, e.name)).mtimeMs; } catch {}
+        nodes.push({ type: "doc", name: humanize(e.name), path: childRel, mtime }); // mtime feeds the sidebar's changed-dot
       }
     }
     return nodes;
