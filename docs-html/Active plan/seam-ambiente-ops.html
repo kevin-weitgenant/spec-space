@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Plano: seam de ambiente — módulo ops</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:.86em;line-height:1.5}
+pre code{background:none;border:none;padding:0}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{text-decoration:none;color:var(--soft);font-size:.86rem;padding:4px 12px;border-radius:999px;border:1px solid var(--border)}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{border-bottom:1px solid var(--border);padding:34px 0}
+h2{font-size:1.5rem;letter-spacing:-.01em;margin:0 0 14px}
+h2 .num{color:var(--accent);margin-right:10px}
+h3{font-size:1.15rem;margin:26px 0 8px}
+.lead{color:var(--soft);margin-top:-4px}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;padding:14px 16px;margin:18px 0;background:var(--panel)}
+.callout .title{font-weight:700;margin-bottom:6px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+.ramp{border:2px dashed var(--accent);border-radius:10px;padding:16px 18px;margin:18px 0;background:var(--accent-soft)}
+.ramp .ramp-title{font-weight:700;color:var(--accent);margin-bottom:8px}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.95em}
+th{background:var(--panel2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border)}
+.sim{color:var(--green);font-weight:700}.nao{color:var(--red);font-weight:700}.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;margin:16px 0}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.9rem}
+.node.dev{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.node.cut{background:var(--red-soft);border-color:var(--red);color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft)}
+.figcap{text-align:center;color:var(--soft);font-size:.86rem;margin:6px 0 18px}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:16px 0;overflow-x:auto}
+.qcard{background:var(--bg);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{width:100%;text-align:left;font:inherit;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:9px 12px;cursor:pointer}
+.opt:hover{background:var(--panel2)}
+.opt.right{background:var(--green-soft);border-color:var(--green)}
+.opt.wrong{background:var(--red-soft);border-color:var(--red)}
+.q-feedback{display:none;margin-top:10px;color:var(--text)}
+.q-feedback.show{display:block}
+footer{max-width:920px;margin:0 auto;padding:26px 24px;color:var(--soft);text-align:center;font-size:.9rem}
+.top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano: seam de ambiente — módulo ops</h1>
+    <p class="lede">Hoje, nove módulos do docs-in-html chamam <code>node:fs</code> diretamente, e abrir coisas no sistema operacional (Explorer, Finder, xdg-open, Warp, navegador) está implementado — com pequenas variações — em quatro lugares. Este plano introduz um único módulo <code>ops.js</code>: a única porta por onde o projeto fala com o ambiente, e a alavanca que torna registry, scan, reload e manager testáveis sem tocar no seu home nem lançar processos reais.</p>
+    <p class="meta">Candidato 2 · “Seam explícito de ambiente (ops)” · docs-in-html · zero dependências, Node ≥ 18, CommonJS</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#intuicao">2 · Intuição</a>
+    <a href="#mudancas">3 · Mudanças</a>
+    <a href="#quiz">4 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+
+  <div class="ramp">
+    <div class="ramp-title">Rampa para iniciante (pode pular)</div>
+    <p>O docs-in-html é um pequeno servidor de desenvolvimento escrito em JavaScript para Node.js. Ele serve pastas com arquivos HTML, recarrega a página no navegador quando um arquivo muda (<em>hot reload</em>) e tem alguns comandos de conveniência: revelar um arquivo no explorador de arquivos, abrir uma pasta no terminal Warp, abrir o navegador. Para fazer tudo isso, o programa conversa com o mundo externo — o disco rígido, o sistema operacional, a sua pasta pessoal (o “home”). Em código, essas conversas acontecem por funções como <code>fs.readFileSync</code>, <code>os.homedir()</code> e <code>child_process.spawn</code>.</p>
+    <p>O problema: quando essas chamadas estão espalhadas pelo código, fica difícil testar o programa sem, ao mesmo tempo, mexer em arquivos reais do seu computador. A ideia central deste plano é <em>empacotar</em> todas essas conversas num único módulo (<code>ops.js</code>), para que os testes possam trocar a versão real por uma versão falsa, que só existe na memória. É como ter um telefone dedicado para falar com o mundo: em produção o telefone é real; nos testes, é um telefone de brinquedo que anota tudo o que você pediria.</p>
+  </div>
+
+  <p class="lead">Para quem já conhece o código, o diagnóstico é concreto e mensurável.</p>
+
+  <h3>Arquivo e processo como dependências diretas</h3>
+  <p>Uma busca por <code>require("node:fs")</code> no repo encontra nove módulos: <code>config.js</code>, <code>export.js</code>, <code>init.js</code>, <code>manager.js</code>, <code>manifest.js</code>, <code>registry.js</code>, <code>reload.js</code>, <code>roots.js</code> e <code>scan.js</code>. Cada um carrega os builtins do Node diretamente no topo — não existe nenhum ponto de inserção entre a lógica e o disco. O mesmo vale para <code>node:child_process</code>:</p>
+  <ul>
+    <li><b>roots.js</b>, na rota <code>__reveal__</code> (linhas ~224-228): três chamadas <code>spawn</code> com <code>detached:true, stdio:"ignore"</code> — <code>explorer /select,...</code> no Windows, <code>open -R</code> no macOS, <code>xdg-open</code> no Linux.</li>
+    <li><b>manager.js</b>: <code>/api/reveal</code> (linhas ~197-201) repete exatamente o mesmo trio <em>explorer / open / xdg-open</em>; <code>/api/open-warp</code> (linhas ~50-51 e ~206-229) resolve o binário do Warp procurando <code>$WARP_BIN</code>, depois localizações padrão, e por fim <code>execFile("where"/"which")</code>; e a abertura de navegador usa <code>exec(cmd)</code> com <code>start</code>/<code>open</code>/<code>xdg-open</code>.</li>
+    <li><b>serve.js</b> (linhas ~155-158): mais uma cópia do padrão <code>start "" / open / xdg-open</code> via <code>exec</code>, quando <code>doOpen</code> está ativo.</li>
+  </ul>
+  <p>São três ou quatro implementações duplicadas de “abrir isto no sistema operacional”, cada uma com suas pequenas divergências de tratamento de plataforma — o tipo de código onde um bug corrigido num lugar sobrevive nos outros.</p>
+
+  <h3>Estado global capturado cedo demais</h3>
+  <p>Os casos mais dolorosos para testes são os que leem o ambiente <em>no momento do require</em>:</p>
+  <ul>
+    <li><b>registry.js</b> (linhas 10-11): <code>const DIR = path.join(os.homedir(), ".docs-in-html")</code> roda quando o módulo é carregado, antes de qualquer função ser chamada. Um teste que queira apontar o registro para um diretório temporário precisa ou fazer monkeypatch <em>antes</em> do primeiro <code>require</code> (com cache de módulo e ordem de carregamento interferindo), ou aceitar que o teste lê e escreve na pasta <code>~/.docs-in-html</code> real do usuário.</li>
+    <li><b>scan.js</b> (linha 17): <code>CACHE_FILE</code> deriva daquele mesmo <code>DIR</code> — o cache do scanner mora no seu home, com a mesma restrição.</li>
+    <li><b>reload.js</b> (linha 23): <code>createReload</code> chama <code>fs.watch(root, {recursive:true}, ...)</code> como efeito colateral do construtor. Qualquer teste que construa um root via <code>createRoot</code> ou chame <code>manager.start</code> ganha watchers reais sobre diretórios reais — que ainda por cima vazam se o teste não fechar.</li>
+  </ul>
+
+  <div class="callout warn">
+    <div class="title">Por que isso importa agora</div>
+    <p>Nada disso é bug: o sistema funciona. É dívida estrutural. Enquanto o ambiente for uma dependência implícita, cada novo teste paga um imposto — monkeypatch frágil, <code>tmpdir</code> com limpeza manual, ou simplesmente “não testamos isso”. O plano a seguir troca o imposto por uma interface explícita.</p>
+  </div>
+</section>
+
+<section id="intuicao">
+  <h2><span class="num">2</span>Intuição</h2>
+
+  <p class="lead">A ideia central é o conceito de <em>seam</em>: um ponto do programa onde você pode trocar o comportamento sem editar o código ao redor.</p>
+
+  <p>Pense num código que calcula o preço de uma venda mas grava o log direto no console do sistema. Você não consegue testar o cálculo sem gerar lixo no console. Agora imagine o mesmo código chamando <code>log(msg)</code> — uma função recebida de fora. Em produção você passa a função que escreve no console; no teste, passa uma que só joga as mensagens numa lista. O cálculo não mudou uma linha; o que mudou é que agora existe uma <em>costura</em> onde os dois mundos se encontram. Michael Feathers chama esse ponto de <em>seam</em>; a implementação concreta que você pluga nele, de <em>adapter</em>.</p>
+
+  <h3>Dois adapters justificam a costura</h3>
+  <p>Um seam só se paga se existem pelo menos duas implementações plausíveis do outro lado. Aqui elas são óbvias:</p>
+
+  <div class="flow">
+    <span class="node">módulos do projeto<br>(roots, manager, registry…)</span>
+    <span class="arr">→</span>
+    <span class="node dev">ops.readFile / spawn / watch / homeDir…</span>
+    <span class="arr">→</span>
+    <span class="node">adapter Node<br>(builtins reais)</span>
+    <span class="arr">·</span>
+    <span class="node dev">adapter de teste<br>(memória / noop)</span>
+  </div>
+  <p class="figcap">Uma interface, dois adapters: produção fala com o mundo real; testes falam com um mundo de mentira.</p>
+
+  <p><b>Exemplo concreto com o registry.</b> Hoje, <code>registry.js</code> computa <code>DIR</code> a partir de <code>os.homedir()</code> no require. Com o seam, o módulo passa a pedir o home ao <code>ops</code> no momento em que precisa — e o <code>ops</code> que recebe é o que o chamador injetou. Um teste monta um <code>ops</code> em memória cujo <code>homeDir()</code> devolve um diretório temporário (ou até um caminho fictício, se o <code>readFile</code>/<code>writeFile</code> também forem falsos), e o registry inteiro se torna testável sem que o disco do usuário seja tocado.</p>
+
+  <p><b>Exemplo com o watcher.</b> <code>reload.js</code> chama <code>ops.watch(root, cb)</code>. No adapter Node, isso é <code>fs.watch</code> recursivo como hoje. No adapter de teste, é um objeto com um método <code>emit(relPath)</code> que o teste dispara à mão: “simule que o usuário salvou <code>index.html</code>” — e o teste observa o SSE do hot reload reagir, sem nenhum watcher real, sem depender de timeouts do sistema de arquivos.</p>
+
+  <p><b>Exemplo com “abrir no OS”.</b> O trio explorer/open/xdg-open vira <code>ops.openPath(abs)</code>, e o Warp e o navegador viram <code>ops.spawn(bin, args)</code> e <code>ops.openUrl(url)</code>. Nos testes, são noops que registram as chamadas: um teste de <code>/api/reveal</code> afirma apenas “o adapter anotou <code>openPath("/docs/proj")</code>” — o teste nunca lança um Explorer.</p>
+
+  <div class="mermaid">
+flowchart LR
+  subgraph chamadores
+    R[registry.js] 
+    S[scan.js]
+    RL[reload.js]
+    RO[roots.js]
+    M[manager.js]
+    SV[serve.js]
+  end
+  OPS[ops.js — seam do ambiente]
+  subgraph adapters
+    A1[Node ops: fs / child_process / os reais]
+    A2[Teste ops: memória + noop]
+  end
+  R & S & RL & RO & M & SV --> OPS
+  OPS -->|produção| A1
+  OPS -->|testes| A2
+  style OPS fill:#e8f0fe,stroke:#1f6feb
+  style A2 fill:#e7f5ec,stroke:#1a7f37
+  </div>
+  <p class="figcap">Seis chamadores, um seam, dois adapters. A seta dos testes é a que não existe hoje.</p>
+
+  <div class="callout tip">
+    <div class="title">O princípio de localidade</div>
+    <p>Hoje, saber <em>quais</em> efeitos um teste pode disparar exige ler nove arquivos. Depois do plano, a resposta é uma: “olhe o que o código chama no <code>ops</code>”. O efeito colateral ganha um endereço único — e o resto do sistema pode ser lido como lógica pura.</p>
+  </div>
+</section>
+
+<section id="mudancas">
+  <h2><span class="num">3</span>Mudanças</h2>
+  <p class="lead">Um módulo novo e seis ajustes cirúrgicos, sem mudança de comportamento observável em produção. Nenhuma dependência nova; continua CommonJS, Node ≥ 18.</p>
+
+  <h3>1 · ops.js (novo)</h3>
+  <p>O módulo define a interface do seam — <code>readFile</code>, <code>writeFile</code>, <code>stat</code>, <code>readdir</code>, <code>rename</code>, <code>unlink</code>, <code>mkdir</code>, <code>rm</code>, <code>watch</code>, <code>spawn</code> (detached), <code>openPath</code>, <code>openUrl</code>, <code>homeDir</code> — com a implementação padrão sendo os builtins do Node. Os helpers de plataforma (<code>openPath</code> escolhendo entre explorer/open/xdg-open, <code>openUrl</code> entre start/open/xdg-open) moram aqui, escritos uma vez. A injeção acontece por <code>opts.ops</code> nas funções que precisam e por um setter a nível de módulo para os casos onde o valor já foi capturado no require — a forma exata:</p>
+<pre><code>module.exports = createDefaultOps();      // usado por padrão
+module.exports.setOps = (o) => { ... };   // troca o adapter global</code></pre>
+  <p>A intenção de design: o adapter default é exportado como o módulo inteiro, de modo que o código existente continue parecendo idêntico (<code>ops.readFile(...)</code>), e o teste só chama <code>setOps</code> no <code>beforeEach</code>.</p>
+
+  <h3>2 · registry.js</h3>
+  <p>As linhas 10-11 deixam de computar <code>DIR</code> de <code>os.homedir()</code> no require. O diretório passa a ser resolvido sob demanda, consultando <code>ops.homeDir()</code> — o que o torna sensível ao adapter injetado mesmo depois do módulo carregado. As operações de leitura/escrita do registro trocam <code>node:fs</code> por <code>ops</code>. Resultado: testar o registry exige apenas um ops com home fictício; nada no seu home real é lido ou escrito.</p>
+
+  <h3>3 · scan.js</h3>
+  <p><code>CACHE_FILE</code> deixa de ser constante derivada de <code>DIR</code> no escopo do módulo e passa a ser computado quando o scan roda, a partir do mesmo <code>ops.homeDir()</code>; <code>writeFileSync</code> do cache (linha ~53) e o <code>readdir</code>/resto das primitivas de arquivo migram para <code>ops</code>. Ganho direto: um teste do scanner com cache pode usar memória e ainda exercitar a lógica de “cache expirado/inválido”.</p>
+
+  <h3>4 · reload.js</h3>
+  <p>O construtor deixa de ter o <code>fs.watch</code> como efeito colateral incondicional: chama <code>ops.watch(root, cb)</code> (linha ~23 hoje), recebendo um objeto observável com <code>close()</code>. O adapter Node devolve o <code>fs.watch</code> recursivo atual — inclusive o mesmo fallback amigável quando <code>fs.watch</code> não existe. O adapter de teste devolve algo com <code>emit()</code>. <code>createRoot</code>/<code>manager.start</code> em testes param de registrar watchers reais.</p>
+
+  <h3>5 · roots.js</h3>
+  <p>A rota <code>__reveal__</code> (linhas ~224-228) troca o trio manual de <code>spawn</code> por uma única chamada <code>ops.openPath(abs)</code> — a distinção “diretório abre nele mesmo, arquivo abre com seleção do pai” vira lógica interna do helper. As demais operações de arquivo do handler de root migram para <code>ops</code>. Duplicação removida: primeira das cópias de “abrir no OS”.</p>
+
+  <h3>6 · manager.js</h3>
+  <p>Três frentes: <code>/api/reveal</code> (~197-201) passa a <code>ops.openPath</code>; <code>/api/open-warp</code> usa <code>ops.spawn</code> para o Warp e para o <code>where</code>/<code>which</code> da resolução de binário (~50-51) — a política de busca (<code>$WARP_BIN</code> → localizações padrão → PATH) permanece no manager, onde está a lógica de domínio, só a execução cruza o seam; e a abertura de navegador delega a <code>ops.openUrl</code>. Nos testes, um noop registrador permite afirmar “o manager pediu para abrir o <em>projeto</em>, não a pasta de docs” sem lançar nada.</p>
+
+  <h3>7 · serve.js</h3>
+  <p>O bloco <code>doOpen</code> (~155-158) substitui a string de comando com <code>start/open/xdg-open</code> por <code>ops.openUrl(url)</code>; o <code>exec</code> importado no topo deixa de ser necessário. O serve continua sem saber nada de plataformas.</p>
+
+  <h3>Ordem e agrupamento</h3>
+  <p>As mudanças se constroem em sequência: primeiro o seam (<code>ops.js</code>), depois os consumidores do home capturado cedo (<code>registry.js</code> → <code>scan.js</code>, que depende do primeiro), em seguida os efeitos de processo (<code>reload.js</code>, <code>roots.js</code>, <code>manager.js</code>, <code>serve.js</code> — cada um independente dos outros, todos dependentes apenas de <code>ops.js</code>). Qualquer passo pode parar no meio sem deixar o sistema quebrado: cada migração é invisível em produção, porque o adapter default é comportamentalmente idêntico ao código atual.</p>
+
+  <table>
+    <thead><tr><th>Ganho</th><th>Antes</th><th>Depois</th></tr></thead>
+    <tbody>
+      <tr><td>Testar registry</td><td class="nao">monkeypatch antes do require ou tocar o home real</td><td class="sim">ops com homeDir fictício</td></tr>
+      <tr><td>Testar /api/reveal, __reveal__</td><td class="nao">lança explorer/open/xdg-open de verdade</td><td class="sim">noop registra a chamada</td></tr>
+      <tr><td>Testar hot reload</td><td class="talvez">watchers reais + timeouts de fs</td><td class="sim">watcher falso com emit()</td></tr>
+      <tr><td>“Abrir no OS” implementado</td><td class="nao">3–4 cópias divergentes</td><td class="sim">1 helper em ops.js</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="title">O que <em>não</em> muda</div>
+    <p>Nenhuma rota nova, nenhum formato de arquivo novo, nenhuma flag de CLI. O comportamento em produção é byte a byte equivalente — este plano é infraestrutura para a qualidade dos testes que virão depois.</p>
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">4</span>Quiz</h2>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. O que caracteriza um <em>seam</em> num programa?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Qualquer função pura que não acessa o disco</button>
+      <button class="opt" data-k="b">B) Um ponto onde é possível variar o comportamento sem editar o código ao redor</button>
+      <button class="opt" data-k="c">C) A camada de rede que separa cliente e servidor</button>
+      <button class="opt" data-k="d">D) Uma interface que só faz sentido se houver microserviços</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Seam é a costura: o local onde duas partes se encontram de forma que uma pode ser substituída (por um adapter) sem alterar a outra. Não exige pureza nem rede — exige trocabilidade.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. Por que <code>registry.js:10-11</code> (<code>DIR = path.join(os.homedir(), ...)</code> no require) é um problema de teste?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque <code>path.join</code> é lento demais para rodar em cada teste</button>
+      <button class="opt" data-k="b">B) Porque o home do usuário não existe em Linux</button>
+      <button class="opt" data-k="c">C) Porque o valor é capturado no carregamento do módulo — trocá-lo exige monkeypatch antes do require ou tocar o home real</button>
+      <button class="opt" data-k="d">D) Porque impossibilita o CommonJS de fazer cache do módulo</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O estado ambiental é congelado no momento do require. Com o seam, <code>homeDir()</code> é consultado sob demanda via <code>ops</code> injetado, e o teste troca o adapter a qualquer momento.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. Por que se diz que “dois adapters justificam o seam”?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Se só existe uma implementação possível, a interface é burocracia; a segunda implementação (a de teste) prova que o seam é real</button>
+      <button class="opt" data-k="b">B) Porque todo adapter precisa de um backup em caso de falha</button>
+      <button class="opt" data-k="c">C) Porque Node só permite duas instâncias de child_process simultâneas</button>
+      <button class="opt" data-k="d">D) Porque o par produção/teste duplica a cobertura de código automaticamente</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> O valor de uma interface está nas trocas que ela permite. Aqui: Node ops em produção, ops em memória/noop nos testes — a segunda existe justamente para exercitar o seam.</div>
+  </div>
+
+  <div class="qcard" data-answer="d">
+    <p class="q-title">4. No plano, <code>reload.js</code> passa a chamar <code>ops.watch(root, cb)</code>. Qual é o ganho principal para testes do hot reload?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) <code>fs.watch</code> deixa de existir no Node</button>
+      <button class="opt" data-k="b">B) O debounce de 150 ms pode ser removido</button>
+      <button class="opt" data-k="c">C) O SSE passa a suportar mais de 6 conexões por origem</button>
+      <button class="opt" data-k="d">D) O teste pode chamar <code>watcher.emit(relPath)</code> num watcher falso — sem watcher real, sem timeout de filesystem, sem vazamento</button>
+    </div>
+    <div class="q-feedback">✅ <b>D.</b> Hoje construir um root já registra <code>fs.watch</code> recursivo em diretório real (efeito colateral do construtor). Com o seam, o evento de mudança vira algo que o teste dispara deterministicamente.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">5. Em <code>manager.js</code>, a busca do binário do Warp (<code>$WARP_BIN</code> → localizações padrão → <code>where</code>/<code>which</code>) permanece no manager, e só a execução vai para o <code>ops</code>. Por quê?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque <code>setOps</code> não aceita funções de busca</button>
+      <button class="opt" data-k="b">B) Porque a ordem de procura é decisão de domínio (lógica), e o seam deve cobrir apenas o efeito colateral — executar processos</button>
+      <button class="opt" data-k="c">C) Porque mover a busca para o ops exigiria uma dependência nova</button>
+      <button class="opt" data-k="d">D) Porque o manager é o único módulo que pode ler variáveis de ambiente</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Um bom seam é estreito: atravessa a fronteira apenas o que é efeito no mundo (spawn/execFile). A política de <em>onde procurar</em> é comportamento do sistema e continua testável por cima do seam.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Plano · seam de ambiente — módulo ops · docs-in-html</footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script>
+// quiz
+document.querySelectorAll('.qcard').forEach(function(card){
+  var ans = card.dataset.answer;
+  var opts = card.querySelectorAll('.opt');
+  var fb = card.querySelector('.q-feedback');
+  opts.forEach(function(o){
+    o.addEventListener('click', function(){
+      opts.forEach(function(x){ x.classList.remove('right','wrong'); });
+      if (o.dataset.k === ans) o.classList.add('right');
+      else {
+        o.classList.add('wrong');
+        card.querySelector('.opt[data-k="'+ans+'"]').classList.add('right');
+      }
+      fb.classList.add('show');
+    });
+  });
+});
+// toc highlight
+var links = document.querySelectorAll('.toc a');
+var sections = document.querySelectorAll('main section');
+function onScroll(){
+  var y = window.scrollY + 120, cur = sections[0];
+  sections.forEach(function(s){ if (s.offsetTop <= y) cur = s; });
+  links.forEach(function(a){ a.classList.toggle('active', a.getAttribute('href') === '#'+cur.id); });
+  document.querySelector('.top').classList.toggle('show', window.scrollY > 600);
+}
+window.addEventListener('scroll', onScroll); onScroll();
+</script>
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+</script>
+</body>
+</html>

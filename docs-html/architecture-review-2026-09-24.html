@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<title>Architecture review — docs-in-html</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
+<style>
+  .seam { stroke-dasharray: 4 4; }
+  .leak { stroke: #dc2626; }
+  .deep { background: linear-gradient(135deg, #0f172a, #1e293b); }
+</style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans">
+<main class="max-w-5xl mx-auto px-6 py-12 space-y-12">
+
+<!-- ── header ─────────────────────────────────────────────── -->
+<header class="space-y-3">
+  <h1 class="font-serif text-3xl">Architecture review — <span class="font-mono text-xl">docs-in-html</span></h1>
+  <p class="text-sm text-slate-500">2026-09-24 · foco: testabilidade e navegabilidade · hot spots do git log: <code>nav.js</code>, <code>serve.js</code>, <code>inject.js</code>, <code>roots.js</code></p>
+  <div class="flex gap-5 text-xs text-slate-600 pt-1">
+    <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 border border-slate-500 bg-white"></span> module</span>
+    <span class="flex items-center gap-1.5"><span class="inline-block w-5 border-t-2 border-dashed border-slate-500"></span> seam</span>
+    <span class="flex items-center gap-1.5"><span class="inline-block w-5 border-t-2 border-red-600"></span> leakage</span>
+    <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-3 deep rounded-sm"></span> deep module</span>
+  </div>
+</header>
+
+<!-- ── candidates ─────────────────────────────────────────── -->
+<section id="candidates" class="space-y-10">
+
+<!-- CANDIDATE 1 -->
+<article id="c1" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h2 class="font-serif text-2xl">1. Aprofundar o módulo Root: tabela de endpoints + guardas</h2>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Strong</span>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">roots.js:43–290 · (colaterais: manager.js)</p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — 1 interface, tudo closure-private</p>
+      <div class="border-2 border-red-400 rounded-lg p-3 bg-white">
+        <p class="text-xs uppercase tracking-wider font-mono text-center py-1">createRoot → handle(req,res)</p>
+        <div class="mt-2 space-y-1 text-[11px] font-mono text-slate-500">
+          <div class="border border-slate-300 rounded px-2 py-1">safeRelPath / resolveIn (segurança!)</div>
+          <div class="border border-slate-300 rounded px-2 py-1">readJsonBody</div>
+          <div class="border border-slate-300 rounded px-2 py-1">8 handlers POST inline</div>
+          <div class="border border-slate-300 rounded px-2 py-1">shiftIcons / pruneIcons</div>
+          <div class="border border-slate-300 rounded px-2 py-1">serveShell / serveFile / MIME</div>
+        </div>
+        <p class="text-[10px] text-red-600 mt-2 text-center">única forma de chegar aqui: servidor real + HTTP real + temp dir real</p>
+      </div>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — interface de teste, implementation escondida</p>
+      <div class="deep rounded-lg p-3">
+        <p class="text-xs uppercase tracking-wider font-mono text-center text-white py-1">root module</p>
+        <div class="mt-2 grid grid-cols-2 gap-1 text-[11px] font-mono text-slate-400">
+          <div class="rounded px-2 py-1 border border-slate-600">resolveRel()</div>
+          <div class="rounded px-2 py-1 border border-slate-600">endpoints.delete()</div>
+          <div class="rounded px-2 py-1 border border-slate-600">endpoints.rename()</div>
+          <div class="rounded px-2 py-1 border border-slate-600">endpoints.save()</div>
+          <div class="rounded px-2 py-1 border border-slate-600">…guardas internas</div>
+          <div class="rounded px-2 py-1 border border-slate-600">handle(req,res)</div>
+        </div>
+        <p class="text-[10px] text-emerald-400 mt-2 text-center">teste chama endpoints.delete(rel) direto; handle continua sendo o mesmo seam HTTP</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-sm"><strong>Problem</strong> — o root module é raso no lugar errado: a interface é um <code>(req,res)</code> cru, e toda a lógica de segurança (<code>path traversal</code>, nomes, caps) e de bookkeeping de config é closure-private. É onde mora a maior quantidade de código não testado do pacote.</p>
+  <p class="text-sm"><strong>Solution</strong> — extrair <code>safeRelPath</code>/<code>resolveIn</code>/<code>readJsonBody</code> (que também existe duplicado em <code>manager.js:108</code>) e um handler por endpoint, recebendo <code>(root, config)</code>; <code>handle</code> vira uma tabela método→rota sobre eles.</p>
+  <ul class="text-sm list-disc pl-5 space-y-0.5">
+    <li>locality: guardas de segurança num lugar só</li>
+    <li>leverage: uma interface, dois call sites (serve + manager)</li>
+    <li>testa path traversal sem servidor</li>
+    <li>deleta o <code>readJsonBody</code> duplicado</li>
+  </ul>
+</article>
+
+<!-- CANDIDATE 2 -->
+<article id="c2" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h2 class="font-serif text-2xl">2. Seam explícito de ambiente (fs + opener + clock)</h2>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Strong</span>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">ports &amp; adapters</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">registry.js:10–11 · scan.js:14 · reload.js:24 · roots.js (__reveal__) · manager.js (reveal/warp/browser-open) · serve.js:165</p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — builtins vazando por todo lado</p>
+      <pre class="mermaid">
+flowchart TB
+  R[registry] -.-> FS1[node:fs]
+  R -.-> HD[os.homedir<br/>no require!]
+  RT[roots] -.-> FS2[node:fs]
+  RT -.-> CP1[spawn explorer]
+  M[manager] -.-> CP2[spawn open/xdg-open]
+  M -.-> CP3[where/which warp]
+  S[serve] -.-> CP4[exec start/open]
+  classDef leak stroke:#dc2626,stroke-width:2px;
+  class FS1,FS2,CP1,CP2,CP3,CP4,HD leak
+      </pre>
+      <p class="text-[10px] text-red-600 mt-1 text-center">teste de /api/reveal dispara o Explorer de verdade</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — um seam, dois adapters</p>
+      <div class="flex flex-col items-center gap-2">
+        <div class="deep rounded-lg w-64 p-2 text-center text-white text-xs font-mono uppercase tracking-wider">ops module (interface)</div>
+        <svg width="220" height="26"><line x1="110" y1="0" x2="110" y2="26" stroke="#64748b" stroke-width="2" class="seam"/></svg>
+        <div class="flex gap-3">
+          <div class="border-2 border-emerald-500 rounded-lg bg-white w-32 p-2 text-center text-[11px] font-mono">adapter node<br/><span class="text-slate-400">fs · spawn · homedir</span></div>
+          <div class="border-2 border-indigo-500 rounded-lg bg-white w-32 p-2 text-center text-[11px] font-mono">adapter mem<br/><span class="text-slate-400">Map · noop · fake</span></div>
+        </div>
+        <p class="text-[10px] text-slate-500 text-center mt-1">dois adapters justificam o seam: prod em node, testes in-memory</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-sm"><strong>Problem</strong> — <code>node:fs</code> é usado direto por 9 modules; <code>registry.js</code> computa <code>homedir()</code> no require (monkeypatch antes do require ou tocar o home real); abrir-no-OS existe 4× (<code>__reveal__</code>, <code>/api/reveal</code>, open-warp, open-browser).</p>
+  <p class="text-sm"><strong>Solution</strong> — um module <code>ops</code> pequeno (<code>readFile</code>, <code>writeFile</code>, <code>stat</code>, <code>openPath</code>, <code>openUrl</code>, <code>homeDir</code>, <code>watch</code>) injetado onde hoje os builtins são chamados direto; default = node builtin.</p>
+  <ul class="text-sm list-disc pl-5 space-y-0.5">
+    <li>locality: efeitos de SO num module</li>
+    <li>registry testável sem tocar o home</li>
+    <li>deleta 3 duplicações de opener</li>
+    <li>watcher vira substituível no reload</li>
+  </ul>
+</article>
+
+<!-- CANDIDATE 3 -->
+<article id="c3" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h2 class="font-serif text-2xl">3. Extrair o núcleo puro do diff (changes.js)</h2>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">Strong</span>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">local-substitutable</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">client/changes.js:64–160 · novo client/diff.js</p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — massa: interface ≈ implementation</p>
+      <div class="flex items-end justify-center gap-2 h-40 pt-2">
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-24 bg-red-200 border border-red-400 rounded-t" style="height:38px"></div>
+          <p class="text-[10px] font-mono text-red-700">interface<br/>(IIFE, 0 exports)</p>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-24 bg-slate-300 border border-slate-400 rounded-t" style="height:130px"></div>
+          <p class="text-[10px] font-mono text-slate-600">implementation<br/>(diff + DOM juntos)</p>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — interface curta, implementation funda</p>
+      <div class="flex items-end justify-center gap-2 h-40 pt-2">
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-24 bg-emerald-200 border border-emerald-500 rounded-t" style="height:22px"></div>
+          <p class="text-[10px] font-mono text-emerald-700">interface<br/>diffOps·wordDiff</p>
+        </div>
+        <div class="flex flex-col items-center gap-1">
+          <div class="w-24 bg-slate-800 rounded-t" style="height:146px"></div>
+          <p class="text-[10px] font-mono text-slate-600">LCS, marks, similarity<br/>(puro, ~150 linhas)</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-sm"><strong>Problem</strong> — o LCS/word-diff/similarity de <code>changes.js</code> é o código com maior potencial de bug visível do pacote, e está preso num IIFE que toca DOM/localStorage no load: intragável de testar.</p>
+  <p class="text-sm"><strong>Solution</strong> — mover para <code>client/diff.js</code> com guarda UMD (<code>if (typeof module!=="undefined") module.exports=…</code>); <code>changes.js</code> importa e fica só com a camada DOM.</p>
+  <ul class="text-sm list-disc pl-5 space-y-0.5">
+    <li>zero deps, zero framework — roda em node:test</li>
+    <li>locality: bugs de diff isolados do DOM</li>
+    <li>casos reais prontos: unicode, ordem, iguais</li>
+    <li>quick win: 1 arquivo novo</li>
+  </ul>
+</article>
+
+<!-- CANDIDATE 4 -->
+<article id="c4" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h2 class="font-serif text-2xl">4. client/lib.js — identidade, BASE e api()</h2>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Worth exploring</span>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">client/reload.js:26–30 · client/changes.js:27–31 · client/edit.js:12–16 · client/nav.js:120,136,236 · inject.js:50</p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — "quem sou eu?" em 3 cópias verbatim</p>
+      <div class="relative border-2 border-red-300 rounded-lg bg-white p-2 h-36">
+        <p class="text-[11px] font-mono text-slate-500 leading-5">
+          reload.js <span class="text-red-600 font-bold">│</span> me = pathname − base…<br>
+          changes.js <span class="text-red-600 font-bold">│</span> me = pathname − base…<br>
+          edit.js <span class="text-red-600 font-bold">│</span> me = pathname − base…
+        </p>
+        <p class="text-[10px] text-red-600 absolute bottom-2 left-0 right-0 text-center">mudou a regra de slug/base → 3 edições sincronizadas, 0 testes</p>
+      </div>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — 1 module, 4 call sites</p>
+      <div class="flex flex-col items-center gap-2">
+        <div class="flex gap-2">
+          <div class="border border-slate-400 rounded px-2 py-1 text-[11px] font-mono bg-white">reload</div>
+          <div class="border border-slate-400 rounded px-2 py-1 text-[11px] font-mono bg-white">edit</div>
+          <div class="border border-slate-400 rounded px-2 py-1 text-[11px] font-mono bg-white">changes</div>
+          <div class="border border-slate-400 rounded px-2 py-1 text-[11px] font-mono bg-white">nav</div>
+        </div>
+        <svg width="60" height="24"><path d="M5,0 L30,24 M55,0 L30,24" stroke="#64748b" stroke-width="1.5" fill="none"/></svg>
+        <div class="deep rounded-lg px-4 py-2 text-white text-[11px] font-mono">lib: me() · api(path) · isShell() · BASE</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-sm"><strong>Problem</strong> — o bloco "identidade do doc" (strip do BASE, fallback index.html) aparece verbatim em 3 clientes; detecção de shell em 4 lugares; wrapper fetch em 2. A lógica do prefixo do manager é a menos testada do pacote justamente por ter 3 cópias.</p>
+  <p class="text-sm"><strong>Solution</strong> — <code>client/lib.js</code> com guarda UMD exportando <code>me()</code>, <code>api()</code>, <code>isShell()</code>; os 4 clientes passam a consumir (a injeção continua uma tag por página + uma nova).</p>
+  <ul class="text-sm list-disc pl-5 space-y-0.5">
+    <li>locality: regra de identidade num lugar</li>
+    <li>leverage: 1 interface, 4 call sites</li>
+    <li>testa o strip de base em node:test</li>
+    <li>5ª tag injetada — custo pequeno</li>
+  </ul>
+</article>
+
+<!-- CANDIDATE 5 -->
+<article id="c5" class="rounded-xl border border-slate-200 bg-white p-6 space-y-4">
+  <div class="flex items-center gap-3 flex-wrap">
+    <h2 class="font-serif text-2xl">5. Tornar serve.js e export.js requireable</h2>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">Worth exploring</span>
+    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">in-process</span>
+  </div>
+  <p class="font-mono text-sm text-slate-600">serve.js:45–71 (argv + process.exit no corpo do módulo) · export.js:44</p>
+
+  <div class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">Before — script, não module</p>
+      <div class="space-y-1 text-[11px] font-mono">
+        <div class="border-l-4 border-red-400 bg-white px-2 py-1">parse argv no top-level</div>
+        <div class="border-l-4 border-red-400 bg-white px-2 py-1">process.exit() em 3 pontos do corpo</div>
+        <div class="border-l-4 border-red-400 bg-white px-2 py-1">0 exports</div>
+        <div class="border-l-4 border-red-400 bg-white px-2 py-1">export.js run(): exit(1) em vez de throw</div>
+      </div>
+      <p class="text-[10px] text-red-600 mt-2">require("./serve.js") num teste = servidor de verdade ou exit</p>
+    </div>
+    <div class="rounded-lg border border-slate-200 bg-stone-50 p-3">
+      <p class="text-xs uppercase tracking-wider text-slate-400 mb-2">After — parseArgs/main puros + casca fina</p>
+      <div class="space-y-1 text-[11px] font-mono">
+        <div class="border-l-4 border-emerald-500 bg-white px-2 py-1">parseArgs(argv) → {mode, dir, port…} <span class="text-slate-400">(puro)</span></div>
+        <div class="border-l-4 border-emerald-500 bg-white px-2 py-1">main(opts) → Promise/exit code <span class="text-slate-400">(sem exit)</span></div>
+        <div class="border-l-4 border-slate-400 bg-white px-2 py-1">rodapé: if (require.main===module) main()</div>
+        <div class="border-l-4 border-emerald-500 bg-white px-2 py-1">export.js: throw → CLI pega e printa</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="text-sm"><strong>Problem</strong> — o CLI inteiro é efeito colateral de require; não há interface para testar parse de flags, fallback de portas ou delegação sem subir processo.</p>
+  <p class="text-sm"><strong>Solution</strong> — <code>parseArgs(argv)</code> e <code>main()</code> exportados, side-effects isolados no rodapé (<code>require.main === module</code>); <code>export.run()</code> lança erro em vez de <code>process.exit</code>.</p>
+  <ul class="text-sm list-disc pl-5 space-y-0.5">
+    <li>interface: parseArgs testável direto</li>
+    <li>bin inalterado para o usuário</li>
+    <li>padrão já existe no pacote: saneLayout</li>
+  </ul>
+</article>
+</section>
+
+<!-- ── testing strategy ───────────────────────────────────── -->
+<section id="testing" class="rounded-xl border-2 border-indigo-200 bg-indigo-50/60 p-6 space-y-4">
+  <h2 class="font-serif text-2xl">Estratégia de testes (o "como" por trás dos candidatos)</h2>
+  <p class="text-sm">Framework: <code class="bg-white px-1.5 py-0.5 rounded">node:test</code> + <code class="bg-white px-1.5 py-0.5 rounded">node:assert</code> — builtin do Node ≥18, mantém o zero-deps de runtime (devDep nenhum). Ordem de construção:</p>
+  <table class="w-full text-sm bg-white rounded-lg overflow-hidden">
+    <tbody>
+      <tr class="border-b border-slate-200"><td class="p-2 align-top w-56 font-mono text-xs">1. test/diff.test.js</td><td class="p-2">unidades puras do núcleo extraído do changes.js (cand. 3): LCS em unicode, word-diff, similarity. Nenhuma infra necessária.</td></tr>
+      <tr class="border-b border-slate-200"><td class="p-2 align-top w-56 font-mono text-xs">2. test/config, manifest, registry</td><td class="p-2">humanize (acentos), merge dos legados _icons/_order, slugify (colisões, "api" reservado), saneLayout (órfãos, grupos vazios). Temp dirs reais bastam — ou o adapter mem do cand. 2.</td></tr>
+      <tr class="border-b border-slate-200"><td class="p-2 align-top w-56 font-mono text-xs">3. test/inject.test.js</td><td class="p-2">heurística por tabela: página com #docList em tag vs em prosa; mermaid/figure/zoomable; staticMode (DOCS_EXPORT + bootstrap de deep link); data-injected em toda tag.</td></tr>
+      <tr class="border-b border-slate-200"><td class="p-2 align-top w-56 font-mono text-xs">4. test/roots.endpoints.test.js</td><td class="p-2">guardas via interface nova (cand. 1): <code>../escape</code>, backslash, nome esquisito, cap do body, delete de pasta não-vazia, rename→shiftIcons.</td></tr>
+      <tr class="border-b border-slate-200"><td class="p-2 align-top w-56 font-mono text-xs">5. test/http.test.js</td><td class="p-2">integração fina, poucos casos: sobe createRoot num port efêmero, asserts de Sec-Fetch-Dest (document→shell, iframe→doc puro), injeção na resposta, no-store.</td></tr>
+      <tr class="border-b border-slate-200"><td class="p-2 align-top w-56 font-mono text-xs">6. test/serve.args.test.js</td><td class="p-2">parseArgs (cand. 5): flags, subcomandos, --port explícito vs fallback.</td></tr>
+      <tr><td class="p-2 align-top w-56 font-mono text-xs">7. CI (GitHub Actions)</td><td class="p-2"><code>node --test</code> em windows + linux a cada push — o pacote tem código por-SO (reveal, warp, portas) que só o matrix pega.</td></tr>
+    </tbody>
+  </table>
+  <p class="text-xs text-slate-600">Clientes DOM (nav/zoom/manager.html): ficam fora do node:test — o custo de um adapter de DOM não se paga hoje. A política testável deles vai para lib.js/diff.js (cands. 3 e 4); o resto é coberto pelos smoke tests de injeção. Playwright fica como passo futuro, se valer.</p>
+</section>
+
+<!-- ── top recommendation ─────────────────────────────────── -->
+<section id="top-recommendation" class="deep rounded-xl p-8 text-white space-y-3">
+  <p class="text-xs uppercase tracking-widest text-emerald-400">Top recommendation</p>
+  <h2 class="font-serif text-2xl"><a href="#c3" class="underline decoration-emerald-400">3 — Extrair o núcleo puro do diff</a>, imediatamente seguido do <a href="#c1" class="underline decoration-emerald-400">1 — endpoint table no root module</a></h2>
+  <p class="text-sm text-slate-300">O diff é o quick win (1 arquivo, teste puro no mesmo dia) e destrava a confiança para o refactor do root module — que é o de maior leverage: concentra toda a lógica de segurança não testada e os dois call sites (serve e manager). O seam de ambiente (cand. 2) entra naturalmente quando o cand. 1 pedir o primeiro adapter de teste.</p>
+</section>
+
+<!-- ── glossary ───────────────────────────────────────────── -->
+<section id="glossary" class="rounded-xl border border-slate-200 bg-white p-6">
+  <h2 class="font-serif text-xl mb-3">Domain vocabulary</h2>
+  <dl class="grid md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+    <div><dt class="font-semibold inline">module</dt><dd class="inline text-slate-600"> — unidade de código com uma interface única (aqui: cada .js do pacote).</dd></div>
+    <div><dt class="font-semibold inline">interface / implementation</dt><dd class="inline text-slate-600"> — o que o module expõe vs o que esconde.</dd></div>
+    <div><dt class="font-semibold inline">deep / shallow</dt><dd class="inline text-slate-600"> — module profundo: interface pequena, muita função escondida. Raso: interface quase do tamanho da implementation.</dd></div>
+    <div><dt class="font-semibold inline">seam</dt><dd class="inline text-slate-600"> — linha onde um adapter pode ser trocado sem tocar quem chama (aqui: node:fs, spawn, watch).</dd></div>
+    <div><dt class="font-semibold inline">adapter</dt><dd class="inline text-slate-600"> — implementação de um lado do seam (node em prod, mem/noop em teste).</dd></div>
+    <div><dt class="font-semibold inline">leverage</dt><dd class="inline text-slate-600"> — uma interface servindo N call sites.</dd></div>
+    <div><dt class="font-semibold inline">locality</dt><dd class="inline text-slate-600"> — um conceito/mudança mora num lugar só (ex.: regra de slug hoje em 3).</dd></div>
+    <div><dt class="font-semibold inline">deletion test</dt><dd class="inline text-slate-600"> — deletar o module concentra complexidade (bom) ou só move?</dd></div>
+    <div><dt class="font-semibold inline">root</dt><dd class="inline text-slate-600"> — uma pasta de docs servida; contexto criado por <code>createRoot</code>.</dd></div>
+    <div><dt class="font-semibold inline">shell</dt><dd class="inline text-slate-600"> — página com <code>id="docList"</code>; o contrato estrutural do layout.</dd></div>
+    <div><dt class="font-semibold inline">doc</dt><dd class="inline text-slate-600"> — um .html da pasta, renderizado no iframe do shell.</dd></div>
+    <div><dt class="font-semibold inline">manifest</dt><dd class="inline text-slate-600"> — árvore JSON (docs/pastas/ordem/mtime) que alimenta a sidebar.</dd></div>
+    <div><dt class="font-semibold inline">registry</dt><dd class="inline text-slate-600"> — <code>~/.docs-in-html/registry.json</code>: pastas conhecidas + layout do mural.</dd></div>
+    <div><dt class="font-semibold inline">mural</dt><dd class="inline text-slate-600"> — página de cards do manager com grupos e ordenação.</dd></div>
+    <div><dt class="font-semibold inline">identidade do doc</dt><dd class="inline text-slate-600"> — "quem sou eu": pathname menos o BASE, com fallback index.html.</dd></div>
+    <div><dt class="font-semibold inline">ops</dt><dd class="inline text-slate-600"> — (novo) module de ambiente: fs/opener/watch/homeDir atrás de um seam.</dd></div>
+  </dl>
+  <p class="text-xs text-slate-400 mt-4">Sem ADRs em docs/adr/ — nada a re-litigar. Nenhum candidato contradiz decisão registrada.</p>
+</section>
+
+</main>
+</body>
+</html>
