@@ -81,12 +81,17 @@ surge dist                   # or Netlify Drop, GitHub Pages...
 On the static site the sidebar and pan/zoom work; editing and live reload
 stay dev-only, by design.
 
-## Authoring
+## Authoring — write HTML, not Markdown
 
-Write plain HTML. Use `<div class="mermaid">…</div>` blocks plus the Mermaid
-core script tags, or drop an inline `<svg>` inside a `<figure>` — it becomes
-pan/zoomable automatically. No template, no boilerplate. The same file also
-renders standalone (`file://` or any static host), just without the zoom.
+You don't write the HTML — **your AI does**. The point is the format: write
+specs as `.html` files instead of `.md` files. LLMs generate rich, complete
+HTML with proper structure, styling, diagrams (Mermaid/SVG), and interactive
+elements out of the box — none of which Markdown can express. You get a
+finished page, not a text file that still needs rendering.
+
+Just drop the AI-generated `.html` files in a folder and run spec-space on
+it. If a diagram shows up as Mermaid or an SVG, it's pan/zoomable
+automatically. No template, no boilerplate, no build step.
 
 ## License
 
