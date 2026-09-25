@@ -6,7 +6,7 @@
   "author": "Kevin Weitgenant",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kevin-weitgenant/docs-in-html.git"
+    "url": "git+https://github.com/kevin-weitgenant/spec-space.git"
   },
   "type": "commonjs",
   "bin": {
