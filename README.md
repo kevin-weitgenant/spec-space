@@ -1,4 +1,7 @@
-# docs-in-html
+# spec-space
+
+> Formerly **docs-in-html** — same tool, new name. The old `docs-in-html`
+> package now forwards to this one, so both commands keep working.
 
 Navigate folders of **HTML docs** with an auto sidebar, live reload, and
 Mermaid/SVG pan/zoom. HTML over Markdown — zero build, zero dependencies.
@@ -7,13 +10,13 @@ Mermaid/SVG pan/zoom. HTML over Markdown — zero build, zero dependencies.
 
 Docs tools like MkDocs and Docsify are Markdown-first. If you write docs as HTML
 (great for AI-generated, richly-styled content), there's nothing to *render* —
-you only need to **navigate** them. `docs-in-html` is a tiny dev server that does
+you only need to **navigate** them. `spec-space` is a tiny dev server that does
 exactly that, and adds Mermaid pan/zoom on top.
 
 ## Install
 
 ```bash
-npm install -g docs-in-html     # or just: npx docs-in-html ./my-docs
+npm install -g spec-space     # or just: npx spec-space ./my-docs
 ```
 
 Requires Node ≥ 18.
@@ -21,11 +24,11 @@ Requires Node ≥ 18.
 ## Use
 
 ```bash
-docs-in-html ./docs-html              # serve a folder (opens the browser)
-docs-in-html ./docs --port 5000       # custom port
-docs-in-html ./docs --no-open         # don't auto-open
-docs-in-html init ./new-docs          # scaffold a starter index.html
-docs-in-html export ./docs --out dist # freeze to static files (Surge etc.)
+spec-space ./docs-html              # serve a folder (opens the browser)
+spec-space ./docs --port 5000       # custom port
+spec-space ./docs --no-open         # don't auto-open
+spec-space init ./new-docs          # scaffold a starter index.html
+spec-space export ./docs --out dist # freeze to static files (Surge etc.)
 ```
 
 ## Manager — all your docs, one process, one URL
@@ -35,10 +38,10 @@ serves **every docs folder you own** from a single process, each at
 `http://localhost:4400/<slug>/`:
 
 ```bash
-docs-in-html manager        # cards page at :4400 (or $DOCS_MANAGER_PORT)
+spec-space manager        # cards page at :4400 (or $DOCS_MANAGER_PORT)
 ```
 
-- **Serving = registering.** Any `docs-in-html <dir>` (npx included) adds the
+- **Serving = registering.** Any `spec-space <dir>` (npx included) adds the
   folder to `~/.docs-in-html/registry.json` — if the manager is running, the
   CLI doesn't even start a server: it registers the folder there and prints
   the link. `--no-register` opts out; `dir --unregister` removes.
@@ -59,7 +62,7 @@ docs-in-html manager        # cards page at :4400 (or $DOCS_MANAGER_PORT)
 The single-folder mode is unchanged and works standalone, as always.
 
 If the default port (8000, or `$PORT`) is already in use — e.g. another
-`docs-in-html` instance serving a different folder — the next free port is
+`spec-space` instance serving a different folder — the next free port is
 used automatically, with a warning:
 
 ```
@@ -76,7 +79,7 @@ static host. `export` freezes what the server decides at runtime (the sidebar
 tree, the injected pan/zoom scripts) into plain files:
 
 ```bash
-docs-in-html export ./docs    # → ./dist with everything baked in
+spec-space export ./docs    # → ./dist with everything baked in
 surge dist                   # or Netlify Drop, GitHub Pages...
 ```
 

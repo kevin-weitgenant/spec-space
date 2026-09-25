@@ -1,4 +1,4 @@
-// docs-in-html export — freeze a docs folder for static hosting (Surge,
+// spec-space export — freeze a docs folder for static hosting (Surge,
 // GitHub Pages, Netlify drop...). What the dev server decides per-request
 // (manifest, which scripts to inject), the export decides ONCE and writes
 // to disk:
@@ -83,7 +83,7 @@ function run(root, outDir) {
     fs.writeFileSync(file, injectScripts(html, { staticMode: true }), "utf8");
   }
 
-  console.log(`docs-in-html · exportado ${src}`);
+  console.log(`spec-space · exportado ${src}`);
   console.log(`  → ${out}`);
   console.log(`  deploy: surge ${out}   (ou arraste a pasta no Netlify Drop / GitHub Pages)`);
 }

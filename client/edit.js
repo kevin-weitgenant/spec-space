@@ -1,4 +1,4 @@
-// docs-in-html inline editor — injected into every doc (not the shell).
+// spec-space inline editor — injected into every doc (not the shell).
 // A small "Editar" toggle (fixed, top-right) turns the rendered document into
 // a WYSIWYG surface via contenteditable: click any text, type, Ctrl+S saves the
 // page back to its file through POST /__save__. The user never sees HTML.

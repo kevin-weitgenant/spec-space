@@ -1,4 +1,4 @@
-// docs-in-html nav client — builds the folder-tree sidebar from /__manifest__,
+// spec-space nav client — builds the folder-tree sidebar from /__manifest__,
 // handles doc switching + active highlighting + collapse memory, and manages
 // files/folders from the sidebar: rename, move (drag & drop or "Move to…"),
 // create folders, delete (docs + empty folders).
@@ -9,7 +9,7 @@
   var iframe = document.querySelector("iframe");
   if (!list) return;
 
-  // Static export (docs-in-html export): the tree comes from manifest.json and
+  // Static export (spec-space export): the tree comes from manifest.json and
   // the sidebar is read-only — no delete/rename/mkdir/drag (those need the dev
   // server's POST endpoints, which don't exist on a static host).
   var EXPORT = window.DOCS_EXPORT === true;

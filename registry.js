@@ -42,7 +42,7 @@ function save(data) {
     fs.mkdirSync(DIR, { recursive: true });
     fs.writeFileSync(FILE, JSON.stringify(data, null, 2) + "\n");
   } catch (e) {
-    console.warn(`[docs-in-html] não foi possível gravar o registry (${e.message}) — o manager não verá esta pasta.`);
+    console.warn(`[spec-space] não foi possível gravar o registry (${e.message}) — o manager não verá esta pasta.`);
   }
 }
 

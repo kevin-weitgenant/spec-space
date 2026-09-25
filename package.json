@@ -1,6 +1,6 @@
 {
-  "name": "docs-in-html",
-  "version": "0.13.0",
+  "name": "spec-space",
+  "version": "0.14.0",
   "description": "Navigate folders of HTML docs with an auto sidebar tree, live reload, and Mermaid/SVG pan/zoom. HTML over Markdown — zero build.",
   "keywords": [
     "docs",
@@ -16,17 +16,17 @@
   ],
   "license": "MIT",
   "author": "Kevin Weitgenant",
-  "homepage": "https://github.com/kevin-weitgenant/docs-in-html#readme",
+  "homepage": "https://github.com/kevin-weitgenant/spec-space#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kevin-weitgenant/docs-in-html.git"
+    "url": "git+https://github.com/kevin-weitgenant/spec-space.git"
   },
   "bugs": {
-    "url": "https://github.com/kevin-weitgenant/docs-in-html/issues"
+    "url": "https://github.com/kevin-weitgenant/spec-space/issues"
   },
   "type": "commonjs",
   "bin": {
-    "docs-in-html": "serve.js"
+    "spec-space": "serve.js"
   },
   "main": "./serve.js",
   "files": [

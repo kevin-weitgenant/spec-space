@@ -1,4 +1,4 @@
-// docs-in-html change highlight — marks what changed in THIS doc since your
+// spec-space change highlight — marks what changed in THIS doc since your
 // last visit, inline in the page (no modal, no toast):
 //   - new blocks  → green tint + "novo" chip
 //   - edited blocks → amber tint + word-diff (old struck, new underlined)

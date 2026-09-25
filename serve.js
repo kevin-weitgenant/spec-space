@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// docs-in-html — zero-build dev server for folders of HTML docs.
+// spec-space — zero-build dev server for folders of HTML docs.
 // Auto sidebar tree (from your folders) + live reload + Mermaid pan/zoom.
 //
-//   docs-in-html [dir] [--port N] [--no-open]   serve a folder (default: current dir)
-//   docs-in-html manager [--no-open]            serve ALL registered docs (multi-root)
-//   docs-in-html init [dir]                     scaffold a starter index.html
-//   docs-in-html export [dir] [--out DIR]       freeze to static files (Surge etc.)
+//   spec-space [dir] [--port N] [--no-open]   serve a folder (default: current dir)
+//   spec-space manager [--no-open]            serve ALL registered docs (multi-root)
+//   spec-space init [dir]                     scaffold a starter index.html
+//   spec-space export [dir] [--out DIR]       freeze to static files (Surge etc.)
 //
 // Serving a folder also registers it in ~/.docs-in-html/registry.json so the
 // manager picks it up. --no-register skips that; dir --unregister removes it.
@@ -21,13 +21,13 @@ const { MANAGER_PORT, managerBaseUrl, pingManager, addToManager } = require("./d
 
 // ── CLI ──────────────────────────────────────────────────────────────────
 function help() {
-  console.log(`docs-in-html — zero-build dev server for HTML docs.
+  console.log(`spec-space — zero-build dev server for HTML docs.
 
 Usage:
-  docs-in-html [dir] [--port N] [--no-open]   serve a folder (default: current dir)
-  docs-in-html manager [--no-open]            serve ALL registered docs (multi-root)
-  docs-in-html init [dir]                     scaffold a starter index.html
-  docs-in-html export [dir] [--out DIR]       freeze to static files (default out: ./dist)
+  spec-space [dir] [--port N] [--no-open]   serve a folder (default: current dir)
+  spec-space manager [--no-open]            serve ALL registered docs (multi-root)
+  spec-space init [dir]                     scaffold a starter index.html
+  spec-space export [dir] [--out DIR]       freeze to static files (default out: ./dist)
 
 Options:
   -p, --port N     port (default 8000, or $PORT; if the default is busy the
@@ -43,7 +43,7 @@ Environment:
                    manager's "⌨ Warp" button (then standard install locations
                    and PATH — see resolveWarp in manager.js)
 
-The manager (docs-in-html manager, port ${MANAGER_PORT} or $DOCS_MANAGER_PORT)
+The manager (spec-space manager, port ${MANAGER_PORT} or $DOCS_MANAGER_PORT)
 serves every registered docs at http://localhost:<port>/<slug>/. When it is
 running, serving a folder just registers it there — no extra server.
 `);
@@ -110,7 +110,7 @@ async function serveSingle() {
     const port = await pingManager();
       if (port) {
         const slug = await addToManager(ROOT, port);
-        console.log(`docs-in-html · ${ROOT}`);
+        console.log(`spec-space · ${ROOT}`);
         if (portWasExplicit)
           console.log(`  ⚠ manager no ar — --port ignorado (a docs vive no manager)`);
         console.log(`  ✓ adicionada ao manager: http://localhost:${port}/${slug}/`);
@@ -143,7 +143,7 @@ async function serveSingle() {
         if (printed) return;
         printed = true;
         const url = `http://localhost:${attemptPort}`;
-        console.log(`docs-in-html · serving ${ROOT}`);
+        console.log(`spec-space · serving ${ROOT}`);
         if (attemptPort !== port)
           console.log(`  ⚠ porta ${port} está em uso — usando ${attemptPort}`);
         if (scaffolded)
@@ -168,7 +168,7 @@ async function serveSingle() {
       }
       if (portWasExplicit) {
         console.error(`erro: porta ${attemptPort} já está em uso.`);
-        console.error("       pode ser outra instância de docs-in-html; feche-a, ou rode sem --port para auto-escolher a próxima livre.");
+        console.error("       pode ser outra instância de spec-space; feche-a, ou rode sem --port para auto-escolher a próxima livre.");
         process.exit(1);
       }
       if (attemptsLeft <= 0) {

@@ -1,4 +1,4 @@
-// `docs-in-html init [dir]` — scaffold a starter index.html (the shell) so you can customize it.
+// `spec-space init [dir]` — scaffold a starter index.html (the shell) so you can customize it.
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -19,7 +19,7 @@ function init(dir) {
     writeConfig(dir, defaultConfig(dir));
     console.log("✓ Created " + cfg + " — tweak title/favicon there");
   }
-  console.log("  Drop .html files in this folder, then run:  docs-in-html " + dir);
+  console.log("  Drop .html files in this folder, then run:  spec-space " + dir);
 }
 
 module.exports = { init };

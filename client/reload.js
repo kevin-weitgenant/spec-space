@@ -1,4 +1,4 @@
-// docs-in-html reload client — injected into every HTML while the dev server runs.
+// spec-space reload client — injected into every HTML while the dev server runs.
 // Reloads THIS page only when its own file (or a shared asset) changes.
 //
 // Browser note: HTTP/1.1 allows only ~6 connections per origin. A naive
@@ -9,7 +9,7 @@
 // moves to the next tab automatically. The manager's /__reload__ carries all
 // roots ({base, path}); a single-root serve sends just {path}.
 (function () {
-  if (window.top === window.self) console.log("[docs-in-html] hot reload connected");
+  if (window.top === window.self) console.log("[spec-space] hot reload connected");
 
   var BASE = window.DOCS_BASE || ""; // "" single-root, "/<slug>/" under the manager
   var BASE_N = BASE.replace(/\/+$/, ""); // normalized: "/slug" or ""
@@ -51,12 +51,12 @@
   var canElect = "BroadcastChannel" in window && navigator.locks && navigator.locks.request;
 
   if (canElect) {
-    var bc = new BroadcastChannel("docs-in-html");
+    var bc = new BroadcastChannel("spec-space");
     bc.onmessage = function (e) { onEvent(e.data); };
     // Everyone queues; the first tab becomes leader and holds the lock until
     // it closes — the next pending request takes over. The leader relays ALL
     // events (all roots) — receivers filter by their own base.
-    navigator.locks.request("docs-in-html-sse", { mode: "exclusive" }, function (lock) {
+    navigator.locks.request("spec-space-sse", { mode: "exclusive" }, function (lock) {
       if (!lock) return; // not granted — stay follower
       openSSE(function (raw) {
         try { bc.postMessage(raw); } catch (_) {} // no loop-back to sender

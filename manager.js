@@ -270,7 +270,7 @@ function start(opts = {}) {
   server.once("error", (err) => {
     if (err.code === "EADDRINUSE") {
       console.error(`erro: porta ${port} já está em uso.`);
-      console.error("       pode ser outro docs-in-html manager; feche-o, ou use $DOCS_MANAGER_PORT/--port.");
+      console.error("       pode ser outro spec-space manager; feche-o, ou use $DOCS_MANAGER_PORT/--port.");
       process.exit(1);
     }
     console.error(`erro: ${err.message}`);
@@ -283,7 +283,7 @@ function start(opts = {}) {
     const data = registry.load();
     data.managerPort = port;
     registry.save(data);
-    console.log(`docs-in-html manager · ${roots.size} docs${roots.size ? ": " + [...roots.values()].map((r) => r.slug).join(", ") : ""}`);
+    console.log(`spec-space manager · ${roots.size} docs${roots.size ? ": " + [...roots.values()].map((r) => r.slug).join(", ") : ""}`);
     console.log(`  → ${url}`);
     if (opts.doOpen) {
       const cmd = process.platform === "win32" ? `start "" "${url}"`
