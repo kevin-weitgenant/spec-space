@@ -698,7 +698,7 @@
     }
     var li2 = document.createElement("li");
     var a = document.createElement("a");
-    a.href = "/" + n.path;
+    a.href = BASEP + "/" + n.path;
     a.setAttribute("draggable", "false"); // links drag natively — kills our mousemove drag
     a.dataset.path = n.path;
     var label2 = document.createElement("span");
