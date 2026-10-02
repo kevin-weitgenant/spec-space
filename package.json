@@ -49,6 +49,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "start": "node serve.js ."
+    "start": "node serve.js .",
+    "test": "node --test"
   }
 }

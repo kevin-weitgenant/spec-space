@@ -25,7 +25,13 @@ function createReload(root, onEvent) {
       const rel = file.split(/[\\/]/).join("/"); // normalize separators
       clearTimeout(timers[rel]);
       timers[rel] = setTimeout(() => { delete timers[rel]; broadcast(rel); }, 150);
+      timers[rel].unref?.();
     });
+    // unref: keep the watcher (and its debounce timers) OUT of the "is the
+    // process still alive?" decision. The http server keeps a real server
+    // alive in production; in tests, node --test can exit once tests finish
+    // instead of hanging on this background watcher.
+    watcher.unref();
     watcher.on("error", (e) => {
       console.warn(`[spec-space] hot reload watcher error: ${e.message}`);
       console.warn("                     salve um arquivo para testar; se nada acontecer, reinicie o servidor.");

@@ -66,8 +66,8 @@ test("ENDPOINTS maps every /__*__ path to a named function + method", () => {
 
 test("endpointDelete rejects traversal before any filesystem op", (t, done) => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "roots-test-"));
-  const { handle, reload } = createRoot(root, { base: "" });
-  t.after(() => { reload.close(); fs.rmSync(root, { recursive: true, force: true }); });
+  const { handle } = createRoot(root, { base: "" });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   let ended = false;
   const res = {
     writeHead(status) { this.status = status; },
