@@ -78,8 +78,9 @@ footer{max-width:920px;margin:0 auto;padding:26px 24px;color:var(--soft);text-al
   <div class="toc-inner">
     <a href="#contexto">1 · Contexto</a>
     <a href="#intuicao">2 · Intuição</a>
-    <a href="#mudancas">3 · Mudanças</a>
-    <a href="#quiz">4 · Quiz</a>
+    <a href="#ganhos">3 · Ganhos</a>
+    <a href="#mudancas">4 · Mudanças</a>
+    <a href="#quiz">5 · Quiz</a>
   </div>
 </nav>
 
@@ -175,8 +176,31 @@ flowchart LR
   </div>
 </section>
 
+<section id="ganhos">
+  <h2><span class="num">3</span>Ganhos</h2>
+  <p class="lead">Em resumo: testes que não tocam no seu computador, menos código repetido e bugs de plataforma corrigidos num lugar só.</p>
+
+  <h3>Testes param de mexer no seu computador?</h3>
+  <p>Sim, e esse é o ganho principal. Hoje, testar o registry ou o scan significa ler e escrever na sua pasta real <code>~/.docs-in-html</code>; testar o reveal lança um Explorer de verdade; testar o hot reload depende do sistema de arquivos disparar eventos. Depois, o teste injeta um ops de mentira — só memória — e nada disso acontece. Teste que não toca no disco do usuário é teste que você roda sem medo.</p>
+
+  <h3>Vai diminuir código?</h3>
+  <p>Sim, o repetido. O trio "explorer / open / xdg-open" está escrito 3–4 vezes (roots, manager, serve), cada copia com pequenas diferenças — bug corrigido numa sobrevive nas outras. Depois existe uma vez só, em <code>ops.js</code>. Corrigir para uma plataforma = corrigido para todos.</p>
+
+  <h3>O que mais melhora no dia a dia?</h3>
+  <ul>
+    <li><strong>Teste do hot reload fica determinístico</strong> — hoje depende do sistema de arquivos disparar o evento (e de timeout); depois o teste chama <code>watcher.emit("index.html")</code> na hora que quiser.</li>
+    <li><strong>Effects colaterais ficam num endereço só</strong> — hoje, saber o que um teste pode disparar exige ler nove arquivos; depois a resposta é uma: "olha o que o código chama no ops".</li>
+    <li><strong>Serve.js fica limpo de plataforma</strong> — os <code>if win32/darwin/linux</code> desaparecem dos chamadores e moram num helper único.</li>
+  </ul>
+
+  <div class="callout tip">
+    <div class="title">Resumo</div>
+    <p>Testes sem tocar no seu home nem lançar processos, "abrir no OS" escrito uma vez só, e hot reload testável com um evento falso.</p>
+  </div>
+</section>
+
 <section id="mudancas">
-  <h2><span class="num">3</span>Mudanças</h2>
+  <h2><span class="num">4</span>Mudanças</h2>
   <p class="lead">Um módulo novo e seis ajustes cirúrgicos, sem mudança de comportamento observável em produção. Nenhuma dependência nova; continua CommonJS, Node ≥ 18.</p>
 
   <h3>1 · ops.js (novo)</h3>
@@ -223,7 +247,7 @@ module.exports.setOps = (o) => { ... };   // troca o adapter global</code></pre>
 </section>
 
 <section id="quiz">
-  <h2><span class="num">4</span>Quiz</h2>
+  <h2><span class="num">5</span>Quiz</h2>
 
   <div class="qcard" data-answer="b">
     <p class="q-title">1. O que caracteriza um <em>seam</em> num programa?</p>
