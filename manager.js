@@ -5,10 +5,9 @@
 // inside it), / → the cards page (client/manager.html).
 
 const http = require("node:http");
-const fs = require("node:fs");
 const path = require("node:path");
-const { spawn } = require("node:child_process");
 const { createRoot, readJsonBody } = require("./roots.js");
+const ops = require("./ops.js");
 const registry = require("./registry.js");
 const { managerBaseUrl } = require("./delegation.js");
 
@@ -43,12 +42,11 @@ function resolveWarp(cb) {
   if (process.env.WARP_BIN) candidates.push(process.env.WARP_BIN);
   // 2) canonical per-platform install locations.
   candidates.push(...WARP_SEARCH_PATHS);
-  const found = candidates.find((p) => { try { return fs.statSync(p).isFile(); } catch { return false; } });
+  const found = candidates.find((p) => { try { return ops.statSync(p).isFile(); } catch { return false; } });
   if (found) { warpBinCache = found; return cb(found); }
   // 3) fall back to `where`/`which` on PATH.
   const finder = process.platform === "win32" ? "where" : "which";
-  const { execFile } = require("node:child_process");
-  execFile(finder, [process.platform === "win32" ? "warp.exe" : "warp"], (err, stdout) => {
+    ops.execFile(finder, [process.platform === "win32" ? "warp.exe" : "warp"], (err, stdout) => {
     const hit = !err && stdout.trim().split(/\r?\n/)[0];
     warpBinCache = hit || null;
     cb(warpBinCache);
@@ -149,7 +147,7 @@ function start(opts = {}) {
       return readJsonBody(req, (j) => {
         if (!isJson || !j || typeof j.dir !== "string") { res.writeHead(400); return res.end("400 Bad Request"); }
         const abs = path.resolve(j.dir);
-        if (!fs.existsSync(abs) || !fs.statSync(abs).isDirectory()) {
+        if (!ops.existsSync(abs) || !ops.statSync(abs).isDirectory()) {
           res.writeHead(400, { "Content-Type": "application/json; charset=utf-8" });
           return res.end(JSON.stringify({ error: "not a directory" }));
         }
@@ -187,12 +185,7 @@ function start(opts = {}) {
       return readJsonBody(req, (j) => {
         const dir = isJson ? registeredDir(j && j.dir) : null;
         if (!dir) { res.writeHead(400); return res.end("400"); }
-        if (process.platform === "win32")
-          spawn("explorer", [dir], { detached: true, stdio: "ignore" }).unref();
-        else if (process.platform === "darwin")
-          spawn("open", [dir], { detached: true, stdio: "ignore" }).unref();
-        else
-          spawn("xdg-open", [dir], { detached: true, stdio: "ignore" }).unref();
+        ops.openPath(dir); // explorer / open / xdg-open — once, in ops
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ ok: true }));
       }, MB);
@@ -220,7 +213,7 @@ function start(opts = {}) {
           // Windows Warp parses the positional arg as a URI — a bare "C:\\..."
           // reads as scheme "c" ("custom URI is invalid"). A file:// URL works.
           const target = process.platform === "win32" ? require("node:url").pathToFileURL(proj).href : proj;
-          spawn(bin, [target], { detached: true, stdio: "ignore" }).unref();
+          ops.spawn(bin, [target]);
           res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
           res.end(JSON.stringify({ ok: true, bin, dir: proj }));
         });
@@ -239,7 +232,7 @@ function start(opts = {}) {
 
     // ── cards page ───────────────────────────────────────────────────────
     if (raw === "/" || raw === "/index.html" || raw === "/__manager__") {
-      const html = fs.readFileSync(path.join(__dirname, "client", "manager.html"));
+      const html = ops.readFileSync(path.join(__dirname, "client", "manager.html"));
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return res.end(html);
     }
@@ -279,11 +272,7 @@ function start(opts = {}) {
     registry.save(data);
     console.log(`spec-space manager · ${roots.size} docs${roots.size ? ": " + [...roots.values()].map((r) => r.slug).join(", ") : ""}`);
     console.log(`  → ${url}`);
-    if (opts.doOpen) {
-      const cmd = process.platform === "win32" ? `start "" "${url}"`
-        : process.platform === "darwin" ? `open "${url}"` : `xdg-open "${url}"`;
-      require("node:child_process").exec(cmd, () => {});
-    }
+    if (opts.doOpen) ops.openUrl(url);
   });
 
   process.on("SIGINT", () => { for (const [, r] of roots) r.ctx.reload.close(); server.close(() => process.exit(0)); });

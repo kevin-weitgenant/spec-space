@@ -13,7 +13,7 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
-const { exec } = require("node:child_process");
+const ops = require("./ops.js");
 const { createRoot } = require("./roots.js");
 const { readConfig, writeConfig, defaultConfig } = require("./config.js");
 const registry = require("./registry.js");
@@ -149,12 +149,7 @@ async function serveSingle() {
         if (scaffolded)
           console.log(`  ✓ criado _config.json — ajuste title/favicon lá (hot reload pega na hora)`);
         console.log(`  → ${url}`);
-        if (doOpen) {
-          const cmd = process.platform === "win32" ? `start "" "${url}"`
-            : process.platform === "darwin" ? `open "${url}"`
-            : `xdg-open "${url}"`;
-          exec(cmd, () => {});
-        }
+        if (doOpen) ops.openUrl(url);
       });
     });
     srv.once("error", (err) => {

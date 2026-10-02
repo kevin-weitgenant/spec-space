@@ -4,7 +4,7 @@
 // its roots' events into ONE multiplexed SSE (one connection per browser, not
 // one per root: HTTP/1.1 caps the origin at ~6).
 
-const fs = require("node:fs");
+const ops = require("./ops.js");
 
 function createReload(root, onEvent) {
   const clients = new Set();
@@ -20,7 +20,7 @@ function createReload(root, onEvent) {
   const timers = {};
   let watcher = null;
   try {
-    watcher = fs.watch(root, { recursive: true }, (_e, file) => {
+    watcher = ops.watch(root, { recursive: true }, (_e, file) => {
       if (!file) return;
       const rel = file.split(/[\\/]/).join("/"); // normalize separators
       clearTimeout(timers[rel]);

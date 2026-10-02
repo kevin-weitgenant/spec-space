@@ -3,12 +3,13 @@
 // the package installed side by side — e.g. different npx caches — may write
 // here), missing file = empty registry, corrupt file = backed up + reset.
 
-const fs = require("node:fs");
-const os = require("node:os");
 const path = require("node:path");
+const ops = require("./ops.js");
 
-const DIR = path.join(os.homedir(), ".docs-in-html");
-const FILE = path.join(DIR, "registry.json");
+// Resolved on demand (NOT at require time): reads homeDir() from the current
+// ops adapter, so tests with a fake ops get a fake registry dir.
+function dirPath() { return path.join(ops.homeDir(), ".docs-in-html"); }
+function filePath() { return path.join(dirPath(), "registry.json"); }
 
 // "My Project — Handbook" → "my-project-handbook" (accents stripped, any
 // non-alphanumeric run collapses to one "-"). Empty → null (caller falls back).
@@ -23,7 +24,7 @@ function slugify(s) {
 
 function load() {
   try {
-    const data = JSON.parse(fs.readFileSync(FILE, "utf8"));
+    const data = JSON.parse(ops.readFileSync(filePath(), "utf8"));
     if (data && typeof data === "object") {
       if (!Array.isArray(data.docs)) data.docs = [];
       return data;
@@ -31,7 +32,7 @@ function load() {
   } catch (e) {
     if (e.code !== "ENOENT") {
       // corrupt registry — back it up rather than destroying user data
-      try { fs.copyFileSync(FILE, FILE + ".bak-" + Date.now()); } catch {}
+      try { ops.copyFileSync(filePath(), filePath() + ".bak-" + Date.now()); } catch {}
     }
   }
   return { docs: [] };
@@ -39,8 +40,8 @@ function load() {
 
 function save(data) {
   try {
-    fs.mkdirSync(DIR, { recursive: true });
-    fs.writeFileSync(FILE, JSON.stringify(data, null, 2) + "\n");
+    ops.mkdirSync(dirPath(), { recursive: true });
+    ops.writeFileSync(filePath(), JSON.stringify(data, null, 2) + "\n");
   } catch (e) {
     console.warn(`[spec-space] não foi possível gravar o registry (${e.message}) — o manager não verá esta pasta.`);
   }
@@ -67,7 +68,7 @@ function remove(dir) {
 
 function list() {
   return load().docs.filter((d) => {
-    try { return fs.statSync(d).isDirectory(); } catch { return false; } // drop deleted dirs from the view
+    try { return ops.statSync(d).isDirectory(); } catch { return false; } // drop deleted dirs from the view
   });
 }
 
@@ -160,4 +161,4 @@ function cardInfo(dir) {
   };
 }
 
-module.exports = { slugify, load, save, add, remove, list, slugsFor, cardInfo, getLayout, saveLayout, FILE, DIR };
+module.exports = { slugify, load, save, add, remove, list, slugsFor, cardInfo, getLayout, saveLayout, dirPath, filePath };

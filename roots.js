@@ -5,7 +5,7 @@
 //   - manager.js → N roots at "/<slug>/"   (base = "/<slug>/")
 // The handler contract: fn(req, res) — same as an http.Server listener.
 
-const fs = require("node:fs");
+const ops = require("./ops.js");
 const path = require("node:path");
 const { createReload } = require("./reload.js");
 const { buildTree } = require("./manifest.js");
@@ -74,17 +74,17 @@ function endpointDelete(ctx, req, res) {
   readJsonBody(req, (j) => {
     const t = resolveIn(ctx.root, j && j.path);
     if (!t) return send(res, 400, "400 Bad Request");
-    fs.stat(t.abs, (err, st) => {
+    ops.stat(t.abs, (err, st) => {
       if (err) return send(res, 404, "404 Not Found");
       if (st.isDirectory()) {
-        fs.rmdir(t.abs, (e2) => { // rmdir refuses non-empty folders — safety by design
+        ops.rmdir(t.abs, (e2) => { // rmdir refuses non-empty folders — safety by design
           if (e2) return send(res, 409, "409 Folder is not empty");
           ctx.pruneIcons(t.rel);
           send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
         });
       } else {
         if (!/\.html?$/i.test(t.rel)) return send(res, 400, "400 Bad Request");
-        fs.unlink(t.abs, (e2) => {
+        ops.unlink(t.abs, (e2) => {
           if (e2) return send(res, 404, "404 Not Found");
           ctx.pruneIcons(t.rel);
           send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
@@ -99,7 +99,7 @@ function endpointRename(ctx, req, res) {
     const from = resolveIn(ctx.root, j && j.from);
     const to = resolveIn(ctx.root, j && j.to);
     if (!from || !to || from.rel === to.rel) return send(res, 400, "400 Bad Request");
-    fs.stat(from.abs, (err, st) => {
+    ops.stat(from.abs, (err, st) => {
       if (err || !st) return send(res, 404, "404 Not Found");
       if (st.isFile()) {
         if (!/\.html?$/i.test(from.rel) || !/\.html?$/i.test(to.rel)) return send(res, 400, "400 Bad Request");
@@ -107,9 +107,9 @@ function endpointRename(ctx, req, res) {
       } else if (to.rel.startsWith(from.rel + "/")) {
         return send(res, 400, "400 Cannot move a folder into itself");
       }
-      fs.access(to.abs, (e2) => {
+      ops.access(to.abs, (e2) => {
         if (!e2) return send(res, 409, "409 Target already exists");
-        fs.rename(from.abs, to.abs, (e3) => {
+        ops.rename(from.abs, to.abs, (e3) => {
           if (e3) return send(res, 500, "500 Rename failed");
           ctx.shiftIcons(from.rel, to.rel);
           send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
@@ -123,9 +123,9 @@ function endpointMkdir(ctx, req, res) {
   readJsonBody(req, (j) => {
     const t = resolveIn(ctx.root, j && j.path);
     if (!t) return send(res, 400, "400 Bad Request");
-    fs.access(t.abs, (existErr) => {
+    ops.access(t.abs, (existErr) => {
       if (!existErr) return send(res, 409, "409 Folder already exists");
-      fs.mkdir(t.abs, { recursive: true }, (err) => {
+      ops.mkdir(t.abs, { recursive: true }, (err) => {
         if (err) return send(res, 500, "500 mkdir failed");
         send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
       });
@@ -138,7 +138,7 @@ function endpointSave(ctx, req, res) {
     const t = resolveIn(ctx.root, j && j.path);
     if (!t || !/\.html?$/i.test(t.rel) || typeof j.html !== "string")
       return send(res, 400, "400 Bad Request");
-    fs.writeFile(t.abs, j.html, "utf8", (err) => {
+    ops.writeFile(t.abs, j.html, "utf8", (err) => {
       if (err) return send(res, 500, "500 write failed");
       send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
     });
@@ -149,15 +149,9 @@ function endpointReveal(ctx, req, res) {
   readJsonBody(req, (j) => {
     const t = resolveIn(ctx.root, j && j.path);
     if (!t) return send(res, 400, "400 Bad Request");
-    fs.stat(t.abs, (err, st) => {
+    ops.stat(t.abs, (err, st) => {
       if (err || !st) return send(res, 404, "404 Not Found");
-      if (process.platform === "win32") {
-        require("node:child_process").spawn("explorer", st.isDirectory() ? [t.abs] : [`/select,${t.abs}`], { detached: true, stdio: "ignore" }).unref();
-      } else if (process.platform === "darwin") {
-        require("node:child_process").spawn("open", ["-R", t.abs], { detached: true, stdio: "ignore" }).unref();
-      } else {
-        require("node:child_process").spawn("xdg-open", [st.isDirectory() ? t.abs : path.dirname(t.abs)], { detached: true, stdio: "ignore" }).unref();
-      }
+      ops.openPath(t.abs); // explorer / open -R / xdg-open — once, in ops
       send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
     });
   });
@@ -244,8 +238,8 @@ function createRoot(root, opts = {}) {
   function serveShell(res) {
     const idx = path.join(root, "index.html");
     let html =
-      fs.existsSync(idx) && fs.statSync(idx).isFile()
-        ? fs.readFileSync(idx, "utf8")
+      ops.existsSync(idx) && ops.statSync(idx).isFile()
+        ? ops.readFileSync(idx, "utf8")
         : SHELL;
     html = applyShellConfig(html, readConfig(root)); // title + favicon from _config.json
     if (!/<base\s/i.test(html)) {
@@ -257,11 +251,11 @@ function createRoot(root, opts = {}) {
   }
 
   function serveFile(filePath, res) {
-    fs.stat(filePath, (err, stat) => {
+    ops.stat(filePath, (err, stat) => {
       if (err || !stat.isFile()) return send(res, 404, "404 Not Found");
       const ext = path.extname(filePath).toLowerCase();
       const type = MIME[ext] || "application/octet-stream";
-      fs.readFile(filePath, (e, data) => {
+      ops.readFile(filePath, (e, data) => {
         if (e) return send(res, 500, "500 Internal Server Error");
         const body = ext === ".html" ? injectScripts(data.toString("utf8"), { base }) : data;
         // Dev server: HTML must never come from the browser's heuristic cache,
@@ -291,9 +285,9 @@ function createRoot(root, opts = {}) {
     if (raw.startsWith("/__docs__/")) {
       const f = path.join(CLIENT_DIR, path.normalize(raw.slice("/__docs__/".length)));
       if (f !== CLIENT_DIR && !f.startsWith(CLIENT_DIR + path.sep)) return send(res, 404, "404");
-      if (!fs.existsSync(f) || !fs.statSync(f).isFile()) return send(res, 404, "404");
+      if (!ops.existsSync(f) || !ops.statSync(f).isFile()) return send(res, 404, "404");
       // dev clients change with the package — never let the browser cache them
-      return send(res, 200, fs.readFileSync(f), { "Content-Type": MIME[path.extname(f).toLowerCase()] || "application/octet-stream", "Cache-Control": "no-store" });
+      return send(res, 200, ops.readFileSync(f), { "Content-Type": MIME[path.extname(f).toLowerCase()] || "application/octet-stream", "Cache-Control": "no-store" });
     }
 
     let urlPath;
