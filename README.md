@@ -1,8 +1,9 @@
+<div align="center">
+  <img src="icon.png" width="480" alt="spec-space">
+
 # spec-space
 
-<p align="center">
-  <img src="icon.png" alt="spec-space icon" width="180">
-</p>
+**Specs that are easy to understand — and stay organized across projects.**
 
 [![JavaScript](https://img.shields.io/badge/JavaScript-plain-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![HTML5](https://img.shields.io/badge/HTML-plain-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
@@ -10,8 +11,7 @@
 [![Zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen)](#)
 [![Status](https://img.shields.io/badge/status-in%20development-orange)](#)
 
-**spec-space** helps you write specs that are easy to understand — and stay
-organized across multiple projects.
+</div>
 
 Specs live as plain HTML folders. spec-space turns any folder into a navigable
 spec site: an auto-generated sidebar tree, live reload, Mermaid/SVG pan & zoom,
