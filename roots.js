@@ -30,6 +30,178 @@ function send(res, status, body, headers = {}) {
   res.end(body);
 }
 
+// ── shared guards (module scope — unit-testable without a server) ─────────
+
+// Read a JSON request body, capped at `cap` bytes. Oversized or malformed
+// bodies never reach the callback's consumer logic (destroy / cb(null)).
+function readJsonBody(req, cb, cap = 4096) {
+  let body = "";
+  req.on("error", () => {}); // client abort mid-body must not crash us
+  req.on("data", (c) => { body += c; if (body.length > cap) req.destroy(); });
+  req.on("end", () => { let j; try { j = JSON.parse(body); } catch (e) { return cb(null); } cb(j); });
+}
+
+// "guides/v2" → "guides/v2" | null (must stay relative, no weird names)
+function safeRelPath(p) {
+  if (typeof p !== "string" || p.includes("\\") || p.startsWith("/")) return null;
+  const segs = p.split("/").filter(Boolean);
+  if (!segs.length || segs.includes("..")) return null;
+  for (const s of segs)
+    if (!s || s.startsWith(".") || s.startsWith("_") || /[<>:"|?*\x00-\x1f]/.test(s)) return null;
+  return segs.join("/");
+}
+
+// Resolve p inside root → { rel, abs } | null (outside root / bad name)
+function resolveIn(root, p) {
+  const rel = safeRelPath(p);
+  if (rel === null) return null;
+  const abs = path.resolve(root, rel);
+  if (!abs.startsWith(root + path.sep)) return null;
+  return { rel, abs };
+}
+
+// ── endpoint handlers — one named function per /__*__ endpoint ────────────
+// Same shape: (ctx, req, res). ctx carries the root dir plus the per-root
+// config bookkeeping (shiftIcons/pruneIcons/readAnim) the endpoints need.
+
+function endpointManifest(ctx, req, res) {
+  const cfg = readConfig(ctx.root);
+  const body = JSON.stringify({ root: ctx.root, sep: path.sep, platform: process.platform, anim: ctx.readAnim(), title: typeof cfg.title === "string" ? cfg.title : "", tree: buildTree(ctx.root) });
+  return send(res, 200, body, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
+}
+
+function endpointDelete(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const t = resolveIn(ctx.root, j && j.path);
+    if (!t) return send(res, 400, "400 Bad Request");
+    fs.stat(t.abs, (err, st) => {
+      if (err) return send(res, 404, "404 Not Found");
+      if (st.isDirectory()) {
+        fs.rmdir(t.abs, (e2) => { // rmdir refuses non-empty folders — safety by design
+          if (e2) return send(res, 409, "409 Folder is not empty");
+          ctx.pruneIcons(t.rel);
+          send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+        });
+      } else {
+        if (!/\.html?$/i.test(t.rel)) return send(res, 400, "400 Bad Request");
+        fs.unlink(t.abs, (e2) => {
+          if (e2) return send(res, 404, "404 Not Found");
+          ctx.pruneIcons(t.rel);
+          send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+        });
+      }
+    });
+  });
+}
+
+function endpointRename(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const from = resolveIn(ctx.root, j && j.from);
+    const to = resolveIn(ctx.root, j && j.to);
+    if (!from || !to || from.rel === to.rel) return send(res, 400, "400 Bad Request");
+    fs.stat(from.abs, (err, st) => {
+      if (err || !st) return send(res, 404, "404 Not Found");
+      if (st.isFile()) {
+        if (!/\.html?$/i.test(from.rel) || !/\.html?$/i.test(to.rel)) return send(res, 400, "400 Bad Request");
+        if (path.basename(to.rel).toLowerCase() === "index.html") return send(res, 400, "400 Bad Request");
+      } else if (to.rel.startsWith(from.rel + "/")) {
+        return send(res, 400, "400 Cannot move a folder into itself");
+      }
+      fs.access(to.abs, (e2) => {
+        if (!e2) return send(res, 409, "409 Target already exists");
+        fs.rename(from.abs, to.abs, (e3) => {
+          if (e3) return send(res, 500, "500 Rename failed");
+          ctx.shiftIcons(from.rel, to.rel);
+          send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+        });
+      });
+    });
+  });
+}
+
+function endpointMkdir(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const t = resolveIn(ctx.root, j && j.path);
+    if (!t) return send(res, 400, "400 Bad Request");
+    fs.access(t.abs, (existErr) => {
+      if (!existErr) return send(res, 409, "409 Folder already exists");
+      fs.mkdir(t.abs, { recursive: true }, (err) => {
+        if (err) return send(res, 500, "500 mkdir failed");
+        send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+      });
+    });
+  });
+}
+
+function endpointSave(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const t = resolveIn(ctx.root, j && j.path);
+    if (!t || !/\.html?$/i.test(t.rel) || typeof j.html !== "string")
+      return send(res, 400, "400 Bad Request");
+    fs.writeFile(t.abs, j.html, "utf8", (err) => {
+      if (err) return send(res, 500, "500 write failed");
+      send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+    });
+  }, 10 * 1024 * 1024); // whole-page HTML — allow up to 10 MB
+}
+
+function endpointReveal(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const t = resolveIn(ctx.root, j && j.path);
+    if (!t) return send(res, 400, "400 Bad Request");
+    fs.stat(t.abs, (err, st) => {
+      if (err || !st) return send(res, 404, "404 Not Found");
+      if (process.platform === "win32") {
+        require("node:child_process").spawn("explorer", st.isDirectory() ? [t.abs] : [`/select,${t.abs}`], { detached: true, stdio: "ignore" }).unref();
+      } else if (process.platform === "darwin") {
+        require("node:child_process").spawn("open", ["-R", t.abs], { detached: true, stdio: "ignore" }).unref();
+      } else {
+        require("node:child_process").spawn("xdg-open", [st.isDirectory() ? t.abs : path.dirname(t.abs)], { detached: true, stdio: "ignore" }).unref();
+      }
+      send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+    });
+  });
+}
+
+function endpointOrder(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const folder = j && j.folder === "" ? "" : safeRelPath(j.folder);
+    const order = j && Array.isArray(j.order) ? j.order : null;
+    if (folder === null || !order || order.some((s) => typeof s !== "string" || !safeRelPath(s)))
+      return send(res, 400, "400 Bad Request");
+    const cfg = readConfig(ctx.root);
+    cfg.order = cfg.order || {};
+    cfg.order[folder] = order;
+    try { writeConfig(ctx.root, cfg); } catch { return send(res, 500, "500 write failed"); }
+    send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+  });
+}
+
+function endpointTitle(ctx, req, res) {
+  readJsonBody(req, (j) => {
+    const title = j && typeof j.title === "string" ? j.title.trim().slice(0, 200) : "";
+    if (!title) return send(res, 400, "400 Bad Request");
+    const cfg = readConfig(ctx.root);
+    cfg.title = title;
+    try { writeConfig(ctx.root, cfg); } catch { return send(res, 500, "500 write failed"); }
+    send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
+  });
+}
+
+// Dispatch table: path → { method, fn }. The whole /__*__ surface, at a glance.
+const ENDPOINTS = {
+  "/__manifest__": { method: "GET", fn: endpointManifest },
+  "/__delete__": { method: "POST", fn: endpointDelete },
+  "/__rename__": { method: "POST", fn: endpointRename },
+  "/__mkdir__": { method: "POST", fn: endpointMkdir },
+  "/__save__": { method: "POST", fn: endpointSave },
+  "/__reveal__": { method: "POST", fn: endpointReveal },
+  "/__order__": { method: "POST", fn: endpointOrder },
+  "/__title__": { method: "POST", fn: endpointTitle },
+};
+
+// ── per-root context ───────────────────────────────────────────────────────
+
 // Create the per-root context. opts.base: URL prefix ("" or "/<slug>"), used
 // for the shell's <base> and the injected dev clients' DOCS_BASE.
 function createRoot(root, opts = {}) {
@@ -103,159 +275,18 @@ function createRoot(root, opts = {}) {
 
   const reload = createReload(root, opts.onReload);
 
+  // What the endpoint handlers get: the root dir plus the per-root helpers.
+  const ctx = { root, base, readAnim, shiftIcons, pruneIcons };
+
   function handle(req, res) {
     if (reload.handle(req, res)) return; // SSE channel
 
     const raw = (req.url || "/").split("?")[0];
 
-    if (raw === "/__manifest__") {
-      const cfg = readConfig(root);
-      const body = JSON.stringify({ root, sep: path.sep, platform: process.platform, anim: readAnim(), title: typeof cfg.title === "string" ? cfg.title : "", tree: buildTree(root) });
-      return send(res, 200, body, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
-    }
-
-    // ── file-management endpoints (delete / rename / mkdir) ──────────────
-    // Shared guards: JSON body cap, relative path inside root, sane names.
-    function readJsonBody(req, cb, cap = 4096) {
-      let body = "";
-      req.on("error", () => {}); // client abort mid-body must not crash us
-      req.on("data", (c) => { body += c; if (body.length > cap) req.destroy(); });
-      req.on("end", () => { let j; try { j = JSON.parse(body); } catch (e) { return cb(null); } cb(j); });
-    }
-    // "guides/v2" → "guides/v2" | null (must stay inside root, no weird names)
-    function safeRelPath(p) {
-      if (typeof p !== "string" || p.includes("\\") || p.startsWith("/")) return null;
-      const segs = p.split("/").filter(Boolean);
-      if (!segs.length || segs.includes("..")) return null;
-      for (const s of segs)
-        if (!s || s.startsWith(".") || s.startsWith("_") || /[<>:"|?*\x00-\x1f]/.test(s)) return null;
-      return segs.join("/");
-    }
-    function resolveIn(p) {
-      const rel = safeRelPath(p);
-      if (rel === null) return null;
-      const abs = path.resolve(root, rel);
-      if (!abs.startsWith(root + path.sep)) return null;
-      return { rel, abs };
-    }
-
-    if (req.method === "POST" && raw === "/__delete__") {
-      return readJsonBody(req, (j) => {
-        const t = resolveIn(j && j.path);
-        if (!t) return send(res, 400, "400 Bad Request");
-        fs.stat(t.abs, (err, st) => {
-          if (err) return send(res, 404, "404 Not Found");
-          if (st.isDirectory()) {
-            fs.rmdir(t.abs, (e2) => { // rmdir refuses non-empty folders — safety by design
-              if (e2) return send(res, 409, "409 Folder is not empty");
-              pruneIcons(t.rel);
-              send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-            });
-          } else {
-            if (!/\.html?$/i.test(t.rel)) return send(res, 400, "400 Bad Request");
-            fs.unlink(t.abs, (e2) => {
-              if (e2) return send(res, 404, "404 Not Found");
-              pruneIcons(t.rel);
-              send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-            });
-          }
-        });
-      });
-    }
-
-    if (req.method === "POST" && raw === "/__rename__") {
-      return readJsonBody(req, (j) => {
-        const from = resolveIn(j && j.from);
-        const to = resolveIn(j && j.to);
-        if (!from || !to || from.rel === to.rel) return send(res, 400, "400 Bad Request");
-        fs.stat(from.abs, (err, st) => {
-          if (err || !st) return send(res, 404, "404 Not Found");
-          if (st.isFile()) {
-            if (!/\.html?$/i.test(from.rel) || !/\.html?$/i.test(to.rel)) return send(res, 400, "400 Bad Request");
-            if (path.basename(to.rel).toLowerCase() === "index.html") return send(res, 400, "400 Bad Request");
-          } else if (to.rel.startsWith(from.rel + "/")) {
-            return send(res, 400, "400 Cannot move a folder into itself");
-          }
-          fs.access(to.abs, (e2) => {
-            if (!e2) return send(res, 409, "409 Target already exists");
-            fs.rename(from.abs, to.abs, (e3) => {
-              if (e3) return send(res, 500, "500 Rename failed");
-              shiftIcons(from.rel, to.rel);
-              send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-            });
-          });
-        });
-      });
-    }
-
-    if (req.method === "POST" && raw === "/__mkdir__") {
-      return readJsonBody(req, (j) => {
-        const t = resolveIn(j && j.path);
-        if (!t) return send(res, 400, "400 Bad Request");
-        fs.access(t.abs, (existErr) => {
-          if (!existErr) return send(res, 409, "409 Folder already exists");
-          fs.mkdir(t.abs, { recursive: true }, (err) => {
-            if (err) return send(res, 500, "500 mkdir failed");
-            send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-          });
-        });
-      });
-    }
-
-    if (req.method === "POST" && raw === "/__save__") {
-      return readJsonBody(req, (j) => {
-        const t = resolveIn(j && j.path);
-        if (!t || !/\.html?$/i.test(t.rel) || typeof j.html !== "string")
-          return send(res, 400, "400 Bad Request");
-        fs.writeFile(t.abs, j.html, "utf8", (err) => {
-          if (err) return send(res, 500, "500 write failed");
-          send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-        });
-      }, 10 * 1024 * 1024); // whole-page HTML — allow up to 10 MB
-    }
-
-    if (req.method === "POST" && raw === "/__reveal__") {
-      return readJsonBody(req, (j) => {
-        const t = resolveIn(j && j.path);
-        if (!t) return send(res, 400, "400 Bad Request");
-        fs.stat(t.abs, (err, st) => {
-          if (err || !st) return send(res, 404, "404 Not Found");
-          if (process.platform === "win32") {
-            require("node:child_process").spawn("explorer", st.isDirectory() ? [t.abs] : [`/select,${t.abs}`], { detached: true, stdio: "ignore" }).unref();
-          } else if (process.platform === "darwin") {
-            require("node:child_process").spawn("open", ["-R", t.abs], { detached: true, stdio: "ignore" }).unref();
-          } else {
-            require("node:child_process").spawn("xdg-open", [st.isDirectory() ? t.abs : path.dirname(t.abs)], { detached: true, stdio: "ignore" }).unref();
-          }
-          send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-        });
-      });
-    }
-
-    if (req.method === "POST" && raw === "/__order__") {
-      return readJsonBody(req, (j) => {
-        const folder = j && j.folder === "" ? "" : safeRelPath(j.folder);
-        const order = j && Array.isArray(j.order) ? j.order : null;
-        if (folder === null || !order || order.some((s) => typeof s !== "string" || !safeRelPath(s)))
-          return send(res, 400, "400 Bad Request");
-        const cfg = readConfig(root);
-        cfg.order = cfg.order || {};
-        cfg.order[folder] = order;
-        try { writeConfig(root, cfg); } catch { return send(res, 500, "500 write failed"); }
-        send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-      });
-    }
-
-    if (req.method === "POST" && raw === "/__title__") {
-      return readJsonBody(req, (j) => {
-        const title = j && typeof j.title === "string" ? j.title.trim().slice(0, 200) : "";
-        if (!title) return send(res, 400, "400 Bad Request");
-        const cfg = readConfig(root);
-        cfg.title = title;
-        try { writeConfig(root, cfg); } catch { return send(res, 500, "500 write failed"); }
-        send(res, 200, JSON.stringify({ ok: true }), { "Content-Type": "application/json; charset=utf-8" });
-      });
-    }
+    // ── file-management endpoints: dispatch via the ENDPOINTS table ──────
+    const ep = ENDPOINTS[raw];
+    if (ep && (ep.method === req.method || (ep.method === "GET" && req.method === "HEAD")))
+      return ep.fn(ctx, req, res);
 
     if (raw.startsWith("/__docs__/")) {
       const f = path.join(CLIENT_DIR, path.normalize(raw.slice("/__docs__/".length)));
@@ -290,4 +321,4 @@ function createRoot(root, opts = {}) {
   return { root, base, handle, reload };
 }
 
-module.exports = { createRoot, CLIENT_DIR, MIME, send };
+module.exports = { createRoot, readJsonBody, safeRelPath, resolveIn, ENDPOINTS, CLIENT_DIR, MIME, send };

@@ -8,7 +8,7 @@ const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
-const { createRoot } = require("./roots.js");
+const { createRoot, readJsonBody } = require("./roots.js");
 const registry = require("./registry.js");
 const { managerBaseUrl } = require("./delegation.js");
 
@@ -105,13 +105,7 @@ function start(opts = {}) {
     return { docs, layout: registry.getLayout() };
   }
 
-  function readJsonBody(req, cb, cap = 1024 * 1024) {
-    let body = "";
-    req.on("error", () => {}); // client abort mid-body must not crash us
-    req.on("data", (c) => { body += c; if (body.length > cap) req.destroy(); });
-    req.on("end", () => { let j; try { j = JSON.parse(body); } catch (e) { return cb(null); } cb(j); });
-    req.on("aborted", () => {});
-  }
+  const MB = 1024 * 1024; // manager payloads (mural layout etc.) can be large
 
   const server = http.createServer((req, res) => {
     const raw = (req.url || "/").split("?")[0];
@@ -149,7 +143,7 @@ function start(opts = {}) {
         const sane = registry.saveLayout(j.layout);
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ ok: true, layout: sane }));
-      });
+      }, MB);
     }
     if (req.method === "POST" && raw === "/api/add") {
       return readJsonBody(req, (j) => {
@@ -164,7 +158,7 @@ function start(opts = {}) {
         const slug = assign.get(abs) || "";
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ slug }));
-      });
+      }, MB);
     }
     if (req.method === "POST" && raw === "/api/remove") {
       return readJsonBody(req, (j) => {
@@ -175,7 +169,7 @@ function start(opts = {}) {
         syncRoots();
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ ok: true }));
-      });
+      }, MB);
     }
     // reveal/open-warp only act on REGISTERED roots — never arbitrary paths
     function registeredDir(p) {
@@ -201,7 +195,7 @@ function start(opts = {}) {
           spawn("xdg-open", [dir], { detached: true, stdio: "ignore" }).unref();
         res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
         res.end(JSON.stringify({ ok: true }));
-      });
+      }, MB);
     }
     if (req.method === "POST" && raw === "/api/open-warp") {
       return readJsonBody(req, (j) => {
@@ -230,7 +224,7 @@ function start(opts = {}) {
           res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
           res.end(JSON.stringify({ ok: true, bin, dir: proj }));
         });
-      });
+      }, MB);
     }
     if (req.method === "POST" && raw === "/api/scan") {
       return readJsonBody(req, (j) => {
@@ -240,7 +234,7 @@ function start(opts = {}) {
           res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
           res.end(JSON.stringify({ found }));
         });
-      });
+      }, MB);
     }
 
     // ── cards page ───────────────────────────────────────────────────────

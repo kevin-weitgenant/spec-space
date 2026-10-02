@@ -79,8 +79,9 @@ footer{max-width:920px;margin:0 auto;padding:26px 24px;text-align:center;color:v
   <div class="toc-inner">
     <a href="#contexto">1 · Contexto</a>
     <a href="#intuicao">2 · Intuição</a>
-    <a href="#mudancas">3 · Mudanças</a>
-    <a href="#quiz">4 · Quiz</a>
+    <a href="#ganhos">3 · Ganhos</a>
+    <a href="#mudancas">4 · Mudanças</a>
+    <a href="#quiz">5 · Quiz</a>
   </div>
 </nav>
 
@@ -175,8 +176,33 @@ flowchart TD
 <p>As três vitórias, no vocabulário de design: <strong>locality</strong> (as guardas de segurança passam a viver num único lugar, e mudanças nelas ficam visíveis e revisáveis), <strong>leverage</strong> (uma interface de endpoints serve os dois consumidores — serve.js e manager.js — e o manager deixa de carregar sua cópia de <code>readJsonBody</code>), e <strong>testabilidade</strong> (path traversal vira um teste de unidade, não um teste de integração com HTTP + fs).</p>
 </section>
 
+<section id="ganhos">
+<h2><span class="num">3</span>Ganhos</h2>
+<p class="lead">Em resumo: o código fica menor, mais fácil de testar e mais fácil de mexer. Abaixo, o porquê de cada um.</p>
+
+<h3>Vai diminuir linhas?</h3>
+<p>Pouco — mas diminui duplicação. A cópia de <code>readJsonBody</code> no manager.js desaparece, e os oito blocos <code>if</code> repetitivos viram funções com a mesma forma. O arquivo não encolhe muito porque o código apenas muda de lugar; o que some é o <strong>repetido</strong>, e repetido é onde bug mora.</p>
+
+<h3>Vai ficar mais testável? Por quê?</h3>
+<p>Sim, e esse é o ganho principal. Hoje, para testar se <code>../../etc/passwd</code> é rejeitado, você precisa: subir servidor → abrir porta → fazer fetch → olhar se veio 400. Chato e lento, então ninguém testa.
+Depois, o teste só chama a função:</p>
+<pre><code>resolveIn(root, "../../etc/passwd")   // → null, rejeitado</code></pre>
+<p>Roda em milissegundos, sem servidor nem rede. Teste fácil de escrever é teste que existe.</p>
+
+<h3>O que mais melhora no dia a dia?</h3>
+<ul>
+<li><strong>Erro mais claro</strong> — hoje um crash mostra <code>handle (roots.js:142)</code> e você caça qual dos oito <code>if</code> estourou. Depois mostra <code>endpointRename</code> — o nome já diz.</li>
+<li><strong>Endpoint novo fica simples</strong> — escreve uma função e adiciona uma linha na tabela. Sem copiar bloco de <code>if</code> à mão.</li>
+<li><strong>Visão do conjunto</strong> — a tabela <code>ENDPOINTS</code> mostra num olhar todos os endpoints e seus métodos, sem ler 170 linhas.</li>
+</ul>
+
+<div class="callout tip">
+<div class="title">Resumo</div>
+<p>Menos código repetido, testes de segurança que rodam sem servidor, erros com nome, e endpoint novo numa linha.</p>
+</div>
+</section>
 <section id="mudancas">
-<h2><span class="num">3</span>Mudanças</h2>
+<h2><span class="num">4</span>Mudanças</h2>
 <p class="lead">Três arquivos, sem quebra do contrato <code>{ root, base, handle, reload }</code>. Nenhuma mudança de comportamento esperada — o shell, o live-reload e a barra lateral continuam idênticos do ponto de vista do navegador.</p>
 
 <h3>1. roots.js — do closure monolítico à tabela de endpoints</h3>
@@ -211,7 +237,7 @@ flowchart TD
 </section>
 
 <section id="quiz">
-<h2><span class="num">4</span>Quiz</h2>
+<h2><span class="num">5</span>Quiz</h2>
 
 <div class="qcard" data-answer="c">
 <p class="q-title">1. Por que as guardas de segurança (<code>safeRelPath</code>, <code>resolveIn</code>) são difíceis de testar hoje?</p>
