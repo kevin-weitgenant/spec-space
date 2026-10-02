@@ -1,5 +1,9 @@
 # spec-space
 
+<p align="center">
+  <img src="icon.png" alt="spec-space icon" width="180">
+</p>
+
 [![JavaScript](https://img.shields.io/badge/JavaScript-plain-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![HTML5](https://img.shields.io/badge/HTML-plain-E34F26?logo=html5&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/HTML)
 [![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?logo=node.js&logoColor=white)](https://nodejs.org)
