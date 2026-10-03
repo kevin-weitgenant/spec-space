@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protótipo — como visualizar as features</title>
+<style>
+:root{ --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472; --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa; --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1; --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1; }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg)}
+.hero{width:100%;background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{padding:4px 14px;border-radius:999px;border:1px solid var(--border);color:var(--soft);text-decoration:none;font-size:.88rem;white-space:nowrap}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{border-bottom:1px solid var(--border);padding:34px 0}
+section:last-of-type{border-bottom:none}
+h2{font-size:1.45rem;margin:0 0 14px}
+h2 .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:1.05rem;margin-right:10px;vertical-align:-4px}
+.lead{color:var(--soft);margin-top:-4px}
+h3{font-size:1.1rem;margin:26px 0 8px}
+p{margin:12px 0}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;padding:14px 18px;margin:18px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)} .callout.tip .title{color:var(--green)}
+.callout.warn{border-left-color:var(--amber)} .callout.warn .title{color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:.92rem;margin:14px 0}
+th{background:var(--panel2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+kbd{background:var(--panel2);border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:1px 7px;font:700 .8em ui-monospace,Consolas,monospace}
+.ramp{border:1.5px dashed var(--border);border-radius:10px;padding:16px 20px;margin:20px 0;background:var(--bg);color:var(--soft);font-size:.95rem}
+.ramp b{color:var(--text)}
+/* ── demo: journey (A) ── */
+.journey{list-style:none;margin:18px 0;padding:0;position:relative}
+.journey li{position:relative;padding:0 0 26px 46px}
+.journey li::before{content:attr(data-n);position:absolute;left:0;top:0;width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;display:flex;align-items:center;justify-content:center}
+.journey li::after{content:"";position:absolute;left:15.5px;top:36px;bottom:4px;width:1px;background:var(--border)}
+.journey li:last-child::after{display:none}
+.journey h4{margin:4px 0 4px;font-size:1.02rem}
+.journey p{margin:0;color:var(--soft);font-size:.93rem}
+.journey .tags{margin:6px 0 0;font-size:.82rem}
+.journey .tags span{display:inline-block;background:var(--panel);border:1px solid var(--border);border-radius:99px;padding:1px 10px;margin:2px 4px 0 0}
+/* ── demo: slim cards (C) ── */
+.slim{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:16px 0}
+.slim details{border-bottom:1px solid var(--border)}
+.slim details:last-child{border-bottom:none}
+.slim summary{cursor:pointer;padding:10px 16px;list-style:none;display:flex;align-items:center;gap:10px;background:var(--bg)}
+.slim summary:hover{background:var(--panel)}
+.slim summary::-webkit-details-marker{display:none}
+.slim summary .ic{font-size:1.15rem}
+.slim summary b{font-size:.98rem}
+.slim summary .hint{color:var(--soft);font-size:.88rem}
+.slim details>div{padding:2px 18px 12px 44px;color:var(--soft);font-size:.92rem}
+/* ── demo: filter table (D) ── */
+.pills{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+.pills button{border:1px solid var(--border);background:var(--bg);border-radius:99px;padding:4px 14px;cursor:pointer;font:600 .85rem -apple-system,'Segoe UI',sans-serif;color:var(--soft)}
+.pills button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+#tblD tr[data-cat]{transition:opacity .15s}
+#tblD tr.hide{display:none}
+/* ── demo: tiles (E) ── */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin:16px 0}
+.tiles a{display:block;text-decoration:none;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:16px 14px;background:var(--bg);transition:border-color .15s,transform .15s}
+.tiles a:hover{border-color:var(--accent);transform:translateY(-2px)}
+.tiles .big{font-size:1.7rem;display:block;margin-bottom:6px}
+.tiles b{font-size:.95rem}
+.tiles small{display:block;color:var(--soft);margin-top:3px;font-size:.82rem}
+footer{border-top:1px solid var(--border);text-align:center;color:var(--soft);font-size:.88rem;padding:26px 24px}
+.top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;box-shadow:0 3px 10px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .25s}
+.top.show{opacity:1;pointer-events:auto}
+.verdict{border:1px solid var(--border);border-left:4px solid var(--purple);background:#faf7fe;border-radius:8px;padding:12px 16px;margin:18px 0;font-size:.92rem;color:var(--soft)}
+.verdict b{color:var(--purple)}
+</style>
+</head>
+<body>
+
+<header class="hero"><div class="hero-inner">
+  <h1>🧪 Protótipo — como visualizar as features</h1>
+  <p class="lede">As mesmas features de exemplo, apresentadas de cinco formas diferentes. Role até o fim de cada seção, sinta a carga cognitiva, e escolha a sua preferida.</p>
+  <p class="meta">prototipo.html · spec-space · features (amostra de ~8 de 34 para comparação)</p>
+</div></header>
+
+<nav class="toc"><div class="toc-inner">
+  <a href="#a">A · Jornada</a>
+  <a href="#b">B · Tabela-matriz</a>
+  <a href="#c">C · Cards enxutos</a>
+  <a href="#d">D · Tabela com filtro</a>
+  <a href="#e">E · Tiles</a>
+  <a href="#f">Comparação</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="a">
+  <h2><span class="num">A</span>Journey map — a features como narrativa de uso</h2>
+  <p class="lead">Você lê em ordem, como uma receita. Cada passo carrega só as features daquele momento; nada de catalogue para decorar.</p>
+  <ol class="journey">
+    <li data-n="1">
+      <h4>Aponte pra uma pasta</h4>
+      <p><code>spec-space ./minhas-docs</code> — escolhe porta livre sozinho e registra no manager.</p>
+      <p class="tags"><span>porta com fallback</span><span>_config.json auto</span></p>
+    </li>
+    <li data-n="2">
+      <h4>Abra no browser</h4>
+      <p>A shell nasce com sidebar em árvore das suas pastas — sem build, sem config.</p>
+      <p class="tags"><span>sidebar automática</span><span>títulos por aba</span></p>
+    </li>
+    <li data-n="3">
+      <h4>Edite sem sair da página</h4>
+      <p><kbd>Ctrl</kbd>+<kbd>E</kbd> liga o WYSIWYG; <kbd>Ctrl</kbd>+<kbd>S</kbd> salva no arquivo. A página recarrega sozinha.</p>
+      <p class="tags"><span>editor inline</span><span>hot reload</span></p>
+    </li>
+    <li data-n="4">
+      <h4>Volte amanhã e veja o que mudou</h4>
+      <p>Blocos novos ganham chip verde, editados ganham word-diff âmbar; minimapa lateral pula direto pra mudança.</p>
+      <p class="tags"><span>change highlights</span><span>minimap</span></p>
+    </li>
+    <li data-n="5">
+      <h4>Diagramas legíveis</h4>
+      <p>Mermaid e SVGs ganham pan/zoom + lightbox automaticamente.</p>
+      <p class="tags"><span>mermaid-zoom</span></p>
+    </li>
+    <li data-n="6">
+      <h4>Muitas pastas? Um manager.</h4>
+      <p>Todos os projetos num mural único, cada um no seu prefixo <code>/slug/</code>.</p>
+      <p class="tags"><span>manager</span><span>mural</span></p>
+    </li>
+    <li data-n="7">
+      <h4>Publique</h4>
+      <p><code>spec-space export</code> congela tudo em arquivos estáticos — Netlify Drop, Pages, Surge.</p>
+      <p class="tags"><span>export estático</span></p>
+    </li>
+  </ol>
+  <div class="verdict"><b>Sensação:</b> conto uma história; o leitor sai sabendo USAR, não só listando. Custo: as 34 features precisam se encaixar nos passos (algumas são "detalhe do passo N").</div>
+</section>
+
+<section id="b">
+  <h2><span class="num">B</span>Tabela-matriz — a visão de cima em 30 segundos</h2>
+  <p class="lead">Uma tabela única, escaneável de cima a baixo. Card detalhado vira opcional, via âncora.</p>
+  <table>
+    <thead><tr><th>Feature</th><th>O que faz</th><th>Onde vive</th></tr></thead>
+    <tbody>
+      <tr><td><b>Hot reload</b></td><td>Recarrega só a página cujo arquivo mudou</td><td><code>client/reload.js</code></td></tr>
+      <tr><td><b>Editor inline</b></td><td>WYSIWYG direto na página, Ctrl+S salva</td><td><code>client/edit.js</code></td></tr>
+      <tr><td><b>Change highlights</b></td><td>Chips "novo" + word-diff desde sua última visita</td><td><code>client/diff.js</code> + <code>changes.js</code></td></tr>
+      <tr><td><b>Sidebar em árvore</b></td><td>Nasce das pastas; ordena, ícones, contexto</td><td><code>client/nav.js</code></td></tr>
+      <tr><td><b>Mermaid zoom</b></td><td>Pan/zoom + lightbox p/ diagramas e SVGs</td><td><code>client/mermaid-zoom.js</code></td></tr>
+      <tr><td><b>Manager</b></td><td>Todos os projetos num mural multi-root</td><td><code>manager.js</code></td></tr>
+      <tr><td><b>Export</b></td><td>Congela em site estático (sem servidor)</td><td><code>export.js</code></td></tr>
+    </tbody>
+  </table>
+  <div class="verdict"><b>Sensação:</b> "achei o que procurava" em segundos. Custo: zero narrativa — não ensina a jornada; 34 linhas ficam longas mas ainda escaneáveis.</div>
+</section>
+
+<section id="c">
+  <h2><span class="num">C</span>Cards enxutos — uma frase + profundidade sob demanda</h2>
+  <p class="lead">Cada card colapsado mostra só <em>ícone + nome + uma frase</em>. O detalhe mora dentro do <code>&lt;details&gt;</code>, aberto só por curiosidade.</p>
+  <div class="slim">
+    <details>
+      <summary><span class="ic">🔄</span><b>Hot reload</b><span class="hint">— recarrega só o que mudou · sem botão</span></summary>
+      <div>Um único SSE por browser (eleição via Web Locks + BroadcastChannel). Cada aba filtra os eventos do seu próprio root. Recarrega a página se o arquivo DELA mudou; assets compartilhados (.js/.css) recarregam qualquer doc.</div>
+    </details>
+    <details>
+      <summary><span class="ic">✏️</span><b>Editor inline</b><span class="hint">— WYSIWYG · Ctrl+E / Ctrl+S</span></summary>
+      <div>Liga contenteditable no body, preserva &lt;pre&gt; como texto puro, e ao salvar remove tudo que o dev-server injetou (data-injected) antes de escrever no disco via /__save__.</div>
+    </details>
+    <details>
+      <summary><span class="ic">✨</span><b>Change highlights</b><span class="hint">— chips "novo" + word-diff + minimap</span></summary>
+      <div>Compara o texto da página com um snapshot no localStorage da sua última visita (LCS puro em diff.js). A chave do snapshot sobrevive a deploys — seu histórico não zera.</div>
+    </details>
+    <details>
+      <summary><span class="ic">🗂️</span><b>Sidebar em árvore</b><span class="hint">— nasce das pastas · menu ⋯ · contexto</span></summary>
+      <div>Manifest da pasta vira árvore; arrastar reordena (persiste via /__order__), menu ⋯ copia caminho/revela/move, clique direito cria pasta. Ícones Lucide ou emoji via _config.json.</div>
+    </details>
+  </div>
+  <div class="verdict"><b>Sensação:</b> a página fica curta e silenciosa; o peso só aparece quando você pede. Custo: recursos "escondidos" — quem não abre o details não descobre nada.</div>
+</section>
+
+<section id="d">
+  <h2><span class="num">D</span>Tabela com filtro — consulte por tema</h2>
+  <p class="lead">Pills de tema no topo; clique e a tabela mostra só aquele pedaço. Feito pra voltar e procurar, não pra ler.</p>
+  <div class="pills" id="pillsD">
+    <button class="on" data-f="all" onclick="fD(this)">tudo</button>
+    <button data-f="nav" onclick="fD(this)">navegação</button>
+    <button data-f="edit" onclick="fD(this)">edição</button>
+    <button data-f="srv" onclick="fD(this)">servidor</button>
+    <button data-f="exp" onclick="fD(this)">export</button>
+  </div>
+  <table id="tblD">
+    <thead><tr><th>Feature</th><th>Atalho / gatilho</th></tr></thead>
+    <tbody>
+      <tr data-cat="nav"><td>Sidebar em árvore</td><td>automático</td></tr>
+      <tr data-cat="nav"><td>Menu ⋯ (copiar, revelar, mover)</td><td>hover no item</td></tr>
+      <tr data-cat="edit"><td>Editor inline</td><td><kbd>Ctrl</kbd>+<kbd>E</kbd></td></tr>
+      <tr data-cat="edit"><td>Salvar</td><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td></tr>
+      <tr data-cat="edit"><td>Change highlights</td><td>automático</td></tr>
+      <tr data-cat="srv"><td>Hot reload</td><td>automático</td></tr>
+      <tr data-cat="srv"><td>Porta com fallback</td><td><code>--port</code> opcional</td></tr>
+      <tr data-cat="exp"><td>Export estático</td><td><code>spec-space export</code></td></tr>
+    </tbody>
+  </table>
+  <div class="verdict"><b>Sensação:</b> controle — eu escolho o que ver. Custo: é uma ferramenta de busca disfarçada de doc; primeira leitura fraca.</div>
+</section>
+
+<section id="e">
+  <h2><span class="num">E</span>Tiles — dashboard de launcher</h2>
+  <p class="lead">Grade de tiles grandes (emoji + nome + 5 palavras). Clique rola até o detalhe completo mais abaixo.</p>
+  <div class="tiles">
+    <a href="#f"><span class="big">🔄</span><b>Hot reload</b><small>só a página que mudou</small></a>
+    <a href="#f"><span class="big">✏️</span><b>Editor inline</b><small>WYSIWYG na própria página</small></a>
+    <a href="#f"><span class="big">✨</span><b>Change highlights</b><small>o que mudou desde ontem</small></a>
+    <a href="#f"><span class="big">🗂️</span><b>Sidebar</b><small>árvore das suas pastas</small></a>
+    <a href="#f"><span class="big">🔍</span><b>Mermaid zoom</b><small>pan/zoom + lightbox</small></a>
+    <a href="#f"><span class="big">🧩</span><b>Manager</b><small>mural multi-projeto</small></a>
+    <a href="#f"><span class="big">📦</span><b>Export</b><small>site estático pronto</small></a>
+  </div>
+  <div class="verdict"><b>Sensação:</b> bonito, visual, dá o mapa do território num olhar. Custo: exige clique pra qualquer profundidade; 34 tiles = parede de emojis.</div>
+</section>
+
+<section id="f">
+  <h2><span class="num">?</span>Comparação honesta</h2>
+  <p class="lead">Nenhuma opção ganha em tudo — depende de quem abre o arquivo e por quê.</p>
+  <table>
+    <thead><tr><th></th><th>Primeira leitura</th><th>Consultar depois</th><th>Descoberta passiva</th></tr></thead>
+    <tbody>
+      <tr><td><b>A · Jornada</b></td><td><b style="color:var(--green)">excelente</b></td><td>regular</td><td><b style="color:var(--green)">excelente</b></td></tr>
+      <tr><td><b>B · Tabela-matriz</b></td><td>boa</td><td><b style="color:var(--green)">excelente</b></td><td>boa</td></tr>
+      <tr><td><b>C · Cards enxutos</b></td><td>boa</td><td>boa</td><td>fraca</td></tr>
+      <tr><td><b>D · Filtro</b></td><td>fraca</td><td><b style="color:var(--green)">excelente</b></td><td>regular</td></tr>
+      <tr><td><b>E · Tiles</b></td><td>boa (mapa)</td><td>regular</td><td>boa</td></tr>
+    </tbody>
+  </table>
+  <div class="callout tip"><div class="title">Combinação natural</div>
+    <b>A</b> para a espinha dorsal (a jornada) + <b>C</b> para o corpo de cada passo (frase curta, details sob demanda). A tabela <b>B</b> pode fechar como "índice completo" no fim. D e E são boas ideias para o manager UI, não para um doc.</div>
+  <div class="callout"><div class="title">Como escolher</div>
+    Pense em quem vai abrir: <em>alguém conhecendo o projeto pela primeira vez</em> → A (ou A+C). <em>Você mesmo daqui a um mês procurando "aquela feature do menu ⋯"</em> → B ou D. <em>Quem decide em 10 segundos se vale a pena</em> → E no topo, resto embaixo.</div>
+</section>
+
+</main>
+<footer>Protótipo · visualização das features · spec-space</footer>
+<a class="top" href="#" title="voltar ao topo">↑</a>
+
+<script>
+function fD(btn){
+  document.querySelectorAll("#pillsD button").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  var f=btn.dataset.f;
+  document.querySelectorAll("#tblD tr[data-cat]").forEach(tr=>{
+    tr.classList.toggle("hide", f!=="all" && tr.dataset.cat!==f);
+  });
+}
+// TOC highlight + back-to-top
+var links=[...document.querySelectorAll(".toc a")];
+var secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+function onScroll(){
+  var y=scrollY+120, cur=secs.findIndex(s=>s&&s.offsetTop>y)-1;
+  if(cur<0)cur=0;
+  links.forEach((a,i)=>a.classList.toggle("active",i===cur));
+  document.querySelector(".top").classList.toggle("show", scrollY>600);
+}
+addEventListener("scroll",onScroll,{passive:true}); onScroll();
+</script>
+</body>
+</html>
