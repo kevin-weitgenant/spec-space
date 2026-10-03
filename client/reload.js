@@ -11,16 +11,12 @@
 (function () {
   if (window.top === window.self) console.log("[spec-space] hot reload connected");
 
-  var BASE = window.DOCS_BASE || ""; // "" single-root, "/<slug>/" under the manager
-  var BASE_N = BASE.replace(/\/+$/, ""); // normalized: "/slug" or ""
+  var lib = window.docsLib;
+  var BASE_N = lib.BASE_N; // normalized: "/slug" or ""
 
   // Who am I? The shell (a page with #docList) may also live at a deep URL
   // (/docs/foo.html) after F5 — identify it by structure, not by pathname.
-  var isShell = !!document.getElementById("docList");
-  var me = (isShell ? "index.html" : decodeURI(location.pathname).replace(/^\/+/, "")) || "index.html";
-  var baseRel = decodeURI(BASE).replace(/^\/+|\/+$/g, "");
-  if (baseRel && me.toLowerCase().indexOf(baseRel.toLowerCase() + "/") === 0)
-    me = me.slice(baseRel.length + 1) || "index.html";
+  var me = lib.isShell() ? "index.html" : lib.me();
 
   function shouldReload(changed) {
     if (changed === me) return true;             // my own file changed

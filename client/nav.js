@@ -134,11 +134,9 @@
     return n;
   }
   function api(url, body) {
-    return fetch(BASE.replace(/\/+$/, "") + url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body)
-    }).then(function (r) {
+    // delegate the URL/method/JSON wiring to lib.js; keep the response policy
+    // here (409 → friendly message) — it's local to the nav
+    return window.docsLib.api(url, body).then(function (r) {
       if (!r.ok) throw new Error(r.status === 409 ? "A file or folder with that name already exists" : "request failed (" + r.status + ")");
       return r.text();
     });

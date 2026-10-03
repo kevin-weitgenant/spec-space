@@ -22,12 +22,11 @@
   try { topDoc = window.top === window.self ? document : window.top.document; }
   catch (e) { topDoc = document; }
 
-  // ── identity: same key logic as the reload client ──
-  var BASE = (window.DOCS_BASE || "").replace(/\/+$/, "");
-  var me = decodeURI(location.pathname).replace(/^\/+/, "") || "index.html";
-  var baseRel = BASE.replace(/^\/+/, "");
-  if (baseRel && me.toLowerCase().indexOf(baseRel.toLowerCase() + "/") === 0)
-    me = me.slice(baseRel.length + 1) || "index.html";
+  // ── identity: lib.js (injected first) owns the rule; the snapshot KEY
+  //    must stay byte-identical to the pre-lib version or users lose history ──
+  var lib = window.docsLib;
+  var BASE = lib.BASE_N; // trailing slash stripped — KEY stays byte-identical
+  var me = lib.isShell() ? "index.html" : lib.me();
   var KEY = "docs-in-html:snap:" + BASE + ":" + me;
 
   // ── collect the doc's blocks (before we add any UI of our own) ──
