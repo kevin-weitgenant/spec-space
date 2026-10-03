@@ -60,6 +60,18 @@ details.mod>.modbody>p:first-child{margin-top:.8em}
 .tag.srv{background:#ddf4ff;color:#0969da}.tag.cli{background:#e7e0f5;color:#6f42c1}.tag.both{background:var(--amber-soft);color:#9a6700}
 footer{border-top:1px solid var(--border)}
 .footer-inner{max-width:920px;margin:0 auto;padding:22px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+.ramp{border:2px dashed var(--border);border-radius:12px;padding:14px 18px;margin:0 0 1.4em;background:var(--panel)}
+.ramp .ramp-title{font-weight:700;font-size:.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3em}
+.ramp p{margin:.4em 0;color:var(--text)}
+.qcard{background:var(--bg);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:0 10px 10px 0;padding:16px 18px;margin:1.2em 0}
+.q-title{font-weight:700;margin:0 0 .6em}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font:inherit;padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg);cursor:pointer}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:700}
+.opt.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red)}
+.q-feedback{display:none;margin-top:.8em;padding:10px 14px;background:var(--panel);border-radius:8px;font-size:.95rem}
+.q-feedback.show{display:block}
 .top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;box-shadow:0 3px 10px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .25s}
 .top.show{opacity:1;pointer-events:auto}
 </style>
@@ -85,6 +97,7 @@ footer{border-top:1px solid var(--border)}
   <a href="#fluxos">8 · Fluxos</a>
   <a href="#testes">9 · Testes</a>
   <a href="#resumo">10 · Resumo</a>
+  <a href="#quiz">11 · Quiz</a>
 </div></nav>
 
 <main class="wrap">
@@ -93,8 +106,12 @@ footer{border-top:1px solid var(--border)}
 <h2><span class="num">1</span>Visão geral</h2>
 <p class="lead">O pacote <strong>spec-space</strong> (antes <code>docs-in-html</code> — o nome antigo segue disponível via pacote de alias) é um servidor de desenvolvimento <em>zero-build</em> para pastas de documentação em HTML puro: sidebar em árvore automática, live reload, edição WYSIWYG inline, highlights do que mudou desde sua última visita, pan/zoom para Mermaid e SVGs — e um manager que serve todas as suas pastas num único processo.</p>
 
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p>"Zero-build" significa que não há etapa de compilação: você escreve HTML puro e o servidor entrega as páginas direto, enriquecendo-as na hora com scripts (sidebar, reload, edição). "Módulo profundo" é um pedaço de código que faz UMA coisa bem, esconde os detalhes e mostra só uma interface pequena para os outros — como um aparelho de som com poucos botões, porém cheio de engenharia dentro. Os cinco módulos abaixo são as "peças" do pacote; o resto do doc visita cada uma.</p>
+</div>
+
 <div class="callout"><div class="title">📋 Dois documentos, duas perguntas</div>
-Este responde <em>"como funciona por dentro"</em>. Para <em>"o que o pacote oferece"</em> (a lista completa de features pela jornada de uso), veja <a href="features.html">✨ Features</a>.</p></div>
+Este responde <em>"como funciona por dentro"</em>. Para <em>"o que o pacote oferece"</em> (a lista completa de features pela jornada de uso), veja <a href="features.html">✨ Features</a>.</div>
 
 <p>A arquitetura se organiza em <strong>cinco módulos profundos</strong> — cada um com uma responsabilidade única e uma interface pequena:</p>
 
@@ -152,6 +169,10 @@ O pacote <code>docs-in-html</code> é agora um stub de alias: seu <code>bin/cli.
 <h2><span class="num">2</span>A costura <code>ops</code> — uma porta para o mundo</h2>
 <p class="lead"><code>ops.js</code> é a ÚNICA porta pela qual o projeto fala com o mundo exterior: sistema de arquivos, processos, home dir.</p>
 
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p>Uma <strong>"costura" (seam)</strong> é um ponto do código onde você pode trocar uma peça por outra sem mexer em mais nada — como um zíper numa roupa. Aqui, a peça é o <em>mundo exterior</em> (disco, processos, home do usuário): em produção a costura deixa passar o mundo real; em teste, você "descostura" o real e costura uma imitação em memória. Assim os testes rodam sem apagar arquivos seus e sem abrir programas.</p>
+</div>
+
 <p>Em produção, o adaptador default envolve <code>node:fs</code>, <code>node:child_process</code> e <code>node:os</code> diretamente. Em teste, <code>ops.setOps(fakeOps)</code> troca o adaptador inteiro por uma versão em memória — sem disco real, sem processo real, sem home real. <code>ops.resetOps()</code> devolve o mundo verdadeiro.</p>
 
 <div class="callout"><div class="title">💡 O módulo é um Proxy</div>
@@ -173,6 +194,10 @@ O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adap
 <h2><span class="num">3</span>CLI requireable — <code>serve.js</code></h2>
 <p class="lead">O arquivo é ao mesmo tempo programa (binário) e módulo: <code>parseArgs()</code> e <code>main()</code> são exportadas e testáveis in-process.</p>
 
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p>"Requireable" significa que o arquivo pode ser <em>requerido</em> (importado com <code>require()</code>) como uma biblioteca, além de executado como comando. O truque é o rodapé <code>if (require.main === module)</code>: "só rode o programa de verdade se fui chamado diretamente pela linha de comando". Quem apenas importa as funções recebe só as funções — nenhum servidor sobe, nenhum texto é impresso. É isso que permite testar a CLI como qualquer função.</p>
+</div>
+
 <ul>
 <li><strong>Puro no parse.</strong> <code>parseArgs(argv, opts)</code> recebe um ARRAY de argumentos (não <code>process.argv</code>) e devolve opções como dados; <code>-h</code> vira <code>mode:"help"</code> — imprimir é trabalho do <code>main()</code>.</li>
 <li><strong>Deps injetáveis.</strong> <code>main(args, deps)</code> recebe <code>pingManagerDep</code>, <code>addToManagerDep</code> e <code>openUrl</code> por injeção — os testes simulam um manager vivo ou o browser abrindo sem que nada disso exista. Nunca chama <code>process.exit</code>: devolve o exit code, e o footer decide.</li>
@@ -180,8 +205,8 @@ O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adap
 <li><strong>Servidor vivo resolve <code>undefined</code>.</strong> Quando o serve sobe de verdade, <code>main</code> resolve <code>undefined</code> — o footer não faz exit; o próprio server mantém o processo vivo (mesmo contrato do script pré-refactor).</li>
 </ul>
 
-<h3>Portas honestas: dica vs. exigência</h3>
-<p>Sem <code>--port</code>, a padrão (8000 ou <code>$PORT</code>) é uma <em>dica</em>: ocupada, cai para a próxima livre com um aviso, até <code>MAX_FALLBACKS = 20</code> tentativas. Com <code>--port</code> explícito é uma <em>exigência</em>: ocupada, morre com erro claro em vez de trocar em silêncio (inclusive com a dica "pode ser outra instância de spec-space").</p>
+<div class="callout"><div class="title">🔌 Portas honestas: dica vs. exigência</div>
+Sem <code>--port</code>, a padrão (8000 ou <code>$PORT</code>) é uma <em>dica</em>: ocupada, cai para a próxima livre com um aviso, até <code>MAX_FALLBACKS = 20</code> tentativas. Com <code>--port</code> explícito é uma <em>exigência</em>: ocupada, morre com erro claro em vez de trocar em silêncio (inclusive com a dica "pode ser outra instância de spec-space").</div>
 
 <h3>Os outros comportamentos do modo serve</h3>
 <ul>
@@ -197,6 +222,10 @@ O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adap
 <section id="contexto">
 <h2><span class="num">4</span>Contexto por pasta — <code>roots.js</code> e cia.</h2>
 <p class="lead"><code>createRoot(root, opts)</code> devolve <code>{ root, base, handle, reload }</code>: o handler tem a mesma assinatura de um listener do <code>http.Server</code>. <code>opts.base</code> é o prefixo de URL (<code>""</code> no single-root, <code>"/&lt;slug&gt;"</code> no manager). Dois consumidores, um handler — a correção se escreve uma vez.</p>
+
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p>Um <strong>handler</strong> é a função que responde a cada pedido HTTP ("me dê <code>auth.html</code>"). Um <strong>endpoint</strong> é um "caminho especial" que o servidor entende além dos arquivos — aqui, rotas como <code>/__save__</code> que gravam edits ou apagam docs. A tabela <code>ENDPOINTS</code> é só uma lista declarativa: caminho → função, escrita de uma vez num lugar só, em vez de espalhada em <code>if</code>s pelo código.</p>
+</div>
 
 <h3>Handlers nomeados + tabela ENDPOINTS</h3>
 <p>Cada endpoint <code>/__*__</code> é <strong>uma função nomeada de escopo de módulo</strong> com a mesma forma <code>(ctx, req, res)</code> — onde <code>ctx</code> carrega o root dir e o bookkeeping de config por root (<code>shiftIcons</code>/<code>pruneIcons</code>/<code>readAnim</code>). O <code>handle</code> despacha pela <strong>tabela declarativa <code>ENDPOINTS</code></strong> — toda a superfície <code>/__*__</code> num relance:</p>
@@ -215,6 +244,9 @@ O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adap
 
 <p>Além da tabela, o módulo <strong>exporta as peças testáveis</strong>: <code>readJsonBody</code> (JSON com cap de tamanho — default 4 KB, sobrecarregado destrói a conexão), <code>safeRelPath</code> (<code>"guides/v2"</code> → válido | <code>null</code>: sem <code>..</code>, sem <code>\</code>, sem nomes esquisitos), <code>resolveIn</code> (resolve dentro do root ou <code>null</code>), <code>ENDPOINTS</code>, <code>MIME</code> e <code>send</code> — unit-testáveis sem subir servidor.</p>
 
+<div class="callout tip"><div class="title">🗺️ O que a tabela ENDPOINTS compra</div>
+Toda a superfície HTTP especial (<code>/__*__</code>) fica visível num único lugar: rever segurança, achar um endpoint e testar a tabela inteiros ficam triviais — o <code>handle</code> só despacha, cada endpoint é uma função nomeada testável isoladamente.</div>
+
 <h3>As decisões que atravessam o módulo</h3>
 <ul>
 <li><strong>O contrato <code>#docList</code></strong> — o shell é reconhecido por <em>estrutura</em> (uma tag real com <code>id="docList"</code>), não por URL. A detecção usa regex de contexto de tag: uma página que só <em>menciona</em> <code>id="docList"</code> em prosa (como este doc!) não é enganada.</li>
@@ -231,6 +263,10 @@ O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adap
 <h2><span class="num">5</span>Ecossistema multi-docs</h2>
 <p class="lead">Servir pastas uma a uma para de escalar no segundo projeto: o manager serve todas as suas docs num processo só, cada uma em <code>http://localhost:4400/&lt;slug&gt;/</code>.</p>
 
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p>Imagine que você tem cinco projetos, cada um com sua pasta de docs. Em vez de rodar cinco servidores (cinco portas, cinco terminais), o <strong>manager</strong> é um único servidor em <code>:4400</code> que conhece todas as pastas. O <strong>slug</strong> é o "apelido de URL" derivado do título (<code>/my-project-handbook/</code>), e o <strong>registry</strong> é um arquivinho no seu home (<code>~/.docs-in-html/registry.json</code>) onde ficam anotadas as pastas, os slugs e o layout do mural.</p>
+</div>
+
 <ul>
 <li><strong>Um handler, N instâncias</strong> — o manager não reimplementa nada: cria um contexto <code>roots.js</code> por pasta e roteia por prefixo de slug (reescreve <code>req.url</code> e chama <code>ctx.handle</code>). Roots são sincronizados com o registry a quente.</li>
 <li><strong>Slug do título</strong> — <code>/my-project-handbook/</code> do <code>title</code>; colisões ganham <code>-2</code>; <code>api</code> é reservado.</li>
@@ -245,6 +281,10 @@ O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adap
 <section id="export">
 <h2><span class="num">6</span>Publicação estática — <code>export.js</code></h2>
 <p class="lead">O que o servidor decide por requisição, o export decide UMA vez e escreve em disco: arquivos puros, zero servidor, sidebar e pan/zoom funcionando (<code>surge dist</code>).</p>
+
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p>Um <strong>site estático</strong> é só um punhado de arquivos entregues por qualquer servidor burro (ou de graça: Surge, GitHub Pages) — sem Node rodando. O export "congela" a experiência do modo dev: copia os arquivos, gera o <code>manifest.json</code> da sidebar e injeta os scripts nas páginas, tudo decidido de antemão. O preço: nada que precise de servidor (editar, apagar, live reload) existe no estático.</p>
+</div>
 
 <p><code>run(root, outDir)</code> também é requireable, com footer <code>require.main</code>: pasta inexistente <strong>lança</strong> ("pasta não encontrada") e o footer imprime + exit 1. Cinco passos:</p>
 <ol>
@@ -262,6 +302,10 @@ No modo estático, <code>inject.js</code> adiciona ao <code>&lt;head&gt;</code> 
 <section id="clientes">
 <h2><span class="num">7</span>Clientes do browser</h2>
 <p class="lead">Scripts injetados nas páginas, servidos de <code>/__docs__/*</code>. Três princípios atravessam todos: identidade por estrutura (não por URL), comunicação via eventos DOM (<code>docs-in-html:change</code>) e UI própria marcada <code>data-injected</code>.</p>
+
+<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
+<p><strong>UMD</strong> (Universal Module Definition) é um modo de escrever um arquivo JavaScript que funciona tanto numa tag <code>&lt;script&gt;</code> no browser (publicando, p.ex., <code>window.DIFF</code>) quanto via <code>require()</code> no Node. Assim o MESMO arquivo roda na página e nos testes com <code>node --test</code> — sem duplicar código. <strong>SSE</strong> (Server-Sent Events) é um canal onde o servidor empurra eventos para o browser sem que ele pergunte — é o trem do live reload.</p>
+</div>
 
 <h3>A ordem de injeção (<code>inject.js</code>)</h3>
 <ol>
@@ -397,6 +441,64 @@ sequenceDiagram
 <tr><td><code>client/manager.html</code></td><td>Clientes</td><td>Mural de cards do manager (Warp, reveal, remover, scan).</td></tr>
 <tr><td><code>alias/docs-in-html/</code></td><td>Compat</td><td>Stub que faz require do spec-space — o CLI antigo segue vivo.</td></tr>
 </tbody></table>
+<section id="quiz">
+<h2><span class="num">11</span>Quiz</h2>
+<p class="lead">Cinco perguntas para checar se o <em>porquê</em> das decisões ficou claro. Clique numa resposta para ver o feedback — pode tentar de novo à vontade.</p>
+
+<div class="qcard" data-answer="c">
+  <p class="q-title">1. Por que o projeto concentra todo acesso a fs/processos num único módulo <code>ops.js</code>?</p>
+  <div class="opts">
+    <button class="opt" data-k="a">A) Para reduzir o número de <code>require</code>s e acelerar o startup do servidor.</button>
+    <button class="opt" data-k="b">B) Porque o Node vai depreicar <code>node:fs</code> e assim a migração fica mais fácil.</button>
+    <button class="opt" data-k="c">C) Porque cria uma costura única: <code>setOps(fakeOps)</code> troca o mundo inteiro por uma imitação em memória, e os testes rodam sem disco, rede ou processos reais.</button>
+    <button class="opt" data-k="d">D) Para que cada módulo possa escolher seu próprio adaptador de fs independentemente.</button>
+  </div>
+  <div class="q-feedback">✅ <b>C.</b> A costura existe a serviço da verificação: um único ponto de troca (o Proxy delega ao adaptador corrente) simula EADDRINUSE, manager no ar ou um disco inteiro nos testes, sem efeitos colaterais.</div>
+</div>
+
+<div class="qcard" data-answer="b">
+  <p class="q-title">2. Para que serve o rodapé <code>if (require.main === module)</code> em <code>serve.js</code>?</p>
+  <div class="opts">
+    <button class="opt" data-k="a">A) Garante que o servidor só aceite requisições vindas do processo principal.</button>
+    <button class="opt" data-k="b">B) Separa biblioteca de programa: efeitos colaterais (parse do argv, exit, subir server) só rodam quando o arquivo é executado como binário — requerer o módulo é silencioso e testável in-process.</button>
+    <button class="opt" data-k="c">C) Faz cache do módulo para o require ficar mais rápido nos testes.</button>
+    <button class="opt" data-k="d">D) É exigência do Node para todo arquivo que exporta <code>main()</code>.</button>
+  </div>
+  <div class="q-feedback">✅ <b>B.</b> Sem o footer, o simples <code>require("./serve")</code> num teste já dispararia o servidor. Com ele, <code>parseArgs</code>/<code>main</code> viram funções puras importáveis; o "modo programa" fica atrás da guarda.</div>
+</div>
+
+<div class="qcard" data-answer="a">
+  <p class="q-title">3. Por que o <code>inject.js</code> garante que <code>diff.js</code> seja injetado imediatamente antes de <code>changes.js</code>?</p>
+  <div class="opts">
+    <button class="opt" data-k="a">A) Porque o <code>changes.js</code> consome <code>window.DIFF</code>: a ordem no HTML garante que o núcleo de diff esteja definido quando o changes executar.</button>
+    <button class="opt" data-k="b">B) Porque o <code>diff.js</code> só carrega o Mermaid se o changes já rodou.</button>
+    <button class="opt" data-k="c">C) É apenas ordem alfabética — nenhuma dependência real entre eles.</button>
+    <button class="opt" data-k="d">D) Porque o changes precisa abrir a conexão SSE antes do diff ser calculado.</button>
+  </div>
+  <div class="q-feedback">✅ <b>A.</b> <code>diff.js</code> (UMD) anexa <code>window.DIFF</code>; <code>changes.js</code> depende dele para diff LCS e word-diff. Injetados com <code>defer</code> na ordem certa, a execução respeita a dependência.</div>
+</div>
+
+<div class="qcard" data-answer="d">
+  <p class="q-title">4. O que a tabela declarativa <code>ENDPOINTS</code> em <code>roots.js</code> compra, na prática?</p>
+  <div class="opts">
+    <button class="opt" data-k="a">A) Rotas mais rápidas, pois evita uma cadeia de <code>if</code>s no handler.</button>
+    <button class="opt" data-k="b">B) Permite expor os endpoints também como comandos de CLI automaticamente.</button>
+    <button class="opt" data-k="c">C) Substitui a validação de caminhos (<code>safeRelPath</code>), que vira desnecessária.</button>
+    <button class="opt" data-k="d">D) Toda a superfície <code>/__*__</code> fica visível e auditável num lugar só — endpoints são funções nomeadas testáveis isoladamente, e o <code>handle</code> só despacha.</button>
+  </div>
+  <div class="q-feedback">✅ <b>D.</b> A tabela é sobre legibilidade e verificabilidade, não performance: um relance mostra cada rota, método e handler; revisar segurança e escrever <code>roots.test.js</code> contra <code>ENDPOINTS</code> fica trivial.</div>
+</div>
+
+<div class="qcard" data-answer="b">
+  <p class="q-title">5. Por que <code>lib.js</code> precisa entrar <strong>primeiro</strong>, em toda página — no dev e no export?</p>
+  <div class="opts">
+    <button class="opt" data-k="a">A) Porque é o maior arquivo e precisa começar a baixar antes para não travar a página.</button>
+    <button class="opt" data-k="b">B) Porque é o módulo de identidade (<code>window.docsLib</code>): <code>reload.js</code>, <code>nav.js</code>, <code>edit.js</code> e cia. consomem <code>me()/api()/isShell()</code> para saber quem são — sem ele, os demais não sabem nem a qual root pertencem.</button>
+    <button class="opt" data-k="c">C) Porque define o CSS da sidebar, que precisa existir antes do HTML renderizar.</button>
+    <button class="opt" data-k="d">D) Porque abre a conexão SSE que os outros scripts apenas reutilizam.</button>
+  </div>
+  <div class="q-feedback">✅ <b>B.</b> Antes do <code>lib.js</code>, cada cliente copiava seu próprio bloco "quem sou eu?". Agora ele entra primeiro (dev E export) e publica <code>window.docsLib</code> — a pergunta de identidade é respondida uma vez só, para todos.</div>
+</div>
 </section>
 
 </main>
@@ -419,6 +521,22 @@ sequenceDiagram
   }
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
+})();
+(function () {
+  document.querySelectorAll(".qcard").forEach(function (c) {
+    var ans = c.dataset.answer, fb = c.querySelector(".q-feedback");
+    c.querySelectorAll(".opt").forEach(function (b) {
+      b.addEventListener("click", function () {
+        c.querySelectorAll(".opt").forEach(function (o) { o.classList.remove("right", "wrong"); });
+        if (b.dataset.k === ans) { b.classList.add("right"); }
+        else {
+          b.classList.add("wrong");
+          var cor = c.querySelector('.opt[data-k="' + ans + '"]'); if (cor) cor.classList.add("right");
+        }
+        fb.classList.add("show");
+      });
+    });
+  });
 })();
 </script>
 </body></html>
