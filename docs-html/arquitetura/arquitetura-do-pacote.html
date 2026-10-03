@@ -2,39 +2,53 @@
 <html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>docs-in-html — Arquitetura do Pacote</title>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });</script>
+<title>Arquitetura do Pacote — spec-space</title>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
 <style>
-:root{--bg:#fff;--panel:#f6f7f9;--text:#1f2329;--soft:#5b6472;--border:#d9dee6;--accent:#1f6feb;--accent-soft:#e8f0fe;--ok:#1a7f37;--bad:#cf222e}
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
+}
 *{box-sizing:border-box}
-body{font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--bg);max-width:900px;margin:0 auto;padding:32px 24px 80px}
-h1,h2,h3{line-height:1.25}
-h1{font-size:2rem;margin-top:0}
-h2{margin-top:2.2em;border-bottom:1px solid var(--border);padding-bottom:.3em}
-h3{margin-top:1.6em}
-code{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:.1em .35em;font-size:.9em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-pre{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.55}
+html{scroll-behavior:smooth}
+body{font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);margin:0}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 .4em;line-height:1.2}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 .6em}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{padding:5px 14px;border-radius:20px;border:1px solid var(--border);text-decoration:none;color:var(--soft);font-size:.88rem;background:var(--bg)}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+section:last-of-type{border-bottom:none}
+h2{display:flex;align-items:baseline;gap:10px;font-size:1.5rem;margin:0 0 .5em;letter-spacing:-.01em}
+h2 .num{color:var(--accent);font-size:1.1rem}
+h3{margin:1.4em 0 .4em;font-size:1.12rem}
+.lead{color:var(--soft);margin:0 0 1em}
+p{margin:.6em 0}
+a{color:var(--accent)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:.1em .35em;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.55}
 pre code{background:none;border:0;padding:0}
-table{border-collapse:collapse;width:100%;font-size:.95rem}
-th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
-th{background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.95rem;margin:1em 0}
+th,td{padding:8px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+th{background:var(--panel2);border-bottom:2px solid var(--border)}
 kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:.1em .4em;font-size:.85em;background:var(--panel)}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:1.2em 0}
+.callout .title{font-weight:700;margin-bottom:.2em}
+.callout.tip{border-left-color:var(--green);background:var(--green-soft)}
+.callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.callout.danger{border-left-color:var(--red);background:var(--red-soft)}
 .mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin:1.2em 0;text-align:center}
-.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:1.2em 0}
-.quiz{border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin:1.4em 0;background:#fff}
-.quiz h3{margin:0 0 .6em;font-size:1.05rem}
-.quiz .opt{display:block;margin:.45em 0;padding:8px 12px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--panel)}
-.quiz .opt:hover{border-color:var(--accent)}
-.quiz .opt.correct{border-color:var(--ok);background:#dafbe1;font-weight:600}
-.quiz .opt.wrong{border-color:var(--bad);background:#ffebe9}
-.quiz .expl{display:none;margin-top:.8em;font-size:.92rem;color:var(--soft);border-top:1px dashed var(--border);padding-top:.8em}
-.quiz.done .expl{display:block}
-.tag{display:inline-block;font-size:.75rem;font-weight:700;border-radius:20px;padding:.15em .7em;vertical-align:middle}
-.tag.srv{background:#ddf4ff;color:#0969da}.tag.cli{background:#fbefff;color:#8250df}.tag.both{background:#fff8c5;color:#9a6700}
-
-/* ── módulos colapsáveis ── */
-details.mod{border:1px solid var(--border);border-radius:12px;margin:1.2em 0;background:#fff;padding:0;overflow:hidden}
+details.mod{border:1px solid var(--border);border-radius:12px;margin:1.2em 0;background:var(--bg);padding:0;overflow:hidden}
 details.mod>summary{cursor:pointer;padding:16px 20px;font-weight:700;font-size:1.05rem;list-style:none;display:flex;align-items:baseline;gap:10px;background:var(--panel)}
 details.mod>summary::-webkit-details-marker{display:none}
 details.mod>summary::before{content:"▸";transition:transform .15s;color:var(--accent);font-size:.9em}
@@ -42,39 +56,53 @@ details.mod[open]>summary::before{transform:rotate(90deg)}
 details.mod>summary .files{font-weight:400;font-size:.8rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace}
 details.mod>.modbody{padding:4px 20px 16px}
 details.mod>.modbody>p:first-child{margin-top:.8em}
-details.file{border:1px solid var(--border);border-radius:10px;margin:1em 0;background:#fff}
-details.file>summary{cursor:pointer;padding:10px 14px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.92rem;list-style:none;display:flex;align-items:center;gap:8px}
-details.file>summary::-webkit-details-marker{display:none}
-details.file>summary::before{content:"+";color:var(--accent);font-weight:700;width:1em}
-details.file[open]>summary::before{content:"−"}
-details.file[open]>summary{border-bottom:1px dashed var(--border);background:var(--panel)}
-details.file>.filebody{padding:0 16px 10px}
-details.file>.filebody>:first-child{margin-top:.8em}
+.tag{display:inline-block;font-size:.75rem;font-weight:700;border-radius:20px;padding:.15em .7em;vertical-align:middle}
+.tag.srv{background:#ddf4ff;color:#0969da}.tag.cli{background:#e7e0f5;color:#6f42c1}.tag.both{background:var(--amber-soft);color:#9a6700}
+footer{border-top:1px solid var(--border)}
+.footer-inner{max-width:920px;margin:0 auto;padding:22px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+.top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;box-shadow:0 3px 10px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .25s}
+.top.show{opacity:1;pointer-events:auto}
 </style>
 </head>
 <body>
 
-<h1>📦 docs-in-html — Arquitetura do Pacote</h1>
+<header class="hero">
+  <div class="hero-inner">
+    <h1>📦 Arquitetura do Pacote — spec-space</h1>
+    <p class="lede">Como o <strong>spec-space</strong> é montado por dentro: módulos, costuras de teste, tabela de endpoints e os clientes do browser.</p>
+    <p class="meta">docs-html/arquitetura/arquitetura-do-pacote.html · spec-space 0.14.0</p>
+  </div>
+</header>
 
-<p><strong>docs-in-html</strong> é um servidor de desenvolvimento <em>zero-build</em> para pastas de documentação em HTML puro. Ele gera automaticamente uma barra lateral (sidebar) em árvore a partir das suas pastas, oferece <em>live reload</em>, edição WYSIWYG inline, highlights do que mudou desde sua última visita, pan/zoom para diagramas Mermaid e SVGs — e ainda um <strong>manager</strong> que serve todas as suas pastas de docs num único processo. A filosofia: <strong>HTML em vez de Markdown — sem etapa de build</strong>.</p>
+<nav class="toc"><div class="toc-inner">
+  <a href="#visao-geral">1 · Visão geral</a>
+  <a href="#seam-ops">2 · A costura ops</a>
+  <a href="#cli">3 · CLI requireable</a>
+  <a href="#contexto">4 · Contexto por pasta</a>
+  <a href="#manager">5 · Multi-docs</a>
+  <a href="#export">6 · Export</a>
+  <a href="#clientes">7 · Clientes</a>
+  <a href="#fluxos">8 · Fluxos</a>
+  <a href="#testes">9 · Testes</a>
+  <a href="#resumo">10 · Resumo</a>
+</div></nav>
 
-<div class="callout">
-💡 Você está lendo este documento <em>dentro</em> do próprio docs-in-html — os diagramas abaixo podem ser clicados para pan/zoom, e qualquer edição no arquivo dispara o live reload. Meta-documentação! 😄
-</div>
+<main class="wrap">
 
-<div class="callout">
-📋 Este documento responde <em>"como funciona por dentro"</em>. Para <em>"o que o pacote oferece"</em> (a lista completa de features pela jornada de uso), veja <a href="features.html">✨ Features</a>.
-</div>
+<section id="visao-geral">
+<h2><span class="num">1</span>Visão geral</h2>
+<p class="lead">O pacote <strong>spec-space</strong> (antes <code>docs-in-html</code> — o nome antigo segue disponível via pacote de alias) é um servidor de desenvolvimento <em>zero-build</em> para pastas de documentação em HTML puro: sidebar em árvore automática, live reload, edição WYSIWYG inline, highlights do que mudou desde sua última visita, pan/zoom para Mermaid e SVGs — e um manager que serve todas as suas pastas num único processo.</p>
 
-<h2 id="visao-geral">Visão geral</h2>
+<div class="callout"><div class="title">📋 Dois documentos, duas perguntas</div>
+Este responde <em>"como funciona por dentro"</em>. Para <em>"o que o pacote oferece"</em> (a lista completa de features pela jornada de uso), veja <a href="features.html">✨ Features</a>.</p></div>
 
-<p>São 14 módulos de servidor/CLI e 7 clientes, mas a arquitetura se organiza em <strong>cinco módulos profundos</strong> — cada um com uma responsabilidade única e uma interface pequena:</p>
+<p>A arquitetura se organiza em <strong>cinco módulos profundos</strong> — cada um com uma responsabilidade única e uma interface pequena:</p>
 
 <table>
-<tbody><tr><th>Módulo</th><th>Responsabilidade</th><th>Interface (o que ele expõe)</th></tr>
-<tr><td>🚀 <strong>CLI &amp; ciclo de vida</strong></td><td>Transformar argumentos em um servidor rodando (ou não — delegando pro manager)</td><td><code>serve.js</code> como binário</td></tr>
-<tr><td>🧩 <strong>Contexto por pasta</strong></td><td>Tudo que UMA pasta de docs precisa para existir na web: shell, árvore, CRUD de arquivos, injeção, reload</td><td><code>createRoot(root, {base}) → { handle, reload }</code></td></tr>
-<tr><td>🛰️ <strong>Ecossistema multi-docs</strong></td><td>Servir N pastas num processo, registrá-las, encontrá-las, organizá-las num mural</td><td>manager em <code>:4400</code> + <code>registry.json</code></td></tr>
+<tbody><tr><th>Módulo</th><th>Responsabilidade</th><th>Interface</th></tr>
+<tr><td>🚀 <strong>CLI &amp; ciclo de vida</strong></td><td>Transformar argumentos em um servidor rodando (ou não — delegando pro manager)</td><td><code>serve.js</code> como binário (requireable: <code>parseArgs</code>/<code>main</code> exportadas)</td></tr>
+<tr><td>🧩 <strong>Contexto por pasta</strong></td><td>Tudo que UMA pasta de docs precisa na web: shell, árvore, CRUD de arquivos, injeção, reload</td><td><code>createRoot(root, {base}) → { handle, reload }</code></td></tr>
+<tr><td>🛰️ <strong>Ecossistema multi-docs</strong></td><td>Servir N pastas num processo, registrá-las, encontrá-las, organizá-las num mural</td><td>manager em <code>:4400</code> + <code>~/.docs-in-html/registry.json</code></td></tr>
 <tr><td>📤 <strong>Publicação estática</strong></td><td>Congelar a experiência dev em arquivos puros para Surge/GH Pages</td><td><code>export [dir] [--out]</code></td></tr>
 <tr><td>🌐 <strong>Clientes do browser</strong></td><td>A vida na página: sidebar, reload, edição, diff, zoom</td><td>scripts injetados via <code>/__docs__/*</code></td></tr>
 </tbody></table>
@@ -82,286 +110,236 @@ details.file>.filebody>:first-child{margin-top:.8em}
 <div class="mermaid">
 flowchart LR
   subgraph Server["🖥️ Servidor (Node.js)"]
-    serve["serve.js<br>CLI + delegação"]
+    serve["serve.js<br>CLI requireable<br>(parseArgs/main)"]
+    ops["ops.js<br>costura de ambiente<br>(fs/spawn/execFile/<br>openPath/openUrl/homeDir)"]
     manager["manager.js<br>multi-root /api/*"]
-    roots["roots.js<br>contexto por pasta<br>(shell, manifest, CRUD,<br>estáticos, injeção)"]
+    roots["roots.js<br>ENDPOINTS dispatch table<br>shell · manifest · CRUD"]
     reload["reload.js<br>watcher + SSE"]
-    manifest["manifest.js<br>árvore de arquivos"]
-    config["config.js<br>_config.json"]
-    registry["registry.js<br>~/.docs-in-html"]
+    manifest["manifest.js"]
+    config["config.js"]
+    registry["registry.js"]
   end
   subgraph Client["🌐 Cliente (browser)"]
-    rcli["reload.js<br>SSE client +<br>leader election"]
+    lib["lib.js<br>me()/api()/isShell()"]
+    rcli["reload.js<br>SSE + leader election"]
     nav["nav.js<br>sidebar viva"]
-    edit["edit.js<br>WYSIWYG"]
-    changes["changes.js<br>diff de mudanças"]
-    mz["mermaid-zoom.js<br>pan/zoom"]
-    cards["manager.html<br>mural de cards"]
+    diff["diff.js (UMD)"]
+    changes["changes.js"]
+    edit["edit.js"]
+    mz["mermaid-zoom.js"]
   end
-  serve -- "registra / pinga" --> registry
+  serve --> registry
   serve -- "delega pasta" --> manager
-  manager -- "rodeia por /slug/" --> roots
+  manager -- "roteia por /slug/" --> roots
   serve -- "base = ''" --> roots
   roots --> reload
   roots --> manifest
   roots --> config
-  roots -- "/__manifest__<br>/__save__ /__delete__ …" --> nav
-  reload -- "SSE /__reload__" --> rcli
-  rcli -- "docs-in-html:change" --> nav
-  rcli -- "location.reload()" --> edit
-  manager -- "/api/docs /api/layout …" --> cards
+  roots --> ops
+  reload --> ops
+  roots -- "/__docs__/*" --> lib
+  lib --> rcli
+  lib --> nav
+  lib --> edit
+  diff --> changes
 </div>
 
-<h2 id="modulos">Os módulos profundos</h2>
-<p>Cada seção abaixo explica o módulo — o design, as decisões, a interface. No fim de cada uma, expanda os arquivos para o detalhe fino, um por um.</p>
+<div class="callout tip"><div class="title">🔁 O alias docs-in-html</div>
+O pacote <code>docs-in-html</code> é agora um stub de alias: seu <code>bin/cli.js</code> apenas resolve <code>spec-space/serve.js</code> (com fallback pro cwd) e faz <code>require</code>. Instalações antigas continuam funcionando sob o nome antigo.</div>
+</section>
 
-<details class="mod"><summary>🚀 CLI &amp; ciclo de vida <span class="files">serve.js</span></summary>
-<div class="modbody">
+<section id="seam-ops">
+<h2><span class="num">2</span>A costura <code>ops</code> — uma porta para o mundo</h2>
+<p class="lead"><code>ops.js</code> é a ÚNICA porta pela qual o projeto fala com o mundo exterior: sistema de arquivos, processos, home dir.</p>
 
-<p>O ponto de entrada (definido em <code>bin</code> no <code>package.json</code>). É um <strong>despachante</strong>, não um servidor: quase todo o trabalho pesado mora nos outros módulos. Suas quatro decisões de design:</p>
+<p>Em produção, o adaptador default envolve <code>node:fs</code>, <code>node:child_process</code> e <code>node:os</code> diretamente. Em teste, <code>ops.setOps(fakeOps)</code> troca o adaptador inteiro por uma versão em memória — sem disco real, sem processo real, sem home real. <code>ops.resetOps()</code> devolve o mundo verdadeiro.</p>
 
+<div class="callout"><div class="title">💡 O módulo é um Proxy</div>
+O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adaptador <em>corrente</em>. Isso significa que <code>setOps()</code> vale <strong>globalmente</strong>, até para módulos que capturaram <code>ops</code> no <code>require</code> — o proxy sempre encaminha para <code>current</code>. Os nomes/assinaturas dos métodos de fs espelham o <code>node:fs</code>: migrar um call site é um rename, não um rewrite.</div>
+
+<p>O que a costura expõe, além do fs:</p>
 <ul>
-<li><strong>Servir = registrar = delegar.</strong> Antes de subir servidor próprio, ele pinga o manager (<code>delegation.js</code>). Se este está no ar, a pasta é registrada lá via <code>POST /api/add</code> e o CLI <em>nem abre servidor</em> — só imprime o link. O manager <em>é</em> o serve dessa pasta agora.</li>
-<li><strong>Auto-scaffold.</strong> Primeiro serve de uma pasta sem <code>_config.json</code> cria um com defaults amigáveis (título derivado do nome da pasta).</li>
-<li><strong>Portas honestas.</strong> Sem <code>--port</code>: a padrão (8000 ou <code>$PORT</code>) ocupada → tenta a próxima livre com um aviso (até 20 tentativas). Com <code>--port</code> explícito é uma <em>exigência</em>: ocupada, morre com erro claro em vez de trocar em silêncio.</li>
-<li><strong>Subcomandos.</strong> <code>init</code>, <code>export</code> e <code>manager</code> são apenas requires + <code>process.exit</code> — cada um com seu próprio módulo.</li>
+<li><code>homeDir()</code> — o home do usuário (registry e scan);</li>
+<li><code>spawn(bin, args)</code> — processo em background detached, fire-and-forget;</li>
+<li><code>execFile</code> — para resolução do binário do Warp;</li>
+<li><code>openPath(abs)</code> — reveal no gerenciador de arquivos (Explorer <code>/select</code>, Finder <code>-R</code>, Linux abre o pai), escrito uma vez só;</li>
+<li><code>openUrl(url)</code> — abrir o browser default (<code>start</code>/<code>open</code>/<code>xdg-open</code> conforme o SO).</li>
 </ul>
 
-<details class="file"><summary>serve.js <span class="tag cli">CLI</span></summary>
-<div class="filebody">
+<p>Quem consome: <code>roots.js</code> (endpoints, estáticos, shell), <code>reload.js</code> (<code>ops.watch</code>), <code>serve.js</code> (<code>openUrl</code>), manager e registry. É por aqui que os testes simulam EADDRINUSE, um manager no ar ou um disco inteiro sem tocar em nenhum deles.</p>
+</section>
 
-<p>Parse manual de <code>argv</code>: <code>docs-in-html [dir] [--port N] [--no-open] [--no-register] [--unregister]</code> + subcomandos. Abre o navegador com <code>start</code>/<code>open</code>/<code>xdg-open</code> conforme o SO. No modo serve: pinga o manager → auto-scaffold → <code>registry.add</code> silencioso → <code>createRoot(ROOT, { base: "" })</code> instalado como handler do <code>http.Server</code> → lógica de portas com fallback. No fim, o server fecha o watcher do root no evento <code>close</code>.</p>
-
-</div></details>
-</div></details>
-
-<details class="mod"><summary>🧩 Contexto por pasta <span class="files">roots.js · inject.js · config.js · manifest.js · reload.js · shell.js · init.js</span></summary>
-<div class="modbody">
-
-<p>O módulo mais profundo do pacote. <code>createRoot(root, opts)</code> devolve <code>{ root, base, handle, reload }</code>, onde <code>handle(req, res)</code> tem a mesma assinatura de um listener do <code>http.Server</code>. <code>opts.base</code> é o prefixo de URL (<code>""</code> no single-root, <code>"/&lt;slug&gt;"</code> no manager) — usado no <code>&lt;base&gt;</code> do shell e no <code>DOCS_BASE</code> injetado nos clientes. <strong>Dois consumidores, um handler</strong>: correção se escreve uma vez.</p>
-
-<p>As decisões que atravessam todos os arquivos deste módulo:</p>
+<section id="cli">
+<h2><span class="num">3</span>CLI requireable — <code>serve.js</code></h2>
+<p class="lead">O arquivo é ao mesmo tempo programa (binário) e módulo: <code>parseArgs()</code> e <code>main()</code> são exportadas e testáveis in-process.</p>
 
 <ul>
-<li><strong>O contrato <code>#docList</code></strong> — o shell é reconhecido por <em>estrutura</em> (uma tag real com <code>id="docList"</code>), não por URL. Shells customizados e deep links funcionam de graça. A detecção usa regex de contexto de tag: uma página que só <em>menciona</em> <code>id="docList"</code> em prosa (como este doc!) não é enganada.</li>
+<li><strong>Puro no parse.</strong> <code>parseArgs(argv, opts)</code> recebe um ARRAY de argumentos (não <code>process.argv</code>) e devolve opções como dados; <code>-h</code> vira <code>mode:"help"</code> — imprimir é trabalho do <code>main()</code>.</li>
+<li><strong>Deps injetáveis.</strong> <code>main(args, deps)</code> recebe <code>pingManagerDep</code>, <code>addToManagerDep</code> e <code>openUrl</code> por injeção — os testes simulam um manager vivo ou o browser abrindo sem que nada disso exista. Nunca chama <code>process.exit</code>: devolve o exit code, e o footer decide.</li>
+<li><strong>Footer <code>require.main</code>.</strong> Todo efeito colateral que antes rodava no require-time (parse do argv, exit, server) mora atrás de <code>if (require.main === module)</code>. Requerer o módulo é silencioso.</li>
+<li><strong>Servidor vivo resolve <code>undefined</code>.</strong> Quando o serve sobe de verdade, <code>main</code> resolve <code>undefined</code> — o footer não faz exit; o próprio server mantém o processo vivo (mesmo contrato do script pré-refactor).</li>
+</ul>
+
+<h3>Portas honestas: dica vs. exigência</h3>
+<p>Sem <code>--port</code>, a padrão (8000 ou <code>$PORT</code>) é uma <em>dica</em>: ocupada, cai para a próxima livre com um aviso, até <code>MAX_FALLBACKS = 20</code> tentativas. Com <code>--port</code> explícito é uma <em>exigência</em>: ocupada, morre com erro claro em vez de trocar em silêncio (inclusive com a dica "pode ser outra instância de spec-space").</p>
+
+<h3>Os outros comportamentos do modo serve</h3>
+<ul>
+<li><strong>Delegação:</strong> pinga o manager primeiro; se está no ar (e sem <code>--no-register</code>), registra a pasta via <code>POST /api/add</code>, imprime o link e <em>nem abre servidor</em> — com aviso se <code>--port</code> foi ignorado.</li>
+<li><strong>Auto-scaffold:</strong> primeiro serve de uma pasta sem <code>_config.json</code> cria um com defaults amigáveis (título derivado do nome da pasta).</li>
+<li><strong>Higiene:</strong> <code>registry.add</code> silencioso; <code>server.on("close")</code> fecha o watcher do root.</li>
+</ul>
+
+<div class="callout"><div class="title">🧭 Subcomandos</div>
+<code>init</code>, <code>export</code> e <code>manager</code> são apenas requires + retorno: <code>manager</code> mantém o processo vivo (server próprio), os outros dois devolvem exit code 0/1 para o footer. <code>--unregister</code> remove do registry e sai.</div>
+</section>
+
+<section id="contexto">
+<h2><span class="num">4</span>Contexto por pasta — <code>roots.js</code> e cia.</h2>
+<p class="lead"><code>createRoot(root, opts)</code> devolve <code>{ root, base, handle, reload }</code>: o handler tem a mesma assinatura de um listener do <code>http.Server</code>. <code>opts.base</code> é o prefixo de URL (<code>""</code> no single-root, <code>"/&lt;slug&gt;"</code> no manager). Dois consumidores, um handler — a correção se escreve uma vez.</p>
+
+<h3>Handlers nomeados + tabela ENDPOINTS</h3>
+<p>Cada endpoint <code>/__*__</code> é <strong>uma função nomeada de escopo de módulo</strong> com a mesma forma <code>(ctx, req, res)</code> — onde <code>ctx</code> carrega o root dir e o bookkeeping de config por root (<code>shiftIcons</code>/<code>pruneIcons</code>/<code>readAnim</code>). O <code>handle</code> despacha pela <strong>tabela declarativa <code>ENDPOINTS</code></strong> — toda a superfície <code>/__*__</code> num relance:</p>
+
+<table>
+<tbody><tr><th>Rota</th><th>Método</th><th>Handler</th><th>O que faz</th></tr>
+<tr><td><code>/__manifest__</code></td><td>GET</td><td><code>endpointManifest</code></td><td>JSON com <code>tree</code> + título + animação + <code>root</code>/<code>sep</code>/<code>platform</code>.</td></tr>
+<tr><td><code>/__delete__</code></td><td>POST</td><td><code>endpointDelete</code></td><td>Apaga doc (<code>.html</code> apenas) ou pasta <em>vazia</em> (409 se não). Sincroniza <code>config.icons</code>.</td></tr>
+<tr><td><code>/__rename__</code></td><td>POST</td><td><code>endpointRename</code></td><td>Renomeia/move doc ou pasta; recusa mover pasta pra dentro de si; reescreve chaves de <code>icons</code>.</td></tr>
+<tr><td><code>/__mkdir__</code></td><td>POST</td><td><code>endpointMkdir</code></td><td>Cria pasta (409 se já existe).</td></tr>
+<tr><td><code>/__save__</code></td><td>POST</td><td><code>endpointSave</code></td><td>Grava o HTML inteiro de volta (editor inline; até 10 MB).</td></tr>
+<tr><td><code>/__reveal__</code></td><td>POST</td><td><code>endpointReveal</code></td><td>Abre o gerenciador de arquivos — uma linha, <code>ops.openPath()</code>.</td></tr>
+<tr><td><code>/__order__</code></td><td>POST</td><td><code>endpointOrder</code></td><td>Persiste a ordem manual por pasta no <code>_config.json</code>.</td></tr>
+<tr><td><code>/__title__</code></td><td>POST</td><td><code>endpointTitle</code></td><td>Persiste o título (trim, cap de 200 chars) no <code>_config.json</code>.</td></tr>
+</tbody></table>
+
+<p>Além da tabela, o módulo <strong>exporta as peças testáveis</strong>: <code>readJsonBody</code> (JSON com cap de tamanho — default 4 KB, sobrecarregado destrói a conexão), <code>safeRelPath</code> (<code>"guides/v2"</code> → válido | <code>null</code>: sem <code>..</code>, sem <code>\</code>, sem nomes esquisitos), <code>resolveIn</code> (resolve dentro do root ou <code>null</code>), <code>ENDPOINTS</code>, <code>MIME</code> e <code>send</code> — unit-testáveis sem subir servidor.</p>
+
+<h3>As decisões que atravessam o módulo</h3>
+<ul>
+<li><strong>O contrato <code>#docList</code></strong> — o shell é reconhecido por <em>estrutura</em> (uma tag real com <code>id="docList"</code>), não por URL. A detecção usa regex de contexto de tag: uma página que só <em>menciona</em> <code>id="docList"</code> em prosa (como este doc!) não é enganada.</li>
 <li><strong>Injeção em tempo de resposta</strong> — nenhum arquivo em disco é transformado no dev. A lógica de <em>quais scripts entram</em> (<code>inject.js</code>) é compartilhada com o export: uma heurística, dois destinos. Toda tag injetada carrega <code>data-injected</code> — é assim que o editor devolve o arquivo limpo ao disco.</li>
-<li><strong>Deep links sem recursão</strong> — navegação top-level para <code>/pasta/doc.html</code> devolve o shell em volta; o iframe dentro dele pede de novo com <code>Sec-Fetch-Dest: iframe</code> e recebe o doc puro.</li>
-<li><strong>O servidor nunca confia no cliente</strong> — guardas de caminho em todos os endpoints (nada sai da pasta, sem <code>..</code>, sem nomes esquisitos), JSON com cap de tamanho, HTML sempre <code>no-store</code> (um live reload nunca mostra doc velho).</li>
-<li><strong>Config é lida a cada pedido</strong> — <code>_config.json</code> muda título/favicon/ordem/ícones com hot reload, sem restart.</li>
+<li><strong>Deep links sem recursão</strong> — navegação top-level para <code>/pasta/doc.html</code> (com <code>Sec-Fetch-Dest: document</code>, exceto o próprio <code>index.html</code>) devolve o shell em volta; o iframe pede de novo com <code>Sec-Fetch-Dest: iframe</code> e recebe o doc puro. Sem o header (curl, browsers antigos), doc puro também.</li>
+<li><strong>O servidor nunca confia no cliente</strong> — guardas de caminho em todos os endpoints, JSON com cap, HTML sempre <code>no-store</code> (um live reload nunca mostra doc velho), estáticos bloqueados fora da pasta (403), <code>%</code>-escapes malformados → 400.</li>
+<li><strong>Config é lida a cada pedido</strong> — <code>_config.json</code> muda título/favicon/ordem/ícones com hot reload, sem restart. <code>config.js</code> também mora nele o <code>humanize()</code> (Unicode-aware) e o <code>applyShellConfig()</code>.</li>
+<li><strong><code>manifest.js</code></strong> — <code>buildTree(root)</code>: só pastas e <code>.html</code>/<code>.htm</code>, esconde dotfiles/prefixo <code>_</code>/<code>index.html</code>; pastas vazias são mantidas; <code>order</code> fixa a ordem; cada doc carrega <code>mtime</code> (alimenta o "dot verde").</li>
+<li><strong><code>reload.js</code></strong> — <code>createReload(root, onEvent?)</code>: <code>ops.watch</code> recursivo com debounce por arquivo (150 ms; timers e o próprio watcher são <code>unref()</code>ados — ficam fora do critério "o processo ainda tem trabalho?") e broadcast SSE em <code>/__reload__</code>. <code>onEvent(relPath)</code> é o gancho do hub do manager. Sem <code>fs.watch</code>, degrada graciosamente.</li>
 </ul>
+</section>
 
-<p>Rotas que o <code>handle</code> atende:</p>
-
-<table>
-<tbody><tr><th>Rota</th><th>O que faz</th></tr>
-<tr><td><code>/__reload__</code></td><td>Canal SSE do watcher.</td></tr>
-<tr><td><code>/__manifest__</code></td><td>JSON com <code>tree</code> + título + animação da sidebar.</td></tr>
-<tr><td><code>POST /__delete__</code></td><td>Apaga doc (<code>.html</code> apenas) ou pasta <em>vazia</em> (<code>rmdir</code> se recusa não-vazia — segurança por design). Sincroniza <code>config.icons</code>.</td></tr>
-<tr><td><code>POST /__rename__</code></td><td>Renomeia/move doc ou pasta; reescreve as chaves de <code>icons</code> afetadas.</td></tr>
-<tr><td><code>POST /__mkdir__</code></td><td>Cria pasta (a árvore mantém pastas vazias justamente para isso).</td></tr>
-<tr><td><code>POST /__save__</code></td><td>Grava o HTML inteiro de volta no arquivo (editor inline; até 10 MB).</td></tr>
-<tr><td><code>POST /__reveal__</code></td><td>Abre o gerenciador de arquivos no arquivo/pasta (Explorer <code>/select</code>, Finder <code>-R</code>, <code>xdg-open</code>).</td></tr>
-<tr><td><code>POST /__order__</code> / <code>/__title__</code></td><td>Persistem a ordem manual (drag &amp; drop) e o título no <code>_config.json</code>.</td></tr>
-<tr><td><code>/__docs__/*</code></td><td>Serve os scripts de <code>client/</code> (<code>no-store</code> — mudam junto com o pacote).</td></tr>
-</tbody></table>
-
-<details class="file"><summary>roots.js <span class="tag srv">servidor</span> — o coração</summary>
-<div class="filebody">
-
-<p>O contexto por pasta: shell (<code>index.html</code> do usuário ou embutido, com title/favicon aplicados e <code>&lt;base&gt;</code> garantido), tabela de rotas acima, guardas de caminho (<code>safeRelPath</code>/<code>resolveIn</code>), arquivos estáticos com tabela MIME e bloqueio de path traversal (403 fora da pasta), deep links via <code>Sec-Fetch-Dest</code>, e a manutenção de <code>config.icons</code> quando arquivos são renomeados/apagados da sidebar (<code>shiftIcons</code>/<code>pruneIcons</code>).</p>
-
-</div></details>
-
-<details class="file"><summary>inject.js <span class="tag both">dev + export</span></summary>
-<div class="filebody">
-
-<p><code>injectScripts(html, { staticMode, base })</code> — a lógica de quais scripts entram, usada pelo dev server (na resposta) e pelo export (em disco):</p>
-<ul>
-<li><code>reload.js</code> em toda página (dev only — nada a recarregar num site estático).</li>
-<li><code>nav.js</code> só no shell (tag real com <code>id="docList"</code>).</li>
-<li><code>edit.js</code> + <code>changes.js</code> em todo doc que não é shell (dev only — dependem de <code>/__save__</code> e do SSE).</li>
-<li><code>mermaid-zoom.js</code> quando há blocos <code>.mermaid</code>, <code>&lt;figure&gt;</code> ou <code>.panzoom/.diagram/.zoomable</code> — e a página não traz pan/zoom próprio (mesmo cuidado anti-prosa da detecção de shell).</li>
-<li>No manager, um <code>&lt;script&gt;</code> define <code>window.DOCS_BASE = "/&lt;slug&gt;/"</code>; no export, define <code>window.DOCS_EXPORT</code> (modo read-only) e injeta no <code>&lt;head&gt;</code> o <strong>bootstrap de deep link</strong>: doc aberto direto no host estático pula para <code>/?p=&lt;path&gt;</code> e o shell o abre no iframe.</li>
-</ul>
-
-</div></details>
-
-<details class="file"><summary>config.js <span class="tag srv">servidor</span></summary>
-<div class="filebody">
-
-<p>O arquivo único de configuração de uma pasta: <code>title</code>, <code>favicon</code> (emoji vira data-URI SVG), <code>sidebarAnim</code> (<code>reveal | slide | guide</code>), <code>icons</code> (antigo <code>_icons.json</code>) e <code>order</code> (antigo <code>_order.json</code>). A leitura mescla os legados como fallback; a primeira escrita os absorve — sem comando de migração. Também mora aqui o <code>humanize()</code> (<code>auth-service.html</code> → <em>"Auth Service"</em>, Unicode-aware: <code>Integração</code> fica <code>Integração</code>) e o <code>applyShellConfig()</code> (aplica título/favicon ao shell — o título só substitui o <code>&lt;title&gt;Docs</code> default; um <code>index.html</code> customizado mantém o que seu autor escolheu).</p>
-
-</div></details>
-
-<details class="file"><summary>manifest.js <span class="tag srv">servidor</span></summary>
-<div class="filebody">
-
-<p><code>buildTree(root)</code> percorre a pasta recursivamente: só pastas e <code>.html</code>/<code>.htm</code>; esconde dotfiles, prefixo <code>_</code> e o próprio <code>index.html</code> (que é o shell); <strong>pastas vazias são mantidas</strong> (a sidebar pode criar/revelar docs nelas); entradas de <code>config.order</code> fixam a ordem (pinneados primeiro na ordem salva; o resto alfabético, pastas antes de arquivos); cada doc carrega <code>mtime</code> — alimenta o "dot verde" de doc alterado na sidebar.</p>
-
-</div></details>
-
-<details class="file"><summary>reload.js <span class="tag srv">servidor</span></summary>
-<div class="filebody">
-
-<p><code>createReload(root, onEvent?)</code> devolve <code>{ handle, close }</code>: <code>fs.watch</code> recursivo com <strong>debounce por arquivo (150 ms)</strong> — o Windows dispara vários eventos para um único save, e o timer por caminho os colapsa num só broadcast SSE (<code>data: {"path": "..."}</code> em <code>/__reload__</code>). <code>onEvent(relPath)</code> existe para o manager: cada root faneia seus eventos para o hub multiplexado dele. Sem <code>fs.watch</code>, degrada graciosamente (avisa e segue estático).</p>
-
-</div></details>
-
-<details class="file"><summary>shell.js + init.js <span class="tag srv">servidor</span> <span class="tag cli">CLI</span></summary>
-<div class="filebody">
-
-<p><code>shell.js</code> é o layout embutido (cabeçalho com <code>&lt;span id="dl-title"&gt;</code> editável, <code>&lt;aside&gt;</code> com <code>&lt;ul id="docList"&gt;</code> e um <code>&lt;iframe&gt;</code>) — o contrato estrutural que identifica "esta página é um shell". <code>init [dir]</code> escreve esse shell como <code>index.html</code> inicial (recusa sobrescrever) e cria o <code>_config.json</code>.</p>
-
-</div></details>
-</div></details>
-
-<details class="mod"><summary>🛰️ Ecossistema multi-docs <span class="files">manager.js · registry.js · delegation.js · scan.js</span></summary>
-<div class="modbody">
-
-<p>Servir pastas uma a uma para de escalar no segundo projeto. Este módulo serve <strong>todas as suas docs</strong> num processo só, cada uma em <code>http://localhost:4400/&lt;slug&gt;/</code>:</p>
+<section id="manager">
+<h2><span class="num">5</span>Ecossistema multi-docs</h2>
+<p class="lead">Servir pastas uma a uma para de escalar no segundo projeto: o manager serve todas as suas docs num processo só, cada uma em <code>http://localhost:4400/&lt;slug&gt;/</code>.</p>
 
 <ul>
-<li><strong>Um handler, N instâncias</strong> — o manager não reimplementa nada do servidor: cria um contexto <code>roots.js</code> por pasta e roteia por prefixo de slug (reescreve <code>req.url</code> e chama <code>ctx.handle</code>). Roots são sincronizados com o registry a quente; slug que muda ganha contexto novo (o prefixo está "assado" no shell/reload).</li>
-<li><strong>Slug do título</strong> — o URL vem do <code>title</code> do <code>_config.json</code> ("My Project — Handbook" → <code>/my-project-handbook/</code>); colisões ganham <code>-2</code>; <code>api</code> é reservado.</li>
-<li><strong>SSE multiplexado</strong> — todos os roots faneiam eventos num <em>hub</em> único: <strong>uma conexão SSE por browser</strong>, não uma por root (HTTP/1.1 limita a origem a ~6). A mensagem carrega <code>{ base, path }</code> para o cliente filtrar.</li>
-<li><strong>Registry tolerante</strong> — <code>~/.docs-in-html/registry.json</code>: arquivo corrompido é backupeado e resetado, chaves desconhecidas preservadas, pastas apagadas somem da view. Também guarda o <strong>layout do mural</strong> (ordem, pastas/grupos, colapso), sempre revalidado contra os docs realmente registrados — o servidor nunca confia cegamente no payload da UI.</li>
-<li><strong>API defensiva</strong> — POSTs do manager exigem <code>Content-Type: application/json</code>: um form cross-origin não consegue setar isso, bloqueando chamadas drive-by de sites aleatórios. Reveal/Warp só agem sobre pastas <em>registradas</em>.</li>
+<li><strong>Um handler, N instâncias</strong> — o manager não reimplementa nada: cria um contexto <code>roots.js</code> por pasta e roteia por prefixo de slug (reescreve <code>req.url</code> e chama <code>ctx.handle</code>). Roots são sincronizados com o registry a quente.</li>
+<li><strong>Slug do título</strong> — <code>/my-project-handbook/</code> do <code>title</code>; colisões ganham <code>-2</code>; <code>api</code> é reservado.</li>
+<li><strong>SSE multiplexado</strong> — todos os roots faneeam eventos num hub único: <strong>uma conexão SSE por browser</strong>, não uma por root. A mensagem carrega <code>{ base, path }</code>.</li>
+<li><strong>API</strong> — <code>/api/ping</code>, <code>/api/docs</code>, <code>/api/add</code>, <code>/api/remove</code>, <code>/api/layout</code> (atômico e sempre saneado — <code>saneLayout</code> poda órfãos, grupos vazios, e acrescenta docs novas no fim), <code>/api/reveal</code>, <code>/api/open-warp</code>, <code>/api/scan</code>. POSTs exigem <code>Content-Type: application/json</code> — um form cross-origin não consegue setar isso, bloqueando chamadas drive-by. Reveal/Warp só agem sobre pastas registradas.</li>
+<li><strong>Warp</strong> — <code>resolveWarp()</code>: <code>$WARP_BIN</code> → locais padrão por SO → PATH, com cache por processo; no Windows o caminho vira URL <code>file://</code> (o Warp parseia argumento posicional como URI).</li>
+<li><strong><code>registry.js</code></strong> — <code>~/.docs-in-html/registry.json</code>: arquivo corrompido é backupeado e resetado, layout do mural revalidado contra os docs reais. O manager persiste a própria porta ao subir (a delegação funciona mesmo sem a env var).</li>
+<li><strong><code>delegation.js</code></strong> — <code>pingManager()</code> nas portas candidatas (env &gt; registry &gt; 4400) com timeout curto; <code>addToManager()</code> devolve o slug escolhido. <code>scan.js</code> importa em lote: acha pastas com <code>_config.json</code> que "pareça nosso" sob o home, com skip-list e profundidade máxima.</li>
 </ul>
+</section>
 
-<details class="file"><summary>manager.js <span class="tag srv">servidor</span></summary>
-<div class="filebody">
+<section id="export">
+<h2><span class="num">6</span>Publicação estática — <code>export.js</code></h2>
+<p class="lead">O que o servidor decide por requisição, o export decide UMA vez e escreve em disco: arquivos puros, zero servidor, sidebar e pan/zoom funcionando (<code>surge dist</code>).</p>
 
-<p>Roteamento por prefixo: <code>/api/*</code> (ping, docs, add/remove, layout atômico, reveal, open-warp, scan), <code>/&lt;slug&gt;/*</code> → contexto do root, <code>/</code> → página de cards (<code>client/manager.html</code>). O botão "⌨ Warp" resolve o binário em <code>$WARP_BIN</code> → locais padrão por SO → PATH (com cache por processo; no Windows o caminho vira <code>file://</code> URL porque o Warp parseia argumento posicional como URI). Persiste a própria porta no registry ao subir — a delegação funciona mesmo sem a env var no shell do CLI. Fecha os watchers de todos os roots no SIGINT/SIGTERM.</p>
+<p><code>run(root, outDir)</code> também é requireable, com footer <code>require.main</code>: pasta inexistente <strong>lança</strong> ("pasta não encontrada") e o footer imprime + exit 1. Cinco passos:</p>
+<ol>
+<li><strong>Copia</strong> a pasta pro output — pulando <code>SKIP_FILES</code> (<code>_config.json</code> e os legados <code>_order.json</code>/<code>_icons.json</code>: config não embarca, vai <em>assada</em>) e evitando copiar o output pra dentro de si mesmo;</li>
+<li><strong>manifest.json</strong> — <code>buildTree(src)</code> na raiz do output (ordem + ícones já aplicados, título pro tab title);</li>
+<li><strong>client/ → __docs__/</strong> — mesmo caminho que as tags injetadas referenciam;</li>
+<li><strong>Shell garantido</strong> — <code>index.html</code> embutido (se a pasta não tem) com title/favicon aplicados, reescrito também se existe;</li>
+<li><strong>Reinjeção</strong> — cada <code>.html</code> reescrito com <code>injectScripts(html, { staticMode: true })</code>.</li>
+</ol>
 
+<div class="callout"><div class="title">🔗 Deep link no estático</div>
+No modo estático, <code>inject.js</code> adiciona ao <code>&lt;head&gt;</code> de todo doc (antes de qualquer render) o <strong>bootstrap de deep link</strong>: doc aberto direto na janela top pula para <code>/?p=&lt;path&gt;</code> (âncora preservada), e o shell pega o parâmetro e abre o doc no iframe. Também define <code>window.DOCS_EXPORT = true</code> — o <code>nav.js</code> entra em modo read-only (lê <code>/manifest.json</code>) e edit/changes nem são injetados.</div>
+</section>
+
+<section id="clientes">
+<h2><span class="num">7</span>Clientes do browser</h2>
+<p class="lead">Scripts injetados nas páginas, servidos de <code>/__docs__/*</code>. Três princípios atravessam todos: identidade por estrutura (não por URL), comunicação via eventos DOM (<code>docs-in-html:change</code>) e UI própria marcada <code>data-injected</code>.</p>
+
+<h3>A ordem de injeção (<code>inject.js</code>)</h3>
+<ol>
+<li><strong><code>lib.js</code> sempre primeiro</strong> — em toda página, dev e export: o módulo de identidade que os demais consomem (<code>window.docsLib</code>).</li>
+<li><strong>Dev only:</strong> um <code>&lt;script&gt;</code> define <code>DOCS_BASE</code> no manager (prefixo <code>/slug/</code>) e <code>reload.js</code> entra em toda página; no export, define <code>DOCS_EXPORT</code> e nada de reload.</li>
+<li><strong>Shell</strong> (tag real com <code>id="docList"</code>): <code>nav.js</code>. <strong>Doc não-shell</strong> (dev): <code>edit.js</code> + <code>diff.js</code> + <code>changes.js</code>, todos <code>defer</code> — <strong>diff.js imediatamente antes de changes.js</strong>, para a ordem de execução valer (o changes consome <code>window.DIFF</code>).</li>
+<li><strong><code>mermaid-zoom.js</code></strong> (<code>defer</code>) pela heurística: blocos <code>.mermaid</code>, <code>&lt;figure&gt;</code> ou <code>.panzoom/.diagram/.zoomable</code> — e sem pan/zoom próprio (mesmo cuidado anti-prosa da detecção de shell).</li>
+</ol>
+
+<details class="mod" open><summary>client/lib.js — o módulo de identidade <span class="files">UMD</span></summary><div class="modbody">
+<p>A interface cabe num cartão-postal: <code>me(pathname?, base?)</code> → caminho relativo ao root da docs (<code>"guias/a.html"</code>; tira a barra inicial, tira o prefixo do manager case-insensitivamente, cai em <code>index.html</code>); <code>api(path, body?)</code> → <code>fetch</code> POST com <code>BASE_N + path</code> e corpo JSON (o tratamento da resposta fica com cada chamador); <code>isShell()</code> → <code>!!document.getElementById("docList")</code>; <code>BASE</code>/<code>BASE_N</code> → <code>window.DOCS_BASE</code> cru e sem barra final. Esse bloco "quem sou eu?" era copiado em <code>reload.js</code>, <code>changes.js</code> e <code>edit.js</code>; o wrapper de fetch vivia em <code>nav.js</code> e <code>edit.js</code> — agora mora aqui, uma vez só. UMD: tag <code>&lt;script&gt;</code> publica <code>window.docsLib</code>; <code>require()</code> ganha <code>module.exports</code> — a regra do prefixo é testável com <code>node --test</code>, sem browser.</p>
 </div></details>
 
-<details class="file"><summary>registry.js <span class="tag srv">servidor</span></summary>
-<div class="filebody">
-
-<p><code>add/remove/list</code> do registro + <code>slugify()</code> (acentos removidos, colisões <code>-2</code>), <code>slugsFor(dirs)</code> (slug único por pasta, do título do config com fallback pro nome da pasta), <code>cardInfo()</code> (título/favicon por card, lido a cada chamada — hot reload), <code>getLayout()/saveLayout()</code> com o saneamento descrito acima (<code>saneLayout</code> poda caminhos órfãos, grupos vazios, e acrescenta docs novas no fim).</p>
-
+<details class="mod"><summary>client/diff.js — o núcleo puro de diff <span class="files">UMD</span></summary><div class="modbody">
+<p>Extraído de <code>changes.js</code> para ser testável com <code>node:test</code> (sem DOM, sem <code>window</code>, sem localStorage). Os algoritmos foram copiados ipsis litteris, com duas diferenças conscientes: o guard UMD no rodapé (mesmo arquivo serve <code>&lt;script&gt;</code>, anexando <code>window.DIFF</code>, e <code>require()</code>) e <code>marks()</code> recebendo a lista de textos novos como parâmetro, fechando sua única impureza. Dentro: <code>diffOps(a, b)</code> — LCS com trim de prefixo/sufixo comuns (docs grandes demais, &gt; 4M células, degradam sem marcação), e <code>wordDiff</code> — diff por tokens para o word-diff dentro de um bloco editado.</p>
 </div></details>
 
-<details class="file"><summary>delegation.js <span class="tag both">cola CLI ⇄ manager</span></summary>
-<div class="filebody">
-
-<p><code>pingManager()</code> dá <code>GET /api/ping</code> nas portas candidatas (env &gt; registry &gt; 4400) com timeout curto — um manager ausente não pode atrasar o serve. <code>addToManager()</code> faz o <code>POST /api/add</code> e devolve o slug que o manager escolheu (o CLI imprime exatamente o URL certo).</p>
-
+<details class="mod"><summary>client/nav.js — a sidebar viva</summary><div class="modbody">
+<p>Busca <code>/__manifest__</code> (ou <code>/manifest.json</code> no export) e renderiza a árvore: pastas colapsáveis com memória em localStorage, ícones Lucide embutidos + emoji, animação configurável, ordem manual por drag &amp; drop, doc ativo + ancestrais expandidos, URL com <code>pushState</code>/<code>popstate</code>, tab title "Doc · Site", esconder sidebar. <strong>Assinatura da árvore</strong>: a cada mudança re-busca o manifest, mas só reconstrói o DOM se o <em>conjunto</em> de arquivos mudou. Gerenciamento: menu kebab "⋯" por item (copy path, copy full path, reveal, move-to, delete com confirmação em dois cliques), menu de contexto da sidebar (new folder, collapse all), rename inline, drag &amp; drop — tudo pelos endpoints <code>POST /__*</code>. No export: read-only + deep link <code>/?p=</code>.</p>
 </div></details>
 
-<details class="file"><summary>scan.js <span class="tag cli">CLI</span></summary>
-<div class="filebody">
-
-<p>Varredura única sob <code>$HOME</code> (+pastas extras) procurando pastas com <code>_config.json</code> que "pareça nosso" (parseia e tem ao menos uma chave conhecida — filtra arquivos homônimos de outras ferramentas). Skip-list (<code>node_modules</code>, <code>AppData</code>…) e profundidade máxima 6; não desce dentro de uma docs já encontrada. É ferramenta de <em>import</em>: depois disso, o registry é a fonte da verdade. Um cache lembra o último conjunto encontrado para a UI destacar o que é novo.</p>
-
-</div></details>
+<details class="mod"><summary>client/reload.js — quando recarregar (e uma conexão só)</summary><div class="modbody">
+<p>HTTP/1.1 permite ~6 conexões por origem — um SSE por tab travaria a 7ª. As tabs elegem <strong>um líder via Web Locks</strong> que mantém a única conexão SSE (origin-root: multiplexada sob o manager) e re-transmite <em>todos</em> os eventos crus por um <code>BroadcastChannel</code>; cada receptor filtra pelo seu root (<code>base</code>) e decide com <code>shouldReload()</code>: meu arquivo mudou → recarrega; sou o shell → só eu mesmo (preserva a sidebar); <code>.js/.css</code> compartilhado → o doc em exibição recarrega. A tab líder fecha? O lock passa adiante. Usa <code>window.docsLib</code> para saber quem é.</p>
 </div></details>
 
-<details class="mod"><summary>📤 Publicação estática <span class="files">export.js</span></summary>
-<div class="modbody">
-
-<p><code>docs-in-html export [dir] [--out]</code> decide <em>uma vez</em> o que o servidor decide por requisição e escreve em disco — resultado: arquivos puros, zero servidor, sidebar e pan/zoom funcionando (leia-se <code>surge dist</code>). O que o <code>dist/</code> contém: seus HTMLs <strong>com as tags de script já escritas</strong>, um <code>manifest.json</code> (árvore + ordem + ícones + título) e <code>__docs__/</code> (os clientes). No site estático a sidebar e o zoom funcionam; o CRUD não (não há endpoints). Deep links funcionam pelo bootstrap do <code>inject.js</code> + o <code>?p=</code> do <code>nav.js</code>. <code>_config.json</code> não embarca — as configurações vão <em>assadas</em> no output.</p>
-
-<details class="file"><summary>export.js <span class="tag cli">CLI</span></summary>
-<div class="filebody">
-
-<p>Cinco passos: copia a pasta (menos config; evita copiar o output pra dentro de si mesmo) → gera <code>manifest.json</code> via <code>buildTree</code> → copia <code>client/</code> para <code>__docs__/</code> → garante o <code>index.html</code> (shell embutido com title/favicon aplicados, se a pasta não tem) → reescreve cada <code>.html</code> com <code>injectScripts(html, { staticMode: true })</code>. Nunca escreve na pasta fonte.</p>
-
+<details class="mod"><summary>client/edit.js · changes.js · mermaid-zoom.js · manager.html</summary><div class="modbody">
+<p><strong>edit.js</strong> — botão "✏ Editar" (<kbd>Ctrl+E</kbd>) liga <code>contenteditable</code>; <kbd>Ctrl+S</kbd> grava via <code>/__save__</code> (clone do body com tudo que é <code>data-injected</code> removido; <code>pre/code</code> como texto puro; estado dirty no botão; beforeunload com mudanças pendentes).</p>
+<p><strong>changes.js</strong> — achata os blocos do doc, diff LCS contra o snapshot do localStorage da última visita, marca diferenças (chip "novo"; word-diff com o velho riscado), sobrescreve o snapshot. Minimap estilo VS Code, favicon com ponto azul + prefixo "● " no título (sinais no <code>window.top</code>), pílula "N mudanças · ↓ próxima · ✓ já vi tudo". Consome <code>window.DIFF</code>.</p>
+<p><strong>mermaid-zoom.js</strong> — lightbox pan/zoom com event delegation + pseudo-elemento CSS (sobrevive aos rewrites do Mermaid) e lista <code>INTERACTIVE</code> (nunca sequestra SVG em <code>button</code>, <code>a</code>, <code>[onclick]</code>, <code>label</code>, <code>summary</code>). Carrega <code>svg-pan-zoom</code> do CDN sob demanda.</p>
+<p><strong>manager.html</strong> — o mural de cards: título + favicon por docs, pastas/grupos com drag &amp; drop persistido via <code>POST /api/layout</code>, ações Warp/reveal/remover, botão Escanear.</p>
 </div></details>
-</div></details>
+</section>
 
-<details class="mod"><summary>🌐 Clientes do browser <span class="files">client/nav.js · reload.js · edit.js · changes.js · mermaid-zoom.js · manager.html</span></summary>
-<div class="modbody">
-
-<p>Os scripts injetados nas páginas (servidos de <code>/__docs__/*</code>). Três princípios atravessam todos:</p>
-
-<ul>
-<li><strong>Identidade por estrutura, não por URL.</strong> "Sou o shell?" é <code>document.getElementById("docList")</code>; "qual é o meu arquivo?" é o pathname menos o <code>DOCS_BASE</code>. Depois de um F5 num deep link, o shell vive em <code>/pasta/doc.html</code> e continua sendo reconhecido.</li>
-<li><strong>Comunicação via eventos DOM.</strong> O canal SSE alimenta o <code>reload.js</code>, que re-transmite como <code>CustomEvent("docs-in-html:change")</code> — é assim que o <code>nav.js</code> (que não recarrega) fica sabendo que deve re-buscar o manifest.</li>
-<li><strong>UI própria carrega <code>data-injected</code></strong> — nada do que o dev server adiciona à página parar no disco quando o editor salva.</li>
-</ul>
-
-<details class="file"><summary>client/nav.js <span class="tag both">cliente</span> — a sidebar viva</summary>
-<div class="filebody">
-
-<ul>
-<li>Busca <code>/__manifest__</code> (ou <code>/manifest.json</code> no export) e renderiza a árvore: pastas colapsáveis com memória em <code>localStorage</code>, ícones por pasta, animação configurável, ordem manual por drag &amp; drop.</li>
-<li><strong>Assinatura da árvore</strong>: a cada mudança re-busca o manifest, mas só reconstrói o DOM se o <em>conjunto</em> de arquivos mudou — edição de conteúdo não reseta scroll/colapso/ativo.</li>
-<li>Clique num doc → carrega no <code>&lt;iframe&gt;</code> e sincroniza a URL com <code>pushState</code> (deep links, botão voltar via <code>popstate</code>); <code>load</code> do iframe destaca o ativo e expande os ancestrais.</li>
-<li><strong>Gerenciamento de arquivos</strong>: renomear, mover (drag &amp; drop ou "Move to…"), criar pasta, excluir (dois cliques com confirmação visual) — tudo pelos endpoints <code>POST /__*</code>. Dot verde em docs alteradas (mtime do manifest + evento <code>docs-in-html:change</code>). Garante <code>allowFullscreen</code> no iframe.</li>
-<li>No export (<code>window.DOCS_EXPORT</code>): modo read-only — a árvore funciona, CRUD não; e o deep link <code>/?p=…</code> abre o doc certo dentro do iframe.</li>
-</ul>
-
-</div></details>
-
-<details class="file"><summary>client/reload.js <span class="tag both">cliente</span> — quando recarregar (e uma conexão só)</summary>
-<div class="filebody">
-
-<p>O problema: HTTP/1.1 permite ~6 conexões por origem — um SSE por tab travaria a 7ª tab. A solução: as tabs da mesma origem elegem <strong>um líder via Web Locks</strong> que mantém a única conexão SSE e re-transmite <em>todos</em> os eventos crus por um <code>BroadcastChannel</code>; cada receptor filtra pelo seu root (<code>base</code>). A tab líder fecha? O lock passa para a próxima automaticamente. (No manager, a mensagem SSE já vem multiplexada com <code>{base, path}</code>.)</p>
-
-<table>
-<tbody><tr><th>Mudou…</th><th>Shell</th><th>Doc no iframe</th></tr>
-<tr><td>o próprio arquivo da página</td><td>recarrega</td><td>recarrega</td></tr>
-<tr><td>outro .html</td><td>nada (preserva estado da sidebar)</td><td>nada</td></tr>
-<tr><td>um .js/.css compartilhado</td><td>nada</td><td><strong>recarrega</strong></td></tr>
-</tbody></table>
-
-</div></details>
-
-<details class="file"><summary>client/edit.js <span class="tag both">cliente</span> — edição WYSIWYG inline</summary>
-<div class="filebody">
-
-<p>Um botão "✏ Editar" (canto superior direito de todo doc; <kbd>Ctrl+E</kbd>) liga <code>contenteditable</code> no body: clique no texto, digite, <kbd>Ctrl+S</kbd> salva via <code>POST /__save__</code>. Você nunca vê tags. Detalhes finos: <code>pre/code</code> editam como texto puro; todo UI próprio carrega <code>data-injected</code> e é removido antes de gravar; o estado "dirty" aparece no próprio botão.</p>
-
-</div></details>
-
-<details class="file"><summary>client/changes.js <span class="tag both">cliente</span> — o que mudou desde sua última visita</summary>
-<div class="filebody">
-
-<p>A cada load, o cliente achata os blocos do doc (<code>h1..h4, p, pre, li, blockquote</code>), faz um diff LCS contra o <em>snapshot</em> do localStorage da última visita, marca as diferenças (novo → verde + chip "novo"; editado → word-diff com o velho riscado) e sobrescreve o snapshot. Tudo client-side — funciona mesmo se a mudança aconteceu com nenhuma tab aberta ou com o servidor reiniciado (o baseline é sua última visita, não o estado do servidor). Complementos: minimap estilo VS Code com marcadores clicáveis, favicon da tab com um ponto azul, e o pill "N mudanças · ✓ já vi tudo". Sinais de tab (favicon/título) vão para o <code>window.top</code>, que é same-origin sob serve e manager.</p>
-
-</div></details>
-
-<details class="file"><summary>client/mermaid-zoom.js <span class="tag both">cliente</span> — pan &amp; zoom estilo mkdocs-material</summary>
-<div class="filebody">
-
-<p>Injetado com <code>defer</code> em páginas com Mermaid, <code>&lt;figure&gt;</code> com SVG, ou classes <code>.panzoom/.diagram/.zoomable</code> (e sem pan/zoom próprio). Clique no diagrama → lightbox com arrastar/scroll, botões +/−/ajustar e tela cheia (funciona dentro do iframe do shell). Carrega <code>svg-pan-zoom</code> do CDN sob demanda.</p>
-
-<p>Duas engenharias espertas: <strong>event delegation</strong> + pseudo-elemento CSS (o Mermaid reescreve o próprio DOM ao renderizar — listeners em nós internos morreriam) e <strong>nunca sequestrar cliques interativos</strong> (SVG dentro de <code>button</code>, <code>a</code>, <code>[onclick]</code>… continua fazendo o que devia).</p>
-
-</div></details>
-
-<details class="file"><summary>client/manager.html <span class="tag both">cliente</span> — o mural</summary>
-<div class="filebody">
-
-<p>Página de cards do manager: um card por docs registrada (título + favicon), organizados num mural com pastas/grupos, drag &amp; drop persistido via <code>POST /api/layout</code>, ações por card (abrir no Warp, reveal, remover) e o botão "Escanear" (<code>/api/scan</code>). HTML+JS puro, zero build — mesmo espírito do shell.</p>
-
-</div></details>
-</div></details>
-
-<h2 id="fluxos">Fluxos</h2>
+<section id="fluxos">
+<h2><span class="num">8</span>Fluxos</h2>
 
 <h3>1. Startup: CLI → servidor ou manager</h3>
-
 <div class="mermaid">
 flowchart TD
-  A["docs-in-html docs-html"] --> B{subcomando?}
-  B -- "init / export" --> C["init.js / export.js → sai"]
-  B -- "manager" --> M["manager.js<br>port 4400 · registry → N roots"]
+  A["spec-space docs-html"] --> B{subcomando?}
+  B -- "init / export" --> C["init.js / export.js → exit code"]
+  B -- "manager" --> M["manager.js<br>4400 · registry → N roots"]
   B -- "serve (padrão)" --> D{"--no-register?"}
-  D -- não --> E["pingManager()<br>(delegation.js)"]
-  E -- "manager no ar" --> F["POST /api/add<br>imprime o link → sai"]
+  D -- não --> E["pingManager()"]
+  E -- "manager no ar" --> F["POST /api/add<br>imprime o link → 0"]
   E -- "ninguém respondeu" --> G
-  D -- sim --> G["registry.add(ROOT)<br>(silencioso)"]
+  D -- sim --> G["registry.add(ROOT)"]
   G --> H["_config.json ausente?<br>auto-scaffold"]
-  H --> I["createRoot(ROOT, base='')"<br>http.createServer]
+  H --> I["createRoot(ROOT, base='')"]
   I --> J{"--port explícito?"}
-  J -- sim --> K["porta ocupada → erro e sai"]
-  J -- não --> L["ocupada → próxima livre + aviso"]
+  J -- sim --> K["ocupada → erro e exit 1"]
+  J -- não --> L["ocupada → próxima livre + aviso<br>(até 20 tentativas)"]
+  L --> O["main() resolve undefined —<br>server mantém o processo vivo"]
 </div>
 
-<h3>2. Requisição: do clique na sidebar ao doc renderizado</h3>
+<h3>2. Live reload: do save à página atualizada</h3>
+<div class="mermaid">
+sequenceDiagram
+  participant E as ✏️ Editor
+  participant W as reload.js (ops.watch)
+  participant L as Tab líder (SSE)
+  participant Bc as BroadcastChannel
+  participant C as client/reload.js (qualquer tab)
+  participant N as nav.js
+  E->>W: salva auth-service.html
+  W->>W: debounce 150 ms (timer unref)
+  W->>L: SSE {"path":"..."}<br/>(manager: {base, path})
+  L->>Bc: re-transmite o evento cru
+  Bc->>C: todas as tabs (filtram pelo seu base)
+  C->>N: CustomEvent docs-in-html:change
+  C->>C: shouldReload()? → location.reload()
+  N->>N: re-busca /__manifest__<br/>(só re-renderiza se a árvore mudou)
+</div>
 
+<div class="callout"><div class="title">🔑 Uma conexão por browser</div>
+Só a tab líder segura o SSE (Web Locks); a liderança migra sozinha quando ela fecha. Sob o manager o hub multiplexa todos os roots nessa única conexão — com 10 tabs e 5 docs há 1 conexão, não 50.</div>
+
+<h3>3. Uma requisição: do clique na sidebar ao doc renderizado</h3>
 <div class="mermaid">
 sequenceDiagram
   participant U as 👤 Usuário
@@ -370,193 +348,77 @@ sequenceDiagram
   participant R as roots.js
   U->>S: clica em "Auth Service"
   S->>F: iframe.src = /auth-service.html
-  S->>S: setActive() + pushState(/auth-service.html)
-  F->>R: GET /auth-service.html<br/>Sec-Fetch-Dest: iframe
-  R->>F: doc puro + scripts injetados<br/>(reload, edit, changes, zoom?)
-  F->>S: evento load → syncFromIframe()
+  S->>S: setActive() + pushState
+  F->>R: GET /auth-service.html (Sec-Fetch-Dest: iframe)
+  R->>F: doc + lib.js · reload.js · edit.js<br/>diff.js · changes.js · zoom?
+  F->>S: load → syncFromIframe()
 </div>
+</section>
 
-<div class="callout">🔑 Note o <strong>Sec-Fetch-Dest</strong>: se o mesmo URL fosse aberto na barra de endereço (<code>document</code>), o servidor devolveria o <em>shell</em> em volta; vindo do iframe, devolve o doc puro. Uma requisição, dois comportamentos, zero recursão.</div>
+<section id="testes">
+<h2><span class="num">9</span>Testes — o desenho a serviço da verificação</h2>
+<p class="lead">7 arquivos em <code>tests/</code>, rodando com <code>node --test</code> puro. A arquitetura existe para que eles não precisem de disco, rede nem browser:</p>
+<table>
+<tbody><tr><th>Arquivo</th><th>O que verifica (e qual costura permite)</th></tr>
+<tr><td><code>ops.test.js</code></td><td>A própria costura: <code>setOps</code>/<code>resetOps</code>, o Proxy, o adaptador em memória.</td></tr>
+<tr><td><code>serve-args.test.js</code></td><td><code>parseArgs()</code> puro — arrays → opções, sem argv real.</td></tr>
+<tr><td><code>serve-port.test.js</code></td><td>Política de portas: <code>main()</code> com deps injetadas simulando EADDRINUSE e manager vivo.</td></tr>
+<tr><td><code>roots.test.js</code></td><td><code>safeRelPath</code>/<code>resolveIn</code>/<code>readJsonBody</code>/<code>ENDPOINTS</code> — handlers nomeados sem subir servidor.</td></tr>
+<tr><td><code>export.test.js</code></td><td><code>run()</code> requireable: os cinco passos, SKIP_FILES, bootstrap <code>/?p=</code>.</td></tr>
+<tr><td><code>lib.test.js</code></td><td><code>me()/api()/isShell()</code> — UMD dá <code>module.exports</code> sem browser.</td></tr>
+<tr><td><code>diff.test.js</code></td><td><code>diffOps/wordDiff/marks</code> — LCS puro, sem DOM nem localStorage.</td></tr>
+</tbody></table>
+</section>
 
-<h3>3. Live reload: do save no editor à página atualizada</h3>
-
-<div class="mermaid">
-sequenceDiagram
-  participant E as ✏️ Editor
-  participant W as reload.js (watcher)
-  participant L as Tab líder (SSE)
-  participant Bc as BroadcastChannel
-  participant C as client/reload.js (qualquer tab)
-  participant N as nav.js
-  E->>W: salva auth-service.html
-  W->>W: debounce 150 ms
-  W->>L: SSE {"path":"auth-service.html"}<br/>(no manager: {base, path})
-  L->>Bc: re-transmite o evento cru
-  Bc->>C: todas as tabs (filtram pelo seu base)
-  C->>N: CustomEvent docs-in-html:change
-  C->>C: shouldReload()? → location.reload()
-  N->>N: re-busca /__manifest__<br/>(só re-renderiza se a árvore mudou)
-</div>
-
-<div class="callout">🔑 <strong>Leader election</strong>: só a tab líder segura a conexão SSE. Com 10 tabs abertas há 1 conexão, não 10 — o limite de ~6 por origem nunca morde. A liderança migra sozinha quando a tab fecha.</div>
-
-<h3>4. Manager: um processo, N docs, uma conexão</h3>
-
-<div class="mermaid">
-flowchart LR
-  subgraph M["manager.js (porta 4400)"]
-    api["/api/*<br>ping · docs · add · remove<br>layout · scan · reveal · warp"]
-    hub["Hub SSE<br>(uma conexão por browser)"]
-    r1["root A<br>/projeto-x/"]
-    r2["root B<br>/handbook/"]
-    reg[("registry.json<br>+ layout")]
-  end
-  cli["docs-in-html &lt;dir&gt;<br>(CLI)"] -- "ping / add" --> api
-  api --> reg
-  reg --> r1 & r2
-  r1 & r2 -- "onEvent" --> hub
-  cards["manager.html<br>(mural de cards)"] <--> api
-  browser["Browser<br>/projeto-x/foo.html"] --> r1
-  browser -- "SSE única" --> hub
-</div>
-
-<h2 id="conceitos">Conceitos-chave para lembrar</h2>
-
-<ol>
-<li><strong>Zero build, zero dependências</strong> — só <code>node:*</code> builtin. A "mágica" (sidebar, reload, zoom, edição) entra por <em>injeção em tempo de resposta</em> (ou, no export, escrita única em disco), nunca transformando seus arquivos.</li>
-<li><strong>Um handler, dois modos</strong> — <code>roots.js</code> é o contexto por pasta; single-root e manager são só prefixos diferentes (<code>base</code>). Correção se escreve uma vez.</li>
-<li><strong>Servir = registrar = delegar</strong> — toda pasta servida entra no registry; se o manager está no ar, o CLI nem sobe servidor, só registra lá.</li>
-<li><strong>O contrato <code>#docList</code></strong> — shell é reconhecido por estrutura (tag real), não por URL. Shells customizados e deep links funcionam de graça.</li>
-<li><strong>Reload seletivo + uma conexão só</strong> — cada página recarrega só o que lhe diz respeito; e por origem existe uma única conexão SSE, mantida por uma tab líder eleita via Web Locks e re-transmitida por BroadcastChannel.</li>
-<li><strong>Uma heurística de injeção, dois destinos</strong> — dev server e export compartilham <code>inject.js</code>; tag carrega <code>data-injected</code> para o editor devolvê-la limpa ao disco.</li>
-<li><strong>Sobreviver ao Mermaid</strong> — delegation + pseudo-elemento CSS em vez de listeners inline.</li>
-<li><strong>O servidor nunca confia no cliente</strong> — guardas de caminho em todos os endpoints, JSON content-type obrigatório nos POSTs do manager, layout saneado antes de gravar.</li>
-</ol>
-
-<h2 id="quiz">🧠 Quiz — cheque seu entendimento</h2>
-<p>Clique numa opção para ver se acertou (e a explicação).</p>
-
-<div class="quiz" data-answer="1">
-  <h3>1. Você roda <code>docs-in-html ./docs</code> com o manager já no ar. O que acontece?</h3>
-  <span class="opt">Um segundo servidor sobe numa porta livre ao lado do manager.</span>
-  <span class="opt">O CLI pinga o manager, registra a pasta lá via <code>/api/add</code> e só imprime o link — nenhum servidor novo.</span>
-  <span class="opt">Erro de porta, porque o manager já usa a 4400.</span>
-  <p class="expl">✅ Essa é a delegação (<code>delegation.js</code>): o manager <em>é</em> o serve dessa pasta agora. <code>--no-register</code> desliga o comportamento.</p>
-</div>
-
-<div class="quiz" data-answer="1">
-  <h3>2. O que <code>roots.js</code> representa na arquitetura?</h3>
-  <span class="opt">O módulo que gerencia dependências npm do pacote.</span>
-  <span class="opt">O contexto de UMA pasta de docs (handler HTTP completo, shell, manifest, CRUD de arquivos, SSE) — instanciado com <code>base</code> vazia pelo serve e com <code>/&lt;slug&gt;</code> pelo manager.</span>
-  <span class="opt">Uma fila de requisições do manager.</span>
-  <p class="expl">✅ Single-root e multi-root são o mesmo handler com prefixos diferentes — correção escrita uma vez vale para os dois modos.</p>
-</div>
-
-<div class="quiz" data-answer="0">
-  <h3>3. Você tem 8 tabs abertas do mesmo servidor dev. Quantas conexões SSE existem nessa origem?</h3>
-  <span class="opt">Uma — as tabs elegem um líder (Web Locks) que re-transmite os eventos via BroadcastChannel.</span>
-  <span class="opt">Oito — cada tab abre seu próprio EventSource.</span>
-  <span class="opt">Sete — o limite do browser rejeita a oitava.</span>
-  <p class="expl">✅ Sem isso, a 7ª tab travaria para sempre: HTTP/1.1 limita a origem a ~6 conexões. O lock migra sozinho quando a líder fecha.</p>
-</div>
-
-<div class="quiz" data-answer="2">
-  <h3>4. Por que as tags injetadas carregam <code>data-injected</code>?</h3>
-  <span class="opt">Para o browser não cachear os scripts.</span>
-  <span class="opt">Para o manager saber de que root veio a página.</span>
-  <span class="opt">Para o editor inline (edit.js) identificá-las como UI do dev server e removê-las antes de gravar o arquivo via <code>/__save__</code>.</span>
-  <p class="expl">✅ O que é injetado na resposta nunca deve parar no disco — senão o arquivo do usuário acumularia scripts a cada edição.</p>
-</div>
-
-<div class="quiz" data-answer="1">
-  <h3>5. Como o <code>changes.js</code> sabe o que mudou num doc desde sua última visita, mesmo que nenhuma tab estivesse aberta quando a mudança ocorreu?</h3>
-  <span class="opt">O servidor guarda versões dos arquivos e envia o diff no reload.</span>
-  <span class="opt">Ele guarda um snapshot dos blocos do doc em localStorage a cada visita e faz um diff LCS na próxima carga — tudo client-side.</span>
-  <span class="opt">Ele compara o mtime do arquivo com a hora do último clique.</span>
-  <p class="expl">✅ O baseline é a <em>sua última visita</em>, não o estado do servidor — sobrevive a restarts e a mudanças offline.</p>
-</div>
-
-<div class="quiz" data-answer="0">
-  <h3>6. Qual é o papel do debounce de 150 ms no <code>reload.js</code> do servidor?</h3>
-  <span class="opt">Colapsar os múltiplos eventos que alguns SOs (notoriamente o Windows) disparam para um único save.</span>
-  <span class="opt">Aguardar o editor terminar de gravar antes de ler.</span>
-  <span class="opt">Limitar a taxa de requisições ao <code>/__manifest__</code>.</span>
-  <p class="expl">✅ Um save no Windows pode gerar vários eventos de watch para o mesmo arquivo; o timer por caminho garante um único broadcast por save real.</p>
-</div>
-
-<div class="quiz" data-answer="2">
-  <h3>7. No export estático, o que acontece quando alguém abre <code>/guides/api.html</code> direto na barra de endereço?</h3>
-  <span class="opt">404, porque não há servidor para o deep link.</span>
-  <span class="opt">Recebe o doc puro, sem sidebar — limitação conhecida.</span>
-  <span class="opt">Um bootstrap injetado no <code>&lt;head&gt;</code> detecta que é a janela top e pula para <code>/?p=guides/api.html</code>; o shell pega o parâmetro e abre o doc no iframe com a sidebar.</span>
-  <p class="expl">✅ O deep-link bootstrap (<code>inject.js</code>) + o tratamento de <code>?p=</code> no <code>nav.js</code> fazem o bounce — âncoras preservadas.</p>
-</div>
-
-<div class="quiz" data-answer="1">
-  <h3>8. Onde vivem o título, favicon, ordem manual e ícones de pastas de uma docs?</h3>
-  <span class="opt">Em variáveis de ambiente do servidor.</span>
-  <span class="opt">No <code>_config.json</code> da pasta (que absorve os legados <code>_icons.json</code>/<code>_order.json</code> na primeira escrita); o manager também guarda o layout do mural no registry.</span>
-  <span class="opt">Em cada arquivo HTML, numa meta tag.</span>
-  <p class="expl">✅ Config por pasta em <code>_config.json</code> (lido a cada request — hot reload), layout do mural em <code>~/.docs-in-html/registry.json</code>. No export, tudo vai assado no output.</p>
-</div>
-
-<div class="quiz" data-answer="0">
-  <h3>9. Por que a detecção de "esta página é um shell" usa regex de contexto de tag, e não um simples <code>includes('id="docList"')</code>?</h3>
-  <span class="opt">Porque uma página pode só <em>mencionar</em> <code>id="docList"</code> em prosa ou código de exemplo (como este doc!) — e seria enganada.</span>
-  <span class="opt">Por performance: regex de tag é mais rápida.</span>
-  <span class="opt">Porque o HTML pode estar minificado.</span>
-  <p class="expl">✅ A regex exige uma tag real (<code>&lt;... id="docList"&gt;</code>). O mesmo cuidado vale para detectar pan/zoom próprio antes de injetar o mermaid-zoom.</p>
-</div>
-
-<div class="quiz" data-answer="2">
-  <h3>10. O <code>scan.js</code> encontra uma pasta com um <code>_config.json</code> que não é do docs-in-html. Como ele decide?</h3>
-  <span class="opt">Importa mesmo assim — false positives são inofensivos.</span>
-  <span class="opt">Aborta o scan inteiro.</span>
-  <span class="opt">Só considera "nosso" um <code>_config.json</code> que parseia e tem ao menos uma chave conhecida (title, favicon, sidebarAnim, icons, order).</span>
-  <p class="expl">✅ O filtro semântico descarta arquivos homônimos de outras ferramentas. E o scan é só import: depois disso o registry é a fonte da verdade.</p>
-</div>
-
-<h2 id="resumo">Resumo em uma tabela</h2>
-
+<section id="resumo">
+<h2><span class="num">10</span>Resumo em uma tabela</h2>
 <table>
 <tbody><tr><th>Arquivo</th><th>Módulo</th><th>Em uma frase</th></tr>
-<tr><td><code>serve.js</code></td><td>CLI</td><td>Argumentos, delegação pro manager, registry, fallback de portas.</td></tr>
-<tr><td><code>roots.js</code></td><td>Contexto</td><td>Handler HTTP por pasta: shell, manifest, CRUD, estáticos, deep links.</td></tr>
-<tr><td><code>inject.js</code></td><td>Contexto</td><td>Quais scripts injetar — compartilhado entre dev server e export.</td></tr>
+<tr><td><code>serve.js</code></td><td>CLI</td><td>Argumentos (requireable), delegação, registry, portas honestas (20 fallbacks).</td></tr>
+<tr><td><code>ops.js</code></td><td>Costura</td><td>Proxy sobre fs/spawn/execFile/openPath/openUrl/homeDir; <code>setOps()</code> troca o mundo.</td></tr>
+<tr><td><code>roots.js</code></td><td>Contexto</td><td>Handler por pasta: ENDPOINTS declarativo, shell, estáticos, deep links.</td></tr>
+<tr><td><code>inject.js</code></td><td>Contexto</td><td>Ordem de injeção (lib primeiro) — compartilhada entre dev e export.</td></tr>
 <tr><td><code>config.js</code></td><td>Contexto</td><td><code>_config.json</code>: título, favicon, ordem, ícones (+ humanize).</td></tr>
 <tr><td><code>manifest.js</code></td><td>Contexto</td><td>Pasta → árvore JSON da sidebar (com ordem e mtime).</td></tr>
-<tr><td><code>reload.js</code></td><td>Contexto</td><td>Watcher com debounce → broadcast SSE (+ hook pro hub do manager).</td></tr>
+<tr><td><code>reload.js</code></td><td>Contexto</td><td><code>ops.watch</code> + debounce unref → SSE (+ hook pro hub).</td></tr>
 <tr><td><code>shell.js</code> / <code>init.js</code></td><td>Contexto</td><td>Layout embutido (contrato <code>#docList</code>) e scaffolding.</td></tr>
-<tr><td><code>manager.js</code></td><td>Multi-docs</td><td>Multi-root: /api/*, roteio por slug, hub SSE único, mural.</td></tr>
+<tr><td><code>manager.js</code></td><td>Multi-docs</td><td>Multi-root: /api/*, roteio por slug, hub SSE, Warp, layout atômico.</td></tr>
 <tr><td><code>registry.js</code></td><td>Multi-docs</td><td><code>~/.docs-in-html/registry.json</code>: docs, slugs, layout do mural.</td></tr>
 <tr><td><code>delegation.js</code></td><td>Multi-docs</td><td>CLI pinga/adiciona no manager em vez de subir servidor.</td></tr>
 <tr><td><code>scan.js</code></td><td>Multi-docs</td><td>Importação em lote: acha pastas com <code>_config.json</code> válido.</td></tr>
-<tr><td><code>export.js</code></td><td>Publicação</td><td>Congela a docs em arquivos estáticos prontos pro Surge.</td></tr>
-<tr><td><code>client/nav.js</code></td><td>Clientes</td><td>Sidebar viva: árvore, URLs, drag &amp; drop, CRUD, modo read-only.</td></tr>
-<tr><td><code>client/reload.js</code></td><td>Clientes</td><td>SSE com leader election + reload seletivo + re-broadcast de eventos.</td></tr>
-<tr><td><code>client/edit.js</code></td><td>Clientes</td><td>Editor WYSIWYG inline com Ctrl+S.</td></tr>
-<tr><td><code>client/changes.js</code></td><td>Clientes</td><td>Diff da última visita: chips "novo", word-diff, minimap, favicon dot.</td></tr>
+<tr><td><code>export.js</code></td><td>Publicação</td><td>Congela a docs em estático; requireable com footer; lança em pasta ausente.</td></tr>
+<tr><td><code>client/lib.js</code></td><td>Clientes</td><td>Identidade UMD: <code>me()/api()/isShell()/BASE</code> — primeiro em toda página.</td></tr>
+<tr><td><code>client/diff.js</code></td><td>Clientes</td><td>Núcleo LCS puro (UMD, <code>window.DIFF</code>), testável com node:test.</td></tr>
+<tr><td><code>client/nav.js</code></td><td>Clientes</td><td>Sidebar viva: árvore, URLs, kebab, CRUD, read-only no export.</td></tr>
+<tr><td><code>client/reload.js</code></td><td>Clientes</td><td>SSE com leader election (Web Locks + BroadcastChannel).</td></tr>
+<tr><td><code>client/edit.js</code></td><td>Clientes</td><td>Editor WYSIWYG inline com Ctrl+S e strip de <code>data-injected</code>.</td></tr>
+<tr><td><code>client/changes.js</code></td><td>Clientes</td><td>Diff da última visita: chips, word-diff, minimap, favicon dot.</td></tr>
 <tr><td><code>client/mermaid-zoom.js</code></td><td>Clientes</td><td>Lightbox pan/zoom robusto a rewrites do Mermaid.</td></tr>
-<tr><td><code>client/manager.html</code></td><td>Clientes</td><td>Mural de cards do manager com ações (Warp, reveal, remover, scan).</td></tr>
+<tr><td><code>client/manager.html</code></td><td>Clientes</td><td>Mural de cards do manager (Warp, reveal, remover, scan).</td></tr>
+<tr><td><code>alias/docs-in-html/</code></td><td>Compat</td><td>Stub que faz require do spec-space — o CLI antigo segue vivo.</td></tr>
 </tbody></table>
+</section>
 
-<p><em>Gerado como documentação viva do pacote <code>docs-in-html</code> — edite este arquivo e veja o reload acontecer. 🔄</em></p>
+</main>
+
+<footer><div class="footer-inner">Arquitetura · Arquitetura do Pacote · spec-space</div></footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
 
 <script>
 (function () {
-  document.querySelectorAll(".quiz").forEach(function (q) {
-    var answer = Number(q.dataset.answer);
-    var opts = q.querySelectorAll(".opt");
-    opts.forEach(function (opt, i) {
-      opt.addEventListener("click", function () {
-        if (q.classList.contains("done")) return;
-        q.classList.add("done");
-        opts[answer].classList.add("correct");
-        if (i !== answer) opt.classList.add("wrong");
-      });
-    });
-  });
+  var links = document.querySelectorAll(".toc a");
+  var sections = [];
+  links.forEach(function (a) { var s = document.querySelector(a.getAttribute("href")); if (s) sections.push({ a: a, s: s }); });
+  function onScroll() {
+    var y = window.scrollY + 120, cur = sections[0];
+    sections.forEach(function (o) { if (o.s.offsetTop <= y) cur = o; });
+    links.forEach(function (a) { a.classList.remove("active"); });
+    if (cur) cur.a.classList.add("active");
+    var t = document.querySelector(".top");
+    if (t) t.classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
 })();
 </script>
-
 </body></html>

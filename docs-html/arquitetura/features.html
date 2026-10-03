@@ -2,48 +2,97 @@
 <html lang="pt-BR"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>docs-in-html — Features</title>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
-<script>mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });</script>
+<title>Features — spec-space</title>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
+</script>
 <style>
-:root{--bg:#fff;--panel:#f6f7f9;--text:#1f2329;--soft:#5b6472;--border:#d9dee6;--accent:#1f6feb;--accent-soft:#e8f0fe;--ok:#1a7f37;--bad:#cf222e}
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
+  --red:#cf222e; --red-soft:#ffebe9;
+}
 *{box-sizing:border-box}
-body{font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--text);background:var(--bg);max-width:900px;margin:0 auto;padding:32px 24px 80px}
-h1,h2,h3{line-height:1.25}
-h1{font-size:2rem;margin-top:0}
-h2{margin-top:2.2em;border-bottom:1px solid var(--border);padding-bottom:.3em}
-h3{margin-top:1.6em}
-code{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:.1em .35em;font-size:.9em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-pre{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.55}
-pre code{background:none;border:0;padding:0}
-table{border-collapse:collapse;width:100%;font-size:.95rem}
-th,td{border:1px solid var(--border);padding:8px 12px;text-align:left;vertical-align:top}
-th{background:var(--panel)}
-kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:.1em .4em;font-size:.85em;background:var(--panel)}
-.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin:1.2em 0;text-align:center}
-.callout{border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:1.2em 0}
-.feat{border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:.9em 0;background:#fff}
-.feat h3{margin:.1em 0 .3em;font-size:1.02rem}
-.feat p{margin:.3em 0}
-.feat .how{font-size:.88rem;color:var(--soft);border-top:1px dashed var(--border);padding-top:.5em;margin-top:.6em}
-.feat .how code{font-size:.85em}
+html{scroll-behavior:smooth}
+body{font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);margin:0}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 .4em;line-height:1.2}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 .6em}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{padding:5px 14px;border-radius:20px;border:1px solid var(--border);text-decoration:none;color:var(--soft);font-size:.88rem;background:var(--bg)}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+section:last-of-type{border-bottom:none}
+h2{display:flex;align-items:baseline;gap:10px;font-size:1.5rem;margin:0 0 .5em;letter-spacing:-.01em}
+h2 .num{color:var(--accent);font-size:1.1rem}
+h3{margin:1.4em 0 .4em;font-size:1.12rem}
+.lead{color:var(--soft);margin:0 0 1em}
+p{margin:.6em 0}
 a{color:var(--accent)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:.1em .35em;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.55}
+pre code{background:none;border:0;padding:0}
+table{border-collapse:collapse;width:100%;font-size:.95rem;margin:1em 0}
+th,td{padding:8px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
+th{background:var(--panel2);border-bottom:2px solid var(--border)}
+kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:.1em .4em;font-size:.85em;background:var(--panel)}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:1.2em 0}
+.callout .title{font-weight:700;margin-bottom:.2em}
+.callout.tip{border-left-color:var(--green);background:var(--green-soft)}
+.callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}
+.callout.danger{border-left-color:var(--red);background:var(--red-soft)}
+.sim{color:var(--green);font-weight:700}.nao{color:var(--red);font-weight:700}.talvez{color:var(--amber);font-weight:700}
+.feat{border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin:.9em 0;background:var(--bg)}
+.feat h3{margin:.1em 0 .3em;font-size:1.02rem}
+.feat .how{font-size:.88rem;color:var(--soft);border-top:1px dashed var(--border);padding-top:.5em;margin-top:.6em}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin:1.2em 0;text-align:center}
+footer{border-top:1px solid var(--border)}
+.footer-inner{max-width:920px;margin:0 auto;padding:22px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+.top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;box-shadow:0 3px 10px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .25s}
+.top.show{opacity:1;pointer-events:auto}
 </style>
 </head>
 <body>
 
-<h1>✨ docs-in-html — Features</h1>
+<header class="hero">
+  <div class="hero-inner">
+    <h1>✨ Features — spec-space</h1>
+    <p class="lede">Tudo o que o pacote <strong>spec-space</strong> oferece, organizado pela jornada de uso — cada card com o <em>o quê</em> e, embaixo, o <em>como</em>.</p>
+    <p class="meta">docs-html/arquitetura/features.html · spec-space 0.14.0</p>
+  </div>
+</header>
 
-<p>Tudo o que o <strong>docs-in-html</strong> oferece, organizado pela jornada de uso. Cada card traz o <em>o quê</em> e, embaixo, o <em>como</em> (com link para a <a href="arquitetura-do-pacote.html">arquitetura do pacote</a> quando você quiser descer ao código).</p>
+<nav class="toc"><div class="toc-inner">
+  <a href="#navegacao">1 · Navegação</a>
+  <a href="#live-reload">2 · Live reload</a>
+  <a href="#mudancas">3 · Mudanças</a>
+  <a href="#edicao">4 · Edição</a>
+  <a href="#organizacao">5 · Organização</a>
+  <a href="#diagramas">6 · Diagramas</a>
+  <a href="#manager">7 · Manager</a>
+  <a href="#deploy">8 · Deploy</a>
+  <a href="#cli">9 · CLI</a>
+  <a href="#regra-mental">10 · A regra mental</a>
+</div></nav>
 
-<div class="callout">💡 Tudo abaixo funciona sobre HTML puro — sem build, sem dependências, sem transformar seus arquivos. No <code>file://</code> ou num host estático o doc continua renderizando; os extras entram por injeção do dev server.</div>
+<main class="wrap">
 
-<h2 id="navegacao">📖 Navegação</h2>
+<section id="navegacao">
+<h2><span class="num">1</span>📖 Navegação</h2>
+
+<div class="callout"><div class="title">💡 HTML puro, sempre</div>
+Tudo abaixo funciona sobre HTML puro — sem build, sem dependências, sem transformar seus arquivos. No <code>file://</code> ou num host estático o doc continua renderizando; os extras entram por injeção do dev server (ou ficam escritos no <code>dist/</code> do export).</div>
 
 <div class="feat">
 <h3>Sidebar em árvore, gerada das suas pastas</h3>
-<p>Pastas viram ramos colapsáveis, arquivos <code>.html</code> viram links. Nada de configurar navegação à mão — jogue HTML na pasta e ele aparece. Nomes viram títulos (<code>auth-service.html</code> → "Auth Service"), com acentuação respeitada ("Integração" não vira "IntegraçãO").</p>
-<p class="how">Como: <code>manifest.js</code> varre a pasta e monta a árvore; <code>nav.js</code> renderiza. <a href="arquitetura-do-pacote.html">→ módulo Contexto por pasta</a></p>
+<p>Pastas viram ramos colapsáveis, arquivos <code>.html</code> viram links. Jogue HTML na pasta e ele aparece. Nomes viram títulos (<code>auth-service.html</code> → "Auth Service"), com acentuação respeitada.</p>
+<p class="how">Como: <code>manifest.js</code> varre a pasta e monta a árvore; <code>nav.js</code> renderiza. <a href="arquitetura-do-pacote.html">→ arquitetura</a></p>
 </div>
 
 <div class="feat">
@@ -55,13 +104,31 @@ a{color:var(--accent)}
 <div class="feat">
 <h3>URL sempre sincronizada — deep links e botão voltar</h3>
 <p>A barra de endereço mostra sempre o doc corrente. F5 num link profundo (<code>/pasta/doc.html</code>) reabre o shell com a sidebar aberta naquele doc; voltar/avançar do browser funcionam.</p>
-<p class="how">Como: <code>pushState</code>/<code>popstate</code> no <code>nav.js</code>; deep link top-level recebe o shell via header <code>Sec-Fetch-Dest</code>.</p>
+<p class="how">Como: <code>pushState</code>/<code>popstate</code> no <code>nav.js</code>; deep link top-level recebe o shell via header <code>Sec-Fetch-Dest</code> (roots.js).</p>
+</div>
+
+<div class="feat">
+<h3>Menu "⋯" (kebab) por item: copiar, revelar, mover, excluir</h3>
+<p>Cada doc e pasta da sidebar ganha um botão <strong>⋯</strong> (visível no hover) com um menu suspenso: <em>Copy path</em>, <em>Copy full path</em> (absoluto, com o separador certo do SO), <em>Reveal in Explorer/Finder/Files</em>, <em>Move to…</em> e <em>Delete</em>. O excluir usa confirmação em dois cliques dentro do próprio menu ("Delete for sure?"), sem <code>confirm()</code>.</p>
+<p class="how">Como: <code>makeKebab()</code>/<code>showMenu()</code> no <code>nav.js</code>; caminho absoluto montado a partir de <code>root</code>/<code>sep</code>/<code>platform</code> que vêm no <code>/__manifest__</code>.</p>
+</div>
+
+<div class="feat">
+<h3>Menu de contexto da sidebar: nova pasta e colapsar tudo</h3>
+<p>Clique com o botão direito na sidebar abre um menu com <em>New folder</em> (criação inline, com input no próprio lugar) e <em>Collapse all</em>.</p>
+<p class="how">Como: <code>contextmenu</code> no <code>&lt;aside&gt;</code> + <code>createFolder()</code>/<code>collapseAll()</code> no <code>nav.js</code> (desligado no export).</p>
+</div>
+
+<div class="feat">
+<h3>Título da aba sincronizado ("Doc · Site")</h3>
+<p>A aba do browser mostra <code>Nome do Doc · Título do Site</code> — o título do site sozinho quando nada está aberto. Duplicar/nomear tabs fica útil de verdade.</p>
+<p class="how">Como: <code>SITE_TITLE</code> do <code>/__manifest__</code> + <code>document.title</code> atualizado a cada troca de doc no <code>nav.js</code>.</p>
 </div>
 
 <div class="feat">
 <h3>Três animações de colapso</h3>
-<p>Escolha no <code>_config.json</code>: <code>guide</code> (linha-guia que desce — padrão), <code>slide</code> (desliza e some) ou <code>reveal</code>.</p>
-<p class="how">Como: <code>sidebarAnim</code> no <code>_config.json</code> → classe <code>dl-anim-*</code> no aside. Mudou o JSON, muda na hora (hot reload).</p>
+<p>Escolha no <code>_config.json</code>: <code>guide</code> (linha-guia que desce — padrão), <code>slide</code> (desliza e some) ou <code>reveal</code>. Mudou o JSON, muda na hora (hot reload).</p>
+<p class="how">Como: <code>sidebarAnim</code> no <code>_config.json</code> → classe <code>dl-anim-*</code> no aside.</p>
 </div>
 
 <div class="feat">
@@ -71,23 +138,31 @@ a{color:var(--accent)}
 </div>
 
 <div class="feat">
+<h3>Ícones Lucide embutidos + emoji</h3>
+<p>Ícones da UI são paths Lucide embutidos no script (sem React, sem rede); ícones personalizados de pasta aceitam um nome do set ou qualquer emoji.</p>
+<p class="how">Como: objeto <code>ICONS</code> no <code>nav.js</code>; valor não-ASCII renderiza como emoji (<code>.dl-emoji</code>).</p>
+</div>
+
+<div class="feat">
 <h3>Esconder a sidebar</h3>
 <p>Botão alinhado à esquerda do cabeçalho recolhe a sidebar para leitura em tela cheia — e o estado é lembrado.</p>
 <p class="how">Como: botão injetado pelo <code>nav.js</code> (ícone <code>sidebar-left.svg</code>).</p>
 </div>
+</section>
 
-<h2 id="live-reload">🔄 Live reload</h2>
+<section id="live-reload">
+<h2><span class="num">2</span>🔄 Live reload</h2>
 
 <div class="feat">
 <h3>Salvou, recarregou — só a página certa</h3>
 <p>Editar um doc recarrega apenas ele no iframe. O shell <strong>nunca</strong> se mata por mudanças alheias: scroll, colapso e doc ativo da sidebar sobrevivem a qualquer edição. Mudança em <code>.js</code>/<code>.css</code> compartilhado recarrega o doc em exibição.</p>
-<p class="how">Como: watcher com debounce de 150 ms (<code>reload.js</code>) → SSE → <code>client/reload.js</code> decide com <code>shouldReload()</code>. <a href="arquitetura-do-pacote.html">→ fluxo Live reload</a></p>
+<p class="how">Como: watcher com debounce de 150 ms (<code>reload.js</code> servidor) → SSE → <code>client/reload.js</code> decide com <code>shouldReload()</code>.</p>
 </div>
 
 <div class="feat">
 <h3>N tabs abertas, uma conexão só</h3>
-<p>Abra quantas tabs quiser: só uma mantém a conexão SSE (eleita via Web Locks), re-transmitindo por BroadcastChannel. O limite de ~6 conexões por origem do browser nunca trava sua 7ª tab.</p>
-<p class="how">Como: leader election no <code>client/reload.js</code>; no manager o SSE já vem multiplexado com todos os roots.</p>
+<p>Abra quantas tabs quiser: só uma mantém a conexão SSE (eleita via <strong>Web Locks</strong>), re-transmitindo por <strong>BroadcastChannel</strong>. O limite de ~6 conexões por origem do browser nunca trava sua 7ª tab; se a líder fecha, o lock migra sozinho.</p>
+<p class="how">Como: leader election no <code>client/reload.js</code>; no manager o SSE já vem multiplexado com todos os roots (mensagens <code>{base, path}</code>).</p>
 </div>
 
 <div class="feat">
@@ -95,8 +170,10 @@ a{color:var(--accent)}
 <p>Mudou título, favicon, ordem ou ícones no <code>_config.json</code>? A UI pega na hora — sem restart do servidor.</p>
 <p class="how">Como: config lida a cada request (<code>roots.js</code> → <code>config.js</code>); o watcher dispara o mesmo fluxo de reload.</p>
 </div>
+</section>
 
-<h2 id="mudancas">🔔 Mudanças desde sua última visita</h2>
+<section id="mudancas">
+<h2><span class="num">3</span>🔔 Mudanças desde sua última visita</h2>
 
 <div class="feat">
 <h3>Dot verde na sidebar</h3>
@@ -107,19 +184,19 @@ a{color:var(--accent)}
 <div class="feat">
 <h3>Chips "novo" + word-diff nas linhas editadas</h3>
 <p>Blocos novos ganham fundo verde e um chip <em>"novo"</em>; blocos editados mostram um diff palavra a palavra — o texto antigo riscado, o novo destacado — direto no fluxo da página, sem modal.</p>
-<p class="how">Como: <code>changes.js</code> achata os blocos do doc e faz diff LCS contra o snapshot da última visita.</p>
+<p class="how">Como: <code>changes.js</code> achata os blocos do doc e faz diff LCS contra o snapshot da última visita — o núcleo de diff é o módulo puro <code>client/diff.js</code> (UMD, <code>window.DIFF</code>), testável com <code>node --test</code>.</p>
 </div>
 
 <div class="feat">
 <h3>Minimap estilo VS Code + pílula de navegação</h3>
 <p>Enquanto houver mudanças não vistas, aparece um minimapa à direita com marcadores das regiões alteradas — clique numa barra para pular. Pílula fixa: "N mudanças · ↓ próxima · ✓ já vi tudo".</p>
-<p class="how">Como: <code>changes.js</code> (marcações só enquanto houver unseen changes).</p>
+<p class="how">Como: <code>changes.js</code> (marcações só enquanto há unseen changes).</p>
 </div>
 
 <div class="feat">
 <h3>Sinal na aba do browser</h3>
-<p>O favicon da tab ganha um ponto azul quando o doc aberto tem novidades — você vê de longe, com a tab ao fundo.</p>
-<p class="how">Como: <code>changes.js</code> troca o favicon dinamicamente (sinais vão ao <code>window.top</code>, same-origin).</p>
+<p>O favicon da tab ganha um ponto azul e o título um prefixo "● " quando o doc aberto tem novidades — você vê de longe, com a tab ao fundo.</p>
+<p class="how">Como: <code>changes.js</code> troca o favicon dinamicamente (sinais vão ao <code>window.top</code>, same-origin sob serve e manager).</p>
 </div>
 
 <div class="feat">
@@ -127,13 +204,15 @@ a{color:var(--accent)}
 <p>O baseline é a <em>sua última visita</em>, guardada em localStorage — não o estado do servidor. Mudou com nenhuma tab aberta? Servidor reiniciado? O diff aparece do mesmo jeito na próxima visita.</p>
 <p class="how">Como: snapshot por doc em <code>localStorage</code> (<code>changes.js</code>).</p>
 </div>
+</section>
 
-<h2 id="edicao">✏️ Edição inline</h2>
+<section id="edicao">
+<h2><span class="num">4</span>✏️ Edição inline</h2>
 
 <div class="feat">
 <h3>WYSIWYG sem ver uma tag</h3>
-<p>Botão "✏ Editar" no canto superior direito (ou <kbd>Ctrl+E</kbd>) torna a página renderizada editável: clique no texto, digite, <kbd>Ctrl+S</kbd> salva direto no arquivo. <code>pre</code>/<code>code</code> editam como texto puro.</p>
-<p class="how">Como: <code>edit.js</code> liga <code>contenteditable</code> e grava via <code>POST /__save__</code>; tags/UI do dev server (marcadas <code>data-injected</code>) são removidas antes de salvar.</p>
+<p>Botão "✏ Editar" no canto superior direito (ou <kbd>Ctrl+E</kbd>) torna a página renderizada editável: clique no texto, digite, <kbd>Ctrl+S</kbd> salva direto no arquivo. <code>pre</code>/<code>code</code> editam como texto puro. Sair do modo com mudanças não salvas pede confirmação (e o <code>beforeunload</code> protege contra fechamento acidental).</p>
+<p class="how">Como: <code>edit.js</code> liga <code>contenteditable</code> e grava via <code>POST /__save__</code> (até 10 MB); toda a UI do dev server (marcada <code>data-injected</code>) é removida do clone antes de salvar.</p>
 </div>
 
 <div class="feat">
@@ -141,77 +220,77 @@ a{color:var(--accent)}
 <p>O próprio botão Editar fica vermelho quando há mudanças não salvas — impossível perder edição por engano.</p>
 <p class="how">Como: classe <code>dirty</code> no botão (<code>edit.js</code>).</p>
 </div>
+</section>
 
-<h2 id="organizacao">🗂️ Organização de arquivos</h2>
-
-<div class="feat">
-<h3>Reordenar arquivos (drag &amp; drop)</h3>
-<p>Arraste docs na sidebar para fixar a ordem que quiser — pinneados ficam primeiro, na ordem que você definiu; o resto segue alfabético. Persiste entre sessões.</p>
-<p class="how">Como: drag no <code>nav.js</code> → <code>POST /__order__</code> → seção <code>order</code> do <code>_config.json</code> (lida pelo <code>manifest.js</code>).</p>
-</div>
+<section id="organizacao">
+<h2><span class="num">5</span>🗂️ Organização de arquivos</h2>
 
 <div class="feat">
-<h3>Reordenar pastas</h3>
-<p>Pastas também são arrastáveis — mesma mecânica, mesma persistência. Ícones personalizados por pasta também podem ser definidos no <code>_config.json</code>.</p>
-<p class="how">Como: mesma rota <code>/__order__</code>; ícones na seção <code>icons</code>.</p>
+<h3>Reordenar arquivos e pastas (drag &amp; drop)</h3>
+<p>Arraste docs na sidebar para fixar a ordem que quiser — pinneados ficam primeiro, na ordem que você definiu; o resto segue alfabético. Pastas são arrastáveis também. Persiste entre sessões, com ordem por pasta.</p>
+<p class="how">Como: drag no <code>nav.js</code> → <code>POST /__order__</code> com <code>{folder, order}</code> → seção <code>order</code> do <code>_config.json</code> (lida pelo <code>manifest.js</code>).</p>
 </div>
 
 <div class="feat">
 <h3>Renomear e mover</h3>
-<p>Rename inline ou "⇄ Move to…" para trocar um doc de pasta. Mover por drag &amp; drop também funciona. A configuração acompanha (ícones, ordem).</p>
-<p class="how">Como: <code>POST /__rename__</code> — o servidor reescreve as chaves de <code>icons</code> afetadas (<code>shiftIcons</code>).</p>
+<p>Rename inline (com validação ao vivo do nome) ou "⇄ Move to…" com popover das pastas destino. Mover por drag &amp; drop também funciona. A configuração acompanha: se o doc aberto foi movido, iframe e barra de endereço se atualizam sem 404.</p>
+<p class="how">Como: <code>POST /__rename__</code> — o servidor reescreve as chaves de <code>icons</code> afetadas (<code>shiftIcons</code> em <code>roots.js</code>).</p>
 </div>
 
 <div class="feat">
 <h3>Criar pastas e excluir</h3>
-<p>Crie pastas novas direto da sidebar (pastas vazias ficam visíveis esperando docs). Excluir doc ou pasta vazia pede confirmação em dois cliques — pastas não-vazias são recusadas, por design.</p>
+<p>Crie pastas novas direto da sidebar (menu de contexto ou kebab de pasta — input inline no próprio lugar; pastas vazias ficam visíveis esperando docs). Excluir doc ou pasta vazia pede confirmação em dois cliques — pastas não-vazias são recusadas (409), por design.</p>
 <p class="how">Como: <code>POST /__mkdir__</code> e <code>POST /__delete__</code> (com <code>rmdir</code> que se recusa a apagar conteúdo).</p>
 </div>
 
 <div class="feat">
 <h3>Revelar no gerenciador de arquivos</h3>
-<p>Ação de contexto para abrir o Explorer/Finder já selecionando o arquivo.</p>
-<p class="how">Como: <code>POST /__reveal__</code> (Explorer <code>/select</code>, Finder <code>-R</code>, <code>xdg-open</code>).</p>
+<p>Ação de contexto para abrir o Explorer/Finder/Files já selecionando o arquivo — o rótulo até muda conforme o SO.</p>
+<p class="how">Como: <code>POST /__reveal__</code> → <code>ops.openPath()</code> (Explorer <code>/select</code>, Finder <code>-R</code>, <code>xdg-open</code> no pai).</p>
 </div>
+</section>
 
-<h2 id="diagramas">🔍 Diagramas</h2>
+<section id="diagramas">
+<h2><span class="num">6</span>🔍 Diagramas</h2>
 
 <div class="feat">
 <h3>Pan/zoom/lightbox para Mermaid e SVGs</h3>
-<p>Blocos Mermaid <em>e</em> SVGs avulsos (qualquer <code>&lt;svg&gt;</code> num <code>&lt;figure&gt;</code>, ou marcado <code>.panzoom</code>/<code>.diagram</code>/<code>.zoomable</code>) ficam clicáveis: lightbox com arrastar, scroll para zoom, botões +/−/ajustar e <strong>tela cheia</strong> (funciona até dentro do iframe do shell). Injeção automática — seu HTML não precisa de tag nenhuma.</p>
-<p class="how">Como: <code>mermaid-zoom.js</code> injetado pela heurística do <code>inject.js</code>; carrega <code>svg-pan-zoom</code> do CDN sob demanda.</p>
+<p>Blocos Mermaid <em>e</em> SVGs avulsos (qualquer <code>&lt;svg&gt;</code> num <code>&lt;figure&gt;</code>, ou marcado <code>.panzoom</code>/<code>.diagram</code>/<code>.zoomable</code>) ficam clicáveis: lightbox com arrastar, scroll para zoom, botões +/−/ajustar e <strong>tela cheia</strong> (funciona até dentro do iframe do shell — o <code>nav.js</code> garante <code>allowFullscreen</code>). Injeção automática — seu HTML não precisa de tag nenhuma.</p>
+<p class="how">Como: <code>mermaid-zoom.js</code> injetado (<code>defer</code>) pela heurística do <code>inject.js</code>; carrega <code>svg-pan-zoom</code> do CDN sob demanda.</p>
 </div>
 
 <div class="feat">
 <h3>Robusto a re-render e a elementos interativos</h3>
-<p>O Mermaid pode reescrever o DOM quantas vezes quiser — o zoom sobrevive (event delegation + CSS). E um SVG dentro de <code>button</code>, <code>a</code> ou <code>[onclick]</code> nunca é sequestrado: o clique faz o que devia.</p>
+<p>O Mermaid pode reescrever o DOM quantas vezes quiser — o zoom sobrevive (event delegation + CSS). E um SVG dentro de <code>button</code>, <code>a</code>, <code>[onclick]</code>, <code>label</code> ou <code>summary</code> nunca é sequestrado: o clique faz o que devia.</p>
 <p class="how">Como: listeners no <code>document</code> + pseudo-elemento <code>::after</code> no contêiner; lista <code>INTERACTIVE</code> de ancestrais intocáveis.</p>
 </div>
+</section>
 
-<h2 id="manager">🛰️ Manager — todas as suas docs, um processo</h2>
+<section id="manager">
+<h2><span class="num">7</span>🛰️ Manager — todas as suas docs, um processo</h2>
 
 <div class="feat">
 <h3>Uma URL para tudo</h3>
-<p><code>docs-in-html manager</code> serve cada pasta registrada em <code>http://localhost:4400/&lt;slug&gt;/</code> — slug derivado do título da docs ("My Project — Handbook" → <code>/my-project-handbook/</code>), colisões resolvem com <code>-2</code>.</p>
-<p class="how">Como: <code>manager.js</code> + <code>registry.js</code>; um contexto <code>roots.js</code> por pasta. <a href="arquitetura-do-pacote.html">→ módulo Ecossistema multi-docs</a></p>
+<p><code>spec-space manager</code> serve cada pasta registrada em <code>http://localhost:4400/&lt;slug&gt;/</code> — slug derivado do título da docs ("My Project — Handbook" → <code>/my-project-handbook/</code>), colisões resolvem com <code>-2</code>.</p>
+<p class="how">Como: <code>manager.js</code> + <code>registry.js</code>; um contexto <code>roots.js</code> por pasta. <a href="arquitetura-do-pacote.html">→ arquitetura</a></p>
 </div>
 
 <div class="feat">
 <h3>Servir = registrar = delegar</h3>
-<p>Qualquer <code>docs-in-html &lt;dir&gt;</code> (npx incluso) registra a pasta no registry. Se o manager está no ar, o CLI <em>nem sobe servidor</em> — registra lá e imprime o link. <code>--no-register</code> desliga; <code>--unregister</code> remove.</p>
+<p>Qualquer <code>spec-space &lt;dir&gt;</code> (npx incluso) registra a pasta no registry. Se o manager está no ar, o CLI <em>nem sobe servidor</em> — registra lá e imprime o link (com aviso se você passou <code>--port</code>, que é ignorado na delegação). <code>--no-register</code> desliga; <code>--unregister</code> remove.</p>
 <p class="how">Como: <code>delegation.js</code> (ping + <code>/api/add</code>) no startup do <code>serve.js</code>.</p>
 </div>
 
 <div class="feat">
 <h3>Mural de cards com pastas e ordenação</h3>
 <p>A página inicial do manager é um mural: um card por docs (título + favicon), organizável em pastas/grupos com drag &amp; drop — ordem e colapso persistidos no registry.</p>
-<p class="how">Como: <code>client/manager.html</code> + <code>POST /api/layout</code> (layout sempre saneado no servidor).</p>
+<p class="how">Como: <code>client/manager.html</code> + <code>POST /api/layout</code> (layout sempre saneado no servidor antes de gravar — escrita atômica).</p>
 </div>
 
 <div class="feat">
 <h3>Ações por card: Warp, reveal, remover</h3>
-<p>Abrir a pasta do projeto no terminal Warp (binário resolvido em <code>$WARP_BIN</code> → locais padrão → PATH), revelar no gerenciador de arquivos, remover do registry.</p>
-<p class="how">Como: <code>/api/open-warp</code>, <code>/api/reveal</code>, <code>/api/remove</code> — só agem sobre pastas registradas.</p>
+<p>Abrir a pasta do projeto no terminal <strong>Warp</strong> (binário resolvido em <code>$WARP_BIN</code> → locais padrão → PATH, com cache por processo; no Windows o caminho vira URL <code>file://</code> porque o Warp parseia argumento posicional como URI), revelar no gerenciador de arquivos, remover do registry.</p>
+<p class="how">Como: <code>/api/open-warp</code> (<code>resolveWarp</code>), <code>/api/reveal</code>, <code>/api/remove</code> — só agem sobre pastas registradas.</p>
 </div>
 
 <div class="feat">
@@ -219,13 +298,21 @@ a{color:var(--accent)}
 <p>O botão "Escanear" acha toda pasta com <code>_config.json</code> válido sob seu home (com skip-list e limite de profundidade) para registrar suas docs existentes em lote — as novas desde o último scan ficam destacadas.</p>
 <p class="how">Como: <code>scan.js</code> via <code>/api/scan</code>; depois do import, o registry é a fonte da verdade.</p>
 </div>
+</section>
 
-<h2 id="deploy">📤 Deploy estático</h2>
+<section id="deploy">
+<h2><span class="num">8</span>📤 Deploy estático</h2>
 
 <div class="feat">
 <h3>Export: a experiência dev, congelada em arquivos</h3>
-<p><code>docs-in-html export ./docs</code> gera um <code>dist/</code> com os scripts já escritos nos HTMLs, um <code>manifest.json</code> e <code>__docs__/</code> — pronto para <code>surge dist</code>, Netlify Drop ou GitHub Pages. Sidebar, ordem, ícones e pan/zoom funcionam no site estático; deep links também (o doc aberto direto pula para o shell com a sidebar aberta nele).</p>
-<p class="how">Como: <code>export.js</code> + <code>inject.js</code> em modo estático (<code>DOCS_EXPORT</code>) + bootstrap de deep link. <a href="arquitetura-do-pacote.html">→ módulo Publicação estática</a></p>
+<p><code>spec-space export ./docs</code> gera um <code>dist/</code> com os scripts já escritos nos HTMLs, um <code>manifest.json</code> e <code>__docs__/</code> — pronto para <code>surge dist</code>, Netlify Drop ou GitHub Pages. Sidebar, ordem, ícones e pan/zoom funcionam no site estático; deep links também.</p>
+<p class="how">Como: <code>export.js</code> em cinco passos — copia a pasta (pulando <code>_config.json</code> e os legados, sem copiar o output pra dentro de si) → <code>manifest.json</code> via <code>buildTree</code> → <code>client/</code> → <code>__docs__/</code> → garante o <code>index.html</code> (shell embutido com title/favicon) → reinjeta cada HTML com <code>injectScripts(staticMode)</code>. Pasta inexistente → erro claro e exit 1.</p>
+</div>
+
+<div class="feat">
+<h3>Deep link no host estático via bootstrap <code>/?p=</code></h3>
+<p>Alguém abre <code>/guides/api.html</code> direto no site publicado? Um pequeno script injetado no <code>&lt;head&gt;</code> detecta que é a janela top e pula para <code>/?p=guides/api.html</code>; o shell pega o parâmetro e abre o doc no iframe (âncora preservada).</p>
+<p class="how">Como: <code>deepLinkBootstrap()</code> no <code>inject.js</code> + leitura de <code>?p=</code> no <code>nav.js</code> (só no modo export).</p>
 </div>
 
 <div class="feat">
@@ -233,34 +320,62 @@ a{color:var(--accent)}
 <p>No site publicado, CRUD e edição ficam de fora (não há endpoints) — conteúdo público não é acidentalmente editável. Live reload e diff são dev-only, por design.</p>
 <p class="how">Como: <code>nav.js</code>/<code>edit.js</code>/<code>changes.js</code> desligam o que depende de servidor via <code>window.DOCS_EXPORT</code>.</p>
 </div>
+</section>
 
-<h2 id="cli">⚙️ CLI de referência</h2>
+<section id="cli">
+<h2><span class="num">9</span>⚙️ CLI de referência</h2>
+
+<div class="callout tip"><div class="title">🔁 Renome suave</div>
+O pacote agora se chama <strong>spec-space</strong>. O pacote de alias <code>docs-in-html</code> mantém o CLI antigo funcionando: <code>docs-in-html &lt;dir&gt;</code> apenas faz <code>require</code> do <code>serve.js</code> do spec-space. Nada quebra.</div>
 
 <table>
 <tbody><tr><th>Comando</th><th>Efeito</th></tr>
-<tr><td><code>docs-in-html [dir]</code></td><td>Serve a pasta (padrão: dir atual), abre o browser, registra no manager.</td></tr>
-<tr><td><code>docs-in-html manager</code></td><td>Serve todas as docs registradas em <code>:4400</code> (ou <code>$DOCS_MANAGER_PORT</code>).</td></tr>
-<tr><td><code>docs-in-html init [dir]</code></td><td>Scaffold de <code>index.html</code> + <code>_config.json</code> customizáveis.</td></tr>
-<tr><td><code>docs-in-html export [dir] [--out]</code></td><td>Congela para arquivos estáticos (saída padrão: <code>./dist</code>).</td></tr>
-<tr><td><code>-p, --port N</code></td><td>Porta explícita — exigência: ocupada, morre com erro (sem <code>--port</code>, cai pra próxima livre com aviso).</td></tr>
+<tr><td><code>spec-space [dir]</code></td><td>Serve a pasta (padrão: dir atual), abre o browser, registra no manager. Auto-cria <code>_config.json</code> no primeiro serve.</td></tr>
+<tr><td><code>spec-space manager</code></td><td>Serve todas as docs registradas em <code>:4400</code> (ou <code>$DOCS_MANAGER_PORT</code>; <code>--port</code> explícito ganha dos dois).</td></tr>
+<tr><td><code>spec-space init [dir]</code></td><td>Scaffold de <code>index.html</code> + <code>_config.json</code> customizáveis (recusa sobrescrever).</td></tr>
+<tr><td><code>spec-space export [dir] [--out]</code></td><td>Congela para arquivos estáticos (saída padrão: <code>./dist</code>).</td></tr>
+<tr><td><code>-p, --port N</code></td><td>Porta explícita — exigência: ocupada, morre com erro (sem <code>--port</code>, cai pra próxima livre com aviso, até 20 tentativas).</td></tr>
 <tr><td><code>--no-open</code> / <code>--no-register</code> / <code>--unregister</code></td><td>Não abrir browser / não registrar / remover do registry e sair.</td></tr>
 <tr><td><code>$PORT</code>, <code>$DOCS_MANAGER_PORT</code>, <code>$WARP_BIN</code></td><td>Variáveis de ambiente equivalentes.</td></tr>
 </tbody></table>
+</section>
 
-<h2 id="regra-mental">A regra mental</h2>
+<section id="regra-mental">
+<h2><span class="num">10</span>A regra mental</h2>
 
 <p>HTML puro no disco; a mágica é injetada na resposta. Isso explica o que funciona onde:</p>
 
 <table>
 <tbody><tr><th>Recurso</th><th>Dev server</th><th>Manager</th><th>Export estático</th><th><code>file://</code> direto</th></tr>
-<tr><td>Renderizar o doc</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
-<tr><td>Sidebar / navegação / ordem / ícones</td><td>✅</td><td>✅</td><td>✅ (read-only)</td><td>—</td></tr>
-<tr><td>Pan/zoom de diagramas</td><td>✅</td><td>✅</td><td>✅</td><td>— (a não ser que você inclua o script à mão)</td></tr>
-<tr><td>Live reload</td><td>✅</td><td>✅ (SSE única)</td><td>—</td><td>—</td></tr>
-<tr><td>Edição / CRUD / drag &amp; drop</td><td>✅</td><td>✅</td><td>—</td><td>—</td></tr>
-<tr><td>Diff desde a última visita</td><td>✅</td><td>✅</td><td>—</td><td>—</td></tr>
+<tr><td>Renderizar o doc</td><td class="sim">✅</td><td class="sim">✅</td><td class="sim">✅</td><td class="sim">✅</td></tr>
+<tr><td>Sidebar / navegação / ordem / ícones</td><td class="sim">✅</td><td class="sim">✅</td><td class="talvez">✅ (read-only)</td><td class="nao">—</td></tr>
+<tr><td>Pan/zoom de diagramas</td><td class="sim">✅</td><td class="sim">✅</td><td class="sim">✅</td><td class="nao">— (a não ser que você inclua o script à mão)</td></tr>
+<tr><td>Live reload</td><td class="sim">✅</td><td class="sim">✅ (SSE única)</td><td class="nao">—</td><td class="nao">—</td></tr>
+<tr><td>Edição / CRUD / drag &amp; drop</td><td class="sim">✅</td><td class="sim">✅</td><td class="nao">—</td><td class="nao">—</td></tr>
+<tr><td>Diff desde a última visita</td><td class="sim">✅</td><td class="sim">✅</td><td class="nao">—</td><td class="nao">—</td></tr>
 </tbody></table>
+</section>
 
-<p><em>Documentação viva do pacote <code>docs-in-html</code> — para o "como funciona por dentro", veja a <a href="arquitetura-do-pacote.html">arquitetura do pacote</a>. 🔄</em></p>
+</main>
 
+<footer><div class="footer-inner">Features · spec-space · pacote <code>spec-space</code></div></footer>
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script>
+(function () {
+  var links = document.querySelectorAll(".toc a");
+  var sections = [];
+  links.forEach(function (a) { var s = document.querySelector(a.getAttribute("href")); if (s) sections.push({ a: a, s: s }); });
+  function onScroll() {
+    var y = window.scrollY + 120, cur = sections[0];
+    sections.forEach(function (o) { if (o.s.offsetTop <= y) cur = o; });
+    links.forEach(function (a) { a.classList.remove("active"); });
+    if (cur) cur.a.classList.add("active");
+    var t = document.querySelector(".top");
+    if (t) t.classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+})();
+</script>
 </body></html>
