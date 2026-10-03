@@ -41,6 +41,7 @@ function createDefaultOps() {
     unlink: fs.unlink,
     mkdir: fs.mkdir,
     rmdir: fs.rmdir,
+    access: fs.access,
     watch: fs.watch,
 
     // ── environment ───────────────────────────────────────────────────────
