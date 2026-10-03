@@ -44,6 +44,9 @@ function injectScripts(html, opts = {}) {
   if (isShell) tags.push(`<script src="${base}/__docs__/nav.js" data-injected></script>`);
   else if (!staticMode) {
     tags.push(`<script src="${base}/__docs__/edit.js" data-injected defer></script>`);
+    // pure diff core first — changes.js consumes window.DIFF; same defer flag,
+    // diff.js immediately before changes.js so the order of execution holds
+    tags.push(`<script src="${base}/__docs__/diff.js" data-injected defer></script>`);
     // change highlights: marks what's new/edited since the last visit (diff
     // vs the localStorage snapshot) — see client/changes.js
     tags.push(`<script src="${base}/__docs__/changes.js" data-injected defer></script>`);
