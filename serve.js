@@ -9,6 +9,11 @@
 //
 // Serving a folder also registers it in ~/.docs-in-html/registry.json so the
 // manager picks it up. --no-register skips that; dir --unregister removes it.
+//
+// The file is both a program (run via bin/node) and a module: parseArgs() and
+// main() are exported and testable in-process; every side effect that used to
+// run at require-time (argv parsing, process.exit, server) lives behind the
+// require.main === module footer.
 
 const http = require("node:http");
 const fs = require("node:fs");
@@ -17,7 +22,7 @@ const ops = require("./ops.js");
 const { createRoot } = require("./roots.js");
 const { readConfig, writeConfig, defaultConfig } = require("./config.js");
 const registry = require("./registry.js");
-const { MANAGER_PORT, managerBaseUrl, pingManager, addToManager } = require("./delegation.js");
+const { MANAGER_PORT, managerPort, pingManager, addToManager } = require("./delegation.js");
 
 // ── CLI ──────────────────────────────────────────────────────────────────
 function help() {
@@ -49,131 +54,172 @@ running, serving a folder just registers it there — no extra server.
 `);
 }
 
-const args = process.argv.slice(2);
-let dir = ".";
-let port = Number(process.env.PORT) || 8000;
-let doOpen = true;
-let portWasExplicit = false;
-let mode = "serve";
-let outDir = "dist";
-let noRegister = false;
-let unregister = false;
-for (let i = 0; i < args.length; i++) {
-  const a = args[i];
-  if (a === "-h" || a === "--help") { help(); process.exit(0); }
-  else if (a === "init") mode = "init";
-  else if (a === "export") mode = "export";
-  else if (a === "manager") mode = "manager";
-  else if (a === "--out") outDir = args[++i] || outDir;
-  else if (a === "-p" || a === "--port") { port = Number(args[++i]) || port; portWasExplicit = true; }
-  else if (a === "--no-open") doOpen = false;
-  else if (a === "-o" || a === "--open") doOpen = true;
-  else if (a === "--no-register") noRegister = true;
-  else if (a === "--unregister") unregister = true;
-  else if (!a.startsWith("-")) dir = a;
+// Pure argv parsing: takes an argument ARRAY (not process.argv) and returns
+// options as data. -h/--help becomes mode:"help" — printing is main()'s job.
+function parseArgs(argv, opts = {}) {
+  const o = {
+    mode: "serve",
+    dir: ".",
+    port: opts.defaultPort !== undefined ? opts.defaultPort : 8000,
+    portWasExplicit: false,
+    doOpen: true,
+    outDir: "dist",
+    noRegister: false,
+    unregister: false,
+  };
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "-h" || a === "--help") o.mode = "help";
+    else if (a === "init") o.mode = "init";
+    else if (a === "export") o.mode = "export";
+    else if (a === "manager") o.mode = "manager";
+    else if (a === "--out") o.outDir = argv[++i] || o.outDir;
+    else if (a === "-p" || a === "--port") { o.port = Number(argv[++i]) || o.port; o.portWasExplicit = true; }
+    else if (a === "--no-open") o.doOpen = false;
+    else if (a === "-o" || a === "--open") o.doOpen = true;
+    else if (a === "--no-register") o.noRegister = true;
+    else if (a === "--unregister") o.unregister = true;
+    else if (!a.startsWith("-")) o.dir = a;
+  }
+  return o;
 }
 
-const ROOT = path.resolve(dir);
+// The CLI machine: takes parsed options (or a raw argv), returns the exit
+// code. NEVER calls process.exit — the footer does. `deps` injects everything
+// that touches the world, so tests can simulate EADDRINUSE, a live manager,
+// or the browser opening without any of them being real.
+async function main(args, deps = {}) {
+  const o = Array.isArray(args) ? parseArgs(args) : args;
+  const { pingManagerDep = pingManager, addToManagerDep = addToManager, openUrl = (u) => ops.openUrl(u) } = deps;
+  if (o.mode === "help") { help(); return 0; }
 
-if (mode === "init") {
-  require("./init.js").init(ROOT);
-  process.exit(0);
-}
+  const ROOT = path.resolve(o.dir);
 
-if (mode === "export") {
-  require("./export.js").run(ROOT, outDir);
-  process.exit(0);
-}
+  if (o.mode === "init") {
+    require("./init.js").init(ROOT);
+    return 0;
+  }
 
-if (mode === "manager") {
-  // port precedence: explicit --port > $DOCS_MANAGER_PORT > 4400 (the CLI's
-  // delegation reads the same precedence — see delegation.js managerPort()).
-  const { managerPort } = require("./delegation.js");
-  require("./manager.js").start({ port: portWasExplicit ? port : managerPort(), portWasExplicit, doOpen });
-  // manager keeps the process alive (its own server)
-} else if (unregister) {
-  const removed = registry.remove(ROOT);
-  console.log(removed
-    ? `✓ removida do registry: ${ROOT}`
-    : `(nada a remover — ${ROOT} não estava no registry)`);
-  process.exit(0);
-} else {
-  serveSingle();
+  if (o.mode === "export") {
+    require("./export.js").run(ROOT, o.outDir);
+    return 0;
+  }
+
+  if (o.mode === "manager") {
+    // port precedence: explicit --port > $DOCS_MANAGER_PORT > 4400 (the CLI's
+    // delegation reads the same precedence — see delegation.js managerPort()).
+    require("./manager.js").start({ port: o.portWasExplicit ? o.port : managerPort(), portWasExplicit: o.portWasExplicit, doOpen: o.doOpen });
+    return; // manager keeps the process alive (its own server)
+  }
+
+  if (o.unregister) {
+    const removed = registry.remove(ROOT);
+    console.log(removed
+      ? `✓ removida do registry: ${ROOT}`
+      : `(nada a remover — ${ROOT} não estava no registry)`);
+    return 0;
+  }
+
+  return serveSingle(ROOT, o, { pingManagerDep, addToManagerDep, openUrl });
 }
 
 // ── single-root serve ──────────────────────────────────────────────────────
-async function serveSingle() {
+function serveSingle(ROOT, o, { pingManagerDep, addToManagerDep, openUrl }) {
+  const { port, portWasExplicit, doOpen, noRegister } = o;
+
   // Delegation: if the manager is already running, don't start another
   // server — register this root there and print the link. The manager IS the
   // serve for this folder now.
-  if (!noRegister) {
-    const port = await pingManager();
-      if (port) {
-        const slug = await addToManager(ROOT, port);
+  return pingManagerDep().then((managerUp) => {
+    if (!noRegister && managerUp) {
+      return addToManagerDep(ROOT, managerUp).then((slug) => {
         console.log(`spec-space · ${ROOT}`);
         if (portWasExplicit)
-          console.log(`  ⚠ manager no ar — --port ignorado (a docs vive no manager)`);
-        console.log(`  ✓ adicionada ao manager: http://localhost:${port}/${slug}/`);
-        process.exit(0);
-      }
-  }
-
-  // Auto-scaffold: first serve of a folder with no _config.json creates one
-  // with friendly defaults (title from the folder name).
-  let scaffolded = false;
-  if (!fs.existsSync(path.join(ROOT, "_config.json"))) {
-    writeConfig(ROOT, defaultConfig(ROOT));
-    scaffolded = true; // writeConfig swallows errors; the flag is just for the banner
-  }
-
-  if (!noRegister) registry.add(ROOT); // silent: picked up next time the manager starts
-
-  const ctx = createRoot(ROOT, { base: "" });
-  const server = http.createServer(ctx.handle);
-  server.on("close", () => ctx.reload.close());
-
-  // If --port was passed explicitly, it's a request, not a hint: succeed on
-  // that exact port or die with a clear message. Otherwise fall back to the
-  // next free port, with a warning.
-  const MAX_FALLBACKS = 20;
-  function start(attemptPort, attemptsLeft) {
-    let printed = false;
-    const srv = server.listen(attemptPort, () => {
-      setImmediate(() => {
-        if (printed) return;
-        printed = true;
-        const url = `http://localhost:${attemptPort}`;
-        console.log(`spec-space · serving ${ROOT}`);
-        if (attemptPort !== port)
-          console.log(`  ⚠ porta ${port} está em uso — usando ${attemptPort}`);
-        if (scaffolded)
-          console.log(`  ✓ criado _config.json — ajuste title/favicon lá (hot reload pega na hora)`);
-        console.log(`  → ${url}`);
-        if (doOpen) ops.openUrl(url);
+          console.log(`  ⚠ manager no ar -- --port ignorado (a docs vive no manager)`);
+        console.log(`  ✓ adicionada ao manager: http://localhost:${managerUp}/${slug}/`);
+        return 0;
       });
+    }
+
+    // Auto-scaffold: first serve of a folder with no _config.json creates one
+    // with friendly defaults (title from the folder name).
+    let scaffolded = false;
+    if (!fs.existsSync(path.join(ROOT, "_config.json"))) {
+      writeConfig(ROOT, defaultConfig(ROOT));
+      scaffolded = true; // writeConfig swallows errors; the flag is just for the banner
+    }
+
+    if (!noRegister) registry.add(ROOT); // silent: picked up next time the manager starts
+
+    const ctx = createRoot(ROOT, { base: "" });
+    const server = http.createServer(ctx.handle);
+    server.on("close", () => ctx.reload.close());
+
+    // If --port was passed explicitly, it's a request, not a hint: succeed on
+    // that exact port or die with a clear message. Otherwise fall back to the
+    // next free port, with a warning.
+    const MAX_FALLBACKS = 20;
+
+    return new Promise((resolve) => {
+      function start(attemptPort, attemptsLeft) {
+        let printed = false;
+        const srv = server.listen(attemptPort, () => {
+          setImmediate(() => {
+            if (printed) return;
+            printed = true;
+            const url = `http://localhost:${attemptPort}`;
+            console.log(`spec-space · serving ${ROOT}`);
+            if (attemptPort !== port)
+              console.log(`  ⚠ porta ${port} está em uso — usando ${attemptPort}`);
+            if (scaffolded)
+              console.log(`  ✓ criado _config.json — ajuste title/favicon lá (hot reload pega na hora)`);
+            console.log(`  → ${url}`);
+            if (doOpen) openUrl(url);
+            // resolve undefined: the footer doesn't exit — a live server keeps
+            // the process alive (same contract the pre-refactor script had)
+            resolve(undefined);
+          });
+        });
+        srv.once("error", (err) => {
+          printed = true;
+          if (err.code !== "EADDRINUSE") {
+            const tip = err.code === "EACCES"
+              ? " (porta privilegiada? tente uma alta, ex.: --port 8000)" : "";
+            console.error(`erro: não foi possível abrir a porta ${attemptPort}${tip}`);
+            if (err.code !== "EACCES") console.error(`       ${err.message}`);
+            srv.close();
+            resolve(1);
+            return;
+          }
+          if (portWasExplicit) {
+            console.error(`erro: porta ${attemptPort} já está em uso.`);
+            console.error("       pode ser outra instância de spec-space; feche-a, ou rode sem --port para auto-escolher a próxima livre.");
+            resolve(1);
+            return;
+          }
+          if (attemptsLeft <= 0) {
+            console.error(`erro: nenhuma porta livre a partir de ${port} (tentou até ${attemptPort}).`);
+            console.error("       feche o outro servidor ou passe --port N.");
+            resolve(1);
+            return;
+          }
+          start(attemptPort + 1, attemptsLeft - 1);
+        });
+      }
+      start(port, portWasExplicit ? 0 : MAX_FALLBACKS - 1);
     });
-    srv.once("error", (err) => {
-      printed = true;
-      if (err.code !== "EADDRINUSE") {
-        const tip = err.code === "EACCES"
-          ? " (porta privilegiada? tente uma alta, ex.: --port 8000)" : "";
-        console.error(`erro: não foi possível abrir a porta ${attemptPort}${tip}`);
-        if (err.code !== "EACCES") console.error(`       ${err.message}`);
-        process.exit(1);
-      }
-      if (portWasExplicit) {
-        console.error(`erro: porta ${attemptPort} já está em uso.`);
-        console.error("       pode ser outra instância de spec-space; feche-a, ou rode sem --port para auto-escolher a próxima livre.");
-        process.exit(1);
-      }
-      if (attemptsLeft <= 0) {
-        console.error(`erro: nenhuma porta livre a partir de ${port} (tentou até ${attemptPort}).`);
-        console.error("       feche o outro servidor ou passe --port N.");
-        process.exit(1);
-      }
-      if (srv.listening) srv.close();
-      start(attemptPort + 1, attemptsLeft - 1);
-    });
-  }
-  start(port, portWasExplicit ? 0 : MAX_FALLBACKS - 1);
+  });
 }
+
+// ── footer: run as a program, be silent as a module ────────────────────────
+if (require.main === module) {
+  const opts = parseArgs(process.argv.slice(2), { defaultPort: Number(process.env.PORT) || 8000 });
+  main(opts).then((code) => {
+    if (code !== undefined) process.exit(code);
+  }, (err) => {
+    console.error(`erro: ${err.message}`);
+    process.exit(1);
+  });
+}
+
+module.exports = { parseArgs, main, help };

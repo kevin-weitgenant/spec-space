@@ -51,10 +51,8 @@ function collectHtml(dir, rel, out) {
 function run(root, outDir) {
   const src = path.resolve(root);
   const out = path.resolve(outDir);
-  if (!fs.existsSync(src)) {
-    console.error(`erro: pasta não encontrada: ${src}`);
-    process.exit(1);
-  }
+  if (!fs.existsSync(src))
+    throw new Error(`pasta não encontrada: ${src}`); // the CLI footer prints + exit 1
 
   // 1 — copy everything
   copyDir(src, out, out);
@@ -89,3 +87,20 @@ function run(root, outDir) {
 }
 
 module.exports = { run };
+
+// ── footer: run as a program, be silent as a module ────────────────────────
+if (require.main === module) {
+  const argv = process.argv.slice(2);
+  let dir = ".";
+  let outDir = "dist";
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--out") outDir = argv[++i] || outDir;
+    else if (!argv[i].startsWith("-")) dir = argv[i];
+  }
+  try {
+    run(dir, outDir);
+  } catch (e) {
+    console.error(`erro: ${e.message}`);
+    process.exit(1);
+  }
+}
