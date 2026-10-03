@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testes — spec-space</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-bg:#e7f5ec; --amber:#9a6700; --amber-bg:#fff8e1;
+  --red:#cf222e; --red-bg:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{padding:4px 12px;border-radius:999px;text-decoration:none;color:var(--soft);font-size:.88rem;border:1px solid transparent}
+.toc a.active{background:var(--accent-soft);color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+main section{padding:34px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;margin:0 0 6px}
+h2 .num{color:var(--accent);margin-right:8px}
+.lead{color:var(--soft);margin-top:0}
+h3{font-size:1.12rem;margin:26px 0 8px}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px;overflow-x:auto;font-size:.86rem;line-height:1.5}
+pre code{background:none;border:none;padding:0}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:8px;background:var(--panel);padding:14px 18px;margin:18px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+table{border-collapse:collapse;width:100%;margin:16px 0;font-size:.94rem}
+th{background:var(--panel2);text-align:left;padding:8px 12px;border-bottom:2px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid var(--border)}
+.sim{color:var(--green);font-weight:700}
+.nao{color:var(--red);font-weight:700}
+.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:18px 0}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.9rem}
+.arr{color:var(--soft)}
+.qcard{background:var(--bg);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 20px;margin:18px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font:inherit;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--panel);cursor:pointer}
+.opt:hover{background:var(--panel2)}
+.opt.right{background:var(--green-bg);border-color:var(--green);color:var(--green);font-weight:600}
+.opt.wrong{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.q-feedback{display:none;margin-top:12px;padding:10px 14px;background:var(--panel);border-radius:8px;font-size:.94rem}
+.q-feedback.show{display:block}
+footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
+.footer-inner{max-width:920px;margin:0 auto}
+.top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;opacity:0;pointer-events:none;transition:opacity .25s;border:none;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Testes — spec-space</h1>
+    <p class="lede">Um guia completo das 45 verificações que protegem o pacote: o que cada suíte cobre, por que cada área importa, a estratégia de teste (node:test, zero dependências, dependências falsas) e o que fica deliberadamente de fora.</p>
+    <p class="meta">docs-html/arquitetura/testes-do-pacote.html · spec-space / docs-in-html</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#estrategia">2 · Estratégia</a>
+    <a href="#inventario">3 · Inventário</a>
+    <a href="#suites">4 · Suítes</a>
+    <a href="#como-rodar">5 · Como rodar</a>
+    <a href="#fora">6 · O que não é testado</a>
+    <a href="#quiz">7 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+  <p class="lead">O spec-space é um servidor de documentação em HTML puro: um <code>serve.js</code> que publica uma pasta de docs, um <code>manager</code> multi-raiz, um cliente de navegador (edição, navegação, diff) e um exportador estático.</p>
+  <p>O projeto nasceu com uma decisão de arquitetura que define todo o resto: <strong>toda interação com o mundo exterior passa por um único adapter</strong> — o módulo <code>ops.js</code>. Sistema de arquivos, diretório home, <code>spawn</code>, <code>watch</code>, abrir URLs: tudo isso é chamado via <code>ops.*</code>, nunca diretamente via <code>node:fs</code>. Em produção, o adapter padrão delega ao Node real; nos testes, <code>ops.setOps(fake)</code> troca a porta de entrada por uma implementação em memória.</p>
+  <div class="ramp" style="border:1px dashed var(--border);border-radius:8px;padding:14px 18px;margin:18px 0;background:var(--panel)">
+    <b>Rampa para iniciante (pode pular)</b>
+    <p style="margin:8px 0 0">Um <em>adapter</em> é um intermediário: em vez de o código chamar <code>fs.readFileSync</code> direto, ele chama <code>ops.readFileSync</code>, que por padrão repassa ao fs — mas que um teste pode substituir. Isso se chama <em>injeção de dependência</em> via <em>seam</em> (costura): um ponto único onde o comportamento pode ser trocado sem alterar os chamadores.</p>
+  </div>
+  <p>A segunda decisão: o servidor é um conglomerado de <strong>funções puras e contextos por raiz</strong> (<code>roots.js</code>), de modo que guardas de segurança, resolução de caminhos e a tabela de endpoints são testáveis sem subir um servidor HTTP de verdade. A terceira: o código de cliente que precisa ser confiável (<code>diff.js</code>, <code>lib.js</code>) é escrito em <strong>UMD</strong> — funciona tanto via <code>&lt;script&gt;</code> no navegador quanto via <code>require()</code> no Node — para que a lógica crítica rode em <code>node --test</code> sem navegador algum.</p>
+</section>
+
+<section id="estrategia">
+  <h2><span class="num">2</span>Estratégia de teste</h2>
+  <p class="lead">Zero dependências, executor nativo e mentiras controladas no lugar de infraestrutura real.</p>
+  <ul>
+    <li><strong><code>node:test</code> + <code>node:assert</code></strong> — o executor embutido do Node. Nenhum framework, nenhuma instalação, nenhum lockfile inchado. Rodar a suíte inteira leva &lt; 1 s.</li>
+    <li><strong>Adapter falso via <code>setOps()</code></strong> — um fs em memória (um <code>Map</code>), um <code>watch</code> emissor de eventos controlado, um <code>spawn</code> que apenas grava chamadas. O home real do usuário nunca é lito.</li>
+    <li><strong>Funções puras</strong> — <code>safeRelPath</code>, <code>resolveIn</code>, <code>parseArgs</code>, <code>diffOps</code>, <code>me()</code> são testadas por chamada direta: entrada → saída, sem mocks.</li>
+    <li><strong><code>listen</code> falso</strong> — nos testes de porta, <code>http.createServer</code> é substituído por um servidor de mentira cujo <code>listen(port, cb)</code> falha sob demanda (<code>EADDRINUSE</code>, <code>EACCES</code>) e registra todas as portas tentadas.</li>
+    <li><strong>Diretórios temporários</strong> — <code>fs.mkdtempSync(os.tmpdir())</code> cria pastas de verdade quando o teste precisa de disco real (deleção, export), com <code>t.after</code> limpando tudo.</li>
+    <li><strong>Resposta/req de mentira</strong> — objetos <code>{ writeHead, end }</code> e Readables cumprem o contrato HTTP mínimo que <code>roots.js</code> exige.</li>
+  </ul>
+  <div class="flow">
+    <span class="node">teste</span><span class="arr">→</span>
+    <span class="node">setOps(fake) / parseArgs(args)</span><span class="arr">→</span>
+    <span class="node">módulo sob teste</span><span class="arr">→</span>
+    <span class="node">assert no resultado</span>
+  </div>
+</section>
+
+<section id="inventario">
+  <h2><span class="num">3</span>Inventário</h2>
+  <p class="lead">Sete arquivos, 45 testes, todos passando (<code>npm test</code> → <code>pass 45 / fail 0</code>).</p>
+  <table>
+    <thead><tr><th>Suíte</th><th>Módulo sob teste</th><th>Testes</th><th>Foco</th></tr></thead>
+    <tbody>
+      <tr><td><code>ops.test.js</code></td><td><code>ops.js</code> (+ registry, reload)</td><td>5</td><td>A costura do ambiente: troca de adapter, registro sem tocar o home, debounce do watcher, launchers gravados</td></tr>
+      <tr><td><code>roots.test.js</code></td><td><code>roots.js</code></td><td>6</td><td>Guardas de path traversal, resolução dentro da raiz, tabela de endpoints, 400 antes do fs, leitura de JSON</td></tr>
+      <tr><td><code>diff.test.js</code></td><td><code>client/diff.js</code></td><td>11</td><td>Núcleo de diff puro: ops mínimas, orçamento de células, marks (new/edit/movido), wordDiff, similaridade</td></tr>
+      <tr><td><code>lib.test.js</code></td><td><code>client/lib.js</code></td><td>9</td><td>Identidade da página (<code>me()</code>): prefixo case-insensitive, decodificação, index.html, segurança no Node</td></tr>
+      <tr><td><code>serve-args.test.js</code></td><td><code>serve.js</code> (parseArgs)</td><td>8</td><td>Matriz de CLI: defaults, portas explícitas, NaN, subcomandos, flags booleanas</td></tr>
+      <tr><td><code>serve-port.test.js</code></td><td><code>serve.js</code> (main)</td><td>4</td><td>Máquina de fallback de porta (EADDRINUSE × porta explícita), EACCES, delegação ao manager</td></tr>
+      <tr><td><code>export.test.js</code></td><td><code>export.js</code></td><td>2</td><td>Export estático real em temp dir: manifest, <code>__docs__/</code>, tags injetadas, fonte intacta</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="suites">
+  <h2><span class="num">4</span>As suítes em detalhe</h2>
+
+  <h3>ops.test.js — a costura do ambiente (5 testes)</h3>
+  <p><code>ops.js</code> é a única porta para o mundo exterior; se ela quebrar, todos os módulos que dependem dela ficam cegos. A suíte verifica que <code>setOps</code>/<code>resetOps</code> realmente trocam e restauram o adapter, que o <code>registry</code> funciona por inteiro (add/list/save, add duplicado é no-op, <code>registry.json</code> vai para o home <em>falso</em>), e que o <code>reload</code> colapsa dois eventos do mesmo arquivo em um único broadcast — <strong>debounce de 150 ms</strong> que existe porque o Windows dispara vários eventos por salvamento. Um último teste grava lançamentos de <code>openPath</code>/<code>openUrl</code>/<code>spawn</code> sem executar nada, e um teste de sanidade confere que o adapter padrão lê um arquivo real como o <code>node:fs</code>.</p>
+
+  <h3>roots.test.js — as guardas de segurança (6 testes)</h3>
+  <p>Este é o coração defensivo do pacote. O servidor aceita nomes de arquivos vindos do navegador (endpoints <code>/__delete__</code>, <code>/__save__</code>, <code>/__rename__</code>…), então um caminho malicioso como <code>../../etc/passwd</code> precisa morrer <em>antes</em> de qualquer operação de filesystem. Os testes cobrem:</p>
+  <ul>
+    <li><strong><code>safeRelPath</code></strong>: aceita caminhos aninhados normais (incluindo espaços); rejeita traversal (<code>../</code>), caminhos absolutos, barra invertida (<code>a\b</code>), segmentos <code>.</code>, prefixos <code>.</code>/<code>_</code>, caracteres proibidos (<code>&lt; &gt; : " | ? *</code>, controles) e não-strings.</li>
+    <li><strong><code>resolveIn</code></strong>: devolve <code>{ rel, abs }</code> apenas quando o caminho absoluto resolvido permanece <em>dentro</em> da raiz (defesa em profundidade — nem confia só no parser).</li>
+    <li><strong><code>ENDPOINTS</code></strong>: cada caminho <code>/__*__</code> tem método HTTP e função nomeada — a tabela contratal do servidor.</li>
+    <li><strong>endpoint de deleção</strong>: um POST com <code>../../etc/passwd</code> recebe <strong>400</strong> e o filesystem nunca é consultado — o teste usa req/res de mentira para provar que a guarda vem primeiro.</li>
+    <li><strong><code>readJsonBody</code></strong>: JSON válido passa; lixo devolve <code>null</code> (e corpos acima do limite de bytes são destruídos, no código).</li>
+  </ul>
+  <div class="callout danger">
+    <div class="title">Por que isso importa</div>
+    Um endpoint de arquivos sem guarda de traversal é uma vulnerabilidade de leitura/escrita arbitrária. Estes seis testes são a prova de regressão mais valiosa do pacote: qualquer refatoração que amoleça <code>safeRelPath</code> ou <code>resolveIn</code> falha imediatamente.
+  </div>
+
+  <h3>diff.test.js — o núcleo de diff puro (11 testes)</h3>
+  <p><code>client/diff.js</code> calcula o diff entre a versão salva e a editada de um documento, exibindo blocos novos, editados e removidos na UI. A suíte testa a matemática, não a UI:</p>
+  <ul>
+    <li><strong>Ops mínimas</strong>: listas idênticas → <code>[]</code>; inserção pura → um único <code>{ t: "+", b: 2 }</code> (prefixo/sufixo comuns são aparados).</li>
+    <li><strong>Orçamento</strong>: matrizes de 2100×2100 sem trecho comum devolvem <code>null</code> — o diff <em>desiste graciosamente</em> em vez de travar a aba com 4 milhões de células de programação dinâmica.</li>
+    <li><strong>Unicode</strong>: “configuração rápida” → “configuração lenta” produz ops − e + corretas (sem quebra por surrogate pairs ou normalização).</li>
+    <li><strong><code>marks</code></strong>: bloco novo vira <code>kind: "new"</code>; um par remover+adicionar com texto similar vira um único <code>edit</code> carregando o texto antigo; um bloco que apenas <em>se moveu</em> (mesmos textos, ordem nova) <strong>não é marcado</strong> — falso positivo de edição seria o bug mais visível ao usuário.</li>
+    <li><strong><code>wordDiff</code></strong>: “npm” → “pnpm” gera exatamente <code>[-npm, +pnpm]</code>; strings idênticas viram só tokens de contexto.</li>
+    <li><strong><code>similarity</code></strong>: 1 para iguais, 0 para disjuntas — a régua que decide quando um par −/+ merece virar “edit”.</li>
+  </ul>
+
+  <h3>lib.test.js — a identidade da página (9 testes)</h3>
+  <p><code>client/lib.js</code> responde “quem sou eu?” para cada página: <code>me(pathname, base)</code> converte a URL do documento em um caminho relativo à raiz de docs. Essa regra era copiada em três scripts diferentes antes de virar um módulo — e cada cópia podia divergir. Os testes fixam o contrato: prefixo do manager é removido de forma <strong>case-insensitive</strong> e com ou sem barra final; <code>/</code> vira <code>index.html</code>; um prefixo que apenas <em>começa parecido</em> (<code>/docs-projeto/x</code> com base <code>/docs-proj</code>) <strong>não</strong> é removido; caminhos percent-codificados (<code>pasta%20com%20espa%C3%A7o</code>) são decodificados; e <code>isShell()</code> sem <code>document</code> devolve <code>false</code> em vez de explodir — o que é exatamente o que permite que este arquivo seja testado no Node. <strong>Estabilidade da chave de snapshot</strong>: se <code>me()</code> mudar, o cache de diff e os endpoints gravam no arquivo errado; daí a cobertura exaustiva de casos-limite.</p>
+  <div class="callout tip">
+    <div class="title">UMD: um arquivo, dois mundos</div>
+    <code>lib.js</code> e <code>diff.js</code> são UMD: via <code>&lt;script&gt;</code> publicam <code>window.docsLib</code> etc.; via <code>require()</code> exportam <code>module.exports</code>. É essa duplicidade deliberada que torna os testes acima possível sem puppeteer, playwright ou um único <code>npm install</code>.
+  </div>
+
+  <h3>serve-args.test.js — a matriz de CLI (8 testes)</h3>
+  <p><code>parseArgs(argv, opts)</code> recebe o argv como argumento (nunca lê <code>process.argv</code> direto), o que o torna uma função pura testável em matriz. Defaults (<code>serve</code>, <code>.</code>, porta 8000, abrir browser); <code>defaultPort</code> substituível; <code>-p/--port</code> marca a porta como <strong>explícita</strong>; <code>--port abc</code> (NaN) mantém o default mas ainda conta como explícita; subcomandos <code>init</code>/<code>export --out site</code>/<code>manager</code>; <code>-h/--help</code> viram <code>mode: "help"</code> — uma decisão de retorno, não um efeito colateral de <code>process.exit</code>; flags <code>--no-open</code>, <code>--no-register</code>, <code>--unregister</code> e o re-armar com <code>-o</code>.</p>
+
+  <h3>serve-port.test.js — a semântica de fallback de porta (4 testes)</h3>
+  <p>Aqui mora o comportamento que os usuários realmente sentem. Com um <code>listen</code> falso que registra cada tentativa:</p>
+  <ul>
+    <li><strong>Sem <code>--port</code></strong>, dois <code>EADDRINUSE</code> seguidos → o servidor avança 9001 → 9002 → 9003 e segue vivo. Fallback automático é o comportamento amigável.</li>
+    <li><strong>Com <code>--port</code> explícito</strong>, um único <code>EADDRINUSE</code> → código de saída 1 e a mensagem “já está em uso”. A porta explícita é um <em>pedido</em>, não uma sugestão: tentar outra seria desobedecer o usuário (e quebrar scripts que assumem a porta).</li>
+    <li><strong>Manager vivo</strong> (<code>pingManagerDep</code> devolve 4478): nenhum servidor é criado; o site apenas se registra no manager (<code>addToManagerDep</code>), que passa a servi-lo.</li>
+    <li><strong><code>EACCES</code></strong> na porta 80: código 1 com a dica de porta privilegiada — diagnóstico educado em vez de stack trace.</li>
+  </ul>
+  <div class="callout">
+    <div class="title">O parâmetro escondido: portWasExplicit</div>
+    A distinção inteira entre “tentar a próxima” e “morrer com mensagem clara” depende do flag <code>portWasExplicit</code> produzido por <code>parseArgs</code>. É por isso que a suíte de args e a de porta são, na prática, uma história só contada em dois arquivos.
+  </div>
+
+  <h3>export.test.js — o export estático de verdade (2 testes)</h3>
+  <p>O caminho triste primeiro: pasta inexistente <strong>lança</strong> (<code>/pasta não encontrada/</code>) em vez de chamar <code>process.exit</code> — o que antes matava o próprio test runner. O caminho feliz monta uma mini-site em um temp dir (index, guia, <code>_config.json</code>) e roda <code>run(src, out)</code> de verdade, conferindo no disco: <code>manifest.json</code> existe; <code>__docs__/lib.js</code> foi copiado; <code>_config.json</code> <strong>não</strong> é embarcado; o shell ganha as tags <code>/__docs__/lib.js</code>, <code>/__docs__/nav.js</code> e <code>window.DOCS_EXPORT</code> mas <strong>nenhum reload.js</strong> (sites estáticos não têm watcher); os docs recebem <code>data-injected</code>; e a pasta <em>fonte</em> permanece intocada — o export nunca reescreve o original.</p>
+</section>
+
+<section id="como-rodar">
+  <h2><span class="num">5</span>Como rodar</h2>
+  <p class="lead">Sem setup: nenhum <code>npm install</code>, nenhum runner externo.</p>
+  <pre><code>npm test          # atalho para node --test tests/
+node --test       # idem, a partir da raiz do repo</code></pre>
+  <p>Saída esperada: <code>1..45</code>, <code># tests 45</code>, <code># pass 45</code>, <code># fail 0</code> — em menos de meio segundo (a única espera real é o debounce de 150 ms do teste de reload, cerca de 250 ms no total). Para um único arquivo: <code>node --test tests/roots.test.js</code>.</p>
+</section>
+
+<section id="fora">
+  <h2><span class="num">6</span>O que não é testado — e por quê</h2>
+  <table>
+    <thead><tr><th>Área</th><th>Coberta?</th><th>Motivo</th></tr></thead>
+    <tbody>
+      <tr><td>Cliente DOM no navegador (nav.js, edits, eventos, renderização)</td><td class="nao">Não</td><td>Requereria browser headless (uma dependência pesada) para validar coisas que o próprio usuário vê ao abrir a página; o custo de manutenção supera o ganho em um pacote de zero dependências.</td></tr>
+      <tr><td>Integração HTTP de ponta a ponta (fetch real ao servidor)</td><td class="talvez">Parcial</td><td>Os endpoints são exercitados via req/res falsos (unidade de handler), não via sockets reais — o contrato testado é o que pode quebrar silenciosamente.</td></tr>
+      <tr><td>Comportamento real do <code>fs.watch</code> por SO</td><td class="nao">Não</td><td>Não-determinístico por natureza (o Windows dispara múltiplos eventos); o teste usa um watcher falso e valida o debounce, que é a parte sob nosso controle.</td></tr>
+      <tr><td>Renderização visual do diff (cores, ícones)</td><td class="nao">Não</td><td>É cosmética; a correção semântica (quais blocos mudaram) está 100% nos testes de <code>diffOps</code>/<code>marks</code>.</td></tr>
+    </tbody>
+  </table>
+  <div class="callout warn">
+    <div class="title">O trade-off declarado</div>
+    O pacote escolhe profundidade em <em>lógica</em> (guardas, diff, parsing, fallback de porta) em vez de amplitude em <em>integração</em>. Quando um bug de navegador aparecer, o manual de reprodução é: abrir a página. A regressão que dói é a lógica que ninguém olha — e essa está coberta.
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">7</span>Quiz</h2>
+  <p class="lead">Cinco perguntas sobre o que a suíte realmente protege. Clique para responder; pode trocar de resposta à vontade.</p>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. Um POST para <code>/__delete__</code> com <code>{"path": "../../etc/passwd"}</code> chega ao handler. O que o teste de roots.js espera?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) 404, porque o arquivo não existe dentro da raiz</button>
+      <button class="opt" data-k="b">B) 400 imediatamente, sem nenhuma operação de filesystem</button>
+      <button class="opt" data-k="c">C) O arquivo é deletado apenas se estiver dentro da raiz</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> A guarda (<code>safeRelPath</code>/<code>resolveIn</code>) rejeita o traversal antes de qualquer <code>ops.stat</code> ou deleção — é exatamente isso que o teste prova com req/res de mentira.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. O usuário sobe o servidor com <code>--port 9005</code> e a porta está ocupada. Qual comportamento os testes exigem?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Tentar automaticamente a 9006</button>
+      <button class="opt" data-k="b">B) Ficar em loop até achar uma porta livre</button>
+      <button class="opt" data-k="c">C) Sair com código 1 e a mensagem “já está em uso”, sem tentar outra porta</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> Porta explícita é um pedido: o fallback automático existe só quando a porta foi escolhida por default. Os dois primeiros testes de serve-port.test.js fixam exatamente essa assimetria.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. Por que <code>lib.test.js</code> consegue testar um módulo de navegador sem navegador?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque lib.js é UMD e <code>isShell()</code> degenera com segurança sem <code>document</code></button>
+      <button class="opt" data-k="b">B) Porque o teste cria um DOM falso com objetos literais</button>
+      <button class="opt" data-k="c">C) Porque <code>me()</code> não usa <code>window</code> em nenhum caminho</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> O build UMD exporta <code>module.exports</code> no Node, e <code>me(pathname, base)</code> recebe os valores que no navegador viriam de <code>location</code>/<code>window.DOCS_BASE</code> como argumentos. <code>isShell()</code> sem document devolve false — testado explicitamente.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">4. Em <code>diff.test.js</code>, os blocos <code>["A","B","C"]</code> → <code>["C","A","B"]</code> produzem quais marks?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Um mark “edit” em C</button>
+      <button class="opt" data-k="b">B) Nenhum — blocos apenas movidos não são marcados</button>
+      <button class="opt" data-k="c">C) Um mark “new” e um “removed”</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Textos iguais em ordem nova = movimento, não edição. Marcar isso seria um falso positivo gritante na UI de revisão; o teste trava o comportamento com <code>deepStrictEqual(m, [])</code>.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">5. O que a suíte de ops.test.js prova sobre o teste de reload (o watcher falso emitindo “index.html” duas vezes)?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Que o watcher real dispara exatamente uma vez por salvamento em qualquer SO</button>
+      <button class="opt" data-k="b">B) Que o broadcast é imediato, um por evento</button>
+      <button class="opt" data-k="c">C) Que o debounce de 150 ms colapsa dois eventos do mesmo arquivo em um único broadcast</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O Windows dispara vários eventos por save; o debounce por arquivo é a defesa. O watcher falso emite “index.html” duas vezes e “guide/a.html” uma — o teste exige exatamente dois broadcasts.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="footer-inner">Docs · Testes — spec-space · docs-in-html</div>
+</footer>
+
+<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
+
+<script>
+document.querySelectorAll(".qcard").forEach(c=>{
+  const ans=c.dataset.answer,fb=c.querySelector(".q-feedback");
+  c.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+    c.querySelectorAll(".opt").forEach(o=>o.classList.remove("right","wrong"));
+    if(b.dataset.k===ans){b.classList.add("right");}
+    else{
+      b.classList.add("wrong");
+      const cor=c.querySelector('.opt[data-k="'+ans+'"]');cor&&cor.classList.add("right");
+    }
+    fb.classList.add("show");
+  }));
+});
+(function(){
+  const links=[...document.querySelectorAll(".toc a")];
+  const secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+  const top=document.querySelector(".top");
+  function onScroll(){
+    top.classList.toggle("show",window.scrollY>600);
+    let i=secs.findIndex(s=>s&&s.getBoundingClientRect().top<=120);
+    links.forEach(l=>l.classList.remove("active"));
+    if(i>=0)links[Math.max(0,i)].classList.add("active");
+  }
+  window.addEventListener("scroll",onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>
