@@ -93,7 +93,7 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
   <p>O projeto nasceu com uma decisão de arquitetura que define todo o resto: <strong>toda interação com o mundo exterior passa por um único adapter</strong> — o módulo <code>ops.js</code>. Sistema de arquivos, diretório home, <code>spawn</code>, <code>watch</code>, abrir URLs: tudo isso é chamado via <code>ops.*</code>, nunca diretamente via <code>node:fs</code>. Em produção, o adapter padrão delega ao Node real; nos testes, <code>ops.setOps(fake)</code> troca a porta de entrada por uma implementação em memória.</p>
   <div class="ramp" style="border:1px dashed var(--border);border-radius:8px;padding:14px 18px;margin:18px 0;background:var(--panel)">
     <b>Rampa para iniciante (pode pular)</b>
-    <p style="margin:8px 0 0">Um <em>adapter</em> é um intermediário: em vez de o código chamar <code>fs.readFileSync</code> direto, ele chama <code>ops.readFileSync</code>, que por padrão repassa ao fs — mas que um teste pode substituir. Isso se chama <em>injeção de dependência</em> via <em>seam</em> (costura): um ponto único onde o comportamento pode ser trocado sem alterar os chamadores.</p>
+    <p style="margin:8px 0 0">Um <em>teste de unidade</em> é um pedacinho de código que chama uma função ou módulo sozinho e confere se a saída é a esperada — sem servidor, sem navegador, sem rede. Para isso funcionar, o código precisa de <em>seams</em> ("costuras"): pontos únicos onde um comportamento pode ser trocado sem alterar quem chama — aqui, em vez de o código chamar <code>fs.readFileSync</code> direto, ele chama <code>ops.readFileSync</code>. Nos testes, um <em>fake</em> (uma imitação em memória, ex.: um sistema de arquivos que é só um <code>Map</code>) ocupa esse lugar: o módulo acha que está falando com o disco, mas nenhuma pasta real é tocada.</p>
   </div>
   <p>A segunda decisão: o servidor é um conglomerado de <strong>funções puras e contextos por raiz</strong> (<code>roots.js</code>), de modo que guardas de segurança, resolução de caminhos e a tabela de endpoints são testáveis sem subir um servidor HTTP de verdade. A terceira: o código de cliente que precisa ser confiável (<code>diff.js</code>, <code>lib.js</code>) é escrito em <strong>UMD</strong> — funciona tanto via <code>&lt;script&gt;</code> no navegador quanto via <code>require()</code> no Node — para que a lógica crítica rode em <code>node --test</code> sem navegador algum.</p>
 </section>
@@ -136,11 +136,14 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
 
 <section id="suites">
   <h2><span class="num">4</span>As suítes em detalhe</h2>
+  <p class="lead">Suíte por suíte: por que cada uma existe e o que exatamente ela trava.</p>
 
   <h3>ops.test.js — a costura do ambiente (5 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>Se a troca de adapter (<code>setOps</code>) não funcionar, nenhum outro teste consegue mentir sobre o mundo — esta é a suíte que valida a fundação de todas as demais.</div>
   <p><code>ops.js</code> é a única porta para o mundo exterior; se ela quebrar, todos os módulos que dependem dela ficam cegos. A suíte verifica que <code>setOps</code>/<code>resetOps</code> realmente trocam e restauram o adapter, que o <code>registry</code> funciona por inteiro (add/list/save, add duplicado é no-op, <code>registry.json</code> vai para o home <em>falso</em>), e que o <code>reload</code> colapsa dois eventos do mesmo arquivo em um único broadcast — <strong>debounce de 150 ms</strong> que existe porque o Windows dispara vários eventos por salvamento. Um último teste grava lançamentos de <code>openPath</code>/<code>openUrl</code>/<code>spawn</code> sem executar nada, e um teste de sanidade confere que o adapter padrão lê um arquivo real como o <code>node:fs</code>.</p>
 
   <h3>roots.test.js — as guardas de segurança (6 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>Um servidor que escreve arquivos a pedido do navegador precisa provar que nenhum caminho malicioso escapa da raiz de docs.</div>
   <p>Este é o coração defensivo do pacote. O servidor aceita nomes de arquivos vindos do navegador (endpoints <code>/__delete__</code>, <code>/__save__</code>, <code>/__rename__</code>…), então um caminho malicioso como <code>../../etc/passwd</code> precisa morrer <em>antes</em> de qualquer operação de filesystem. Os testes cobrem:</p>
   <ul>
     <li><strong><code>safeRelPath</code></strong>: aceita caminhos aninhados normais (incluindo espaços); rejeita traversal (<code>../</code>), caminhos absolutos, barra invertida (<code>a\b</code>), segmentos <code>.</code>, prefixos <code>.</code>/<code>_</code>, caracteres proibidos (<code>&lt; &gt; : " | ? *</code>, controles) e não-strings.</li>
@@ -155,6 +158,7 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
   </div>
 
   <h3>diff.test.js — o núcleo de diff puro (11 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>O diff é a matemática mais delicada do pacote; testá-la em Node puro garante correção sem depender de como a UI desenha o resultado.</div>
   <p><code>client/diff.js</code> calcula o diff entre a versão salva e a editada de um documento, exibindo blocos novos, editados e removidos na UI. A suíte testa a matemática, não a UI:</p>
   <ul>
     <li><strong>Ops mínimas</strong>: listas idênticas → <code>[]</code>; inserção pura → um único <code>{ t: "+", b: 2 }</code> (prefixo/sufixo comuns são aparados).</li>
@@ -166,6 +170,7 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
   </ul>
 
   <h3>lib.test.js — a identidade da página (9 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>Se <code>me()</code> errar o caminho do documento, o salvamento e o diff gravam no arquivo errado — por isso o contrato é fixado caso a caso.</div>
   <p><code>client/lib.js</code> responde “quem sou eu?” para cada página: <code>me(pathname, base)</code> converte a URL do documento em um caminho relativo à raiz de docs. Essa regra era copiada em três scripts diferentes antes de virar um módulo — e cada cópia podia divergir. Os testes fixam o contrato: prefixo do manager é removido de forma <strong>case-insensitive</strong> e com ou sem barra final; <code>/</code> vira <code>index.html</code>; um prefixo que apenas <em>começa parecido</em> (<code>/docs-projeto/x</code> com base <code>/docs-proj</code>) <strong>não</strong> é removido; caminhos percent-codificados (<code>pasta%20com%20espa%C3%A7o</code>) são decodificados; e <code>isShell()</code> sem <code>document</code> devolve <code>false</code> em vez de explodir — o que é exatamente o que permite que este arquivo seja testado no Node. <strong>Estabilidade da chave de snapshot</strong>: se <code>me()</code> mudar, o cache de diff e os endpoints gravam no arquivo errado; daí a cobertura exaustiva de casos-limite.</p>
   <div class="callout tip">
     <div class="title">UMD: um arquivo, dois mundos</div>
@@ -173,9 +178,11 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
   </div>
 
   <h3>serve-args.test.js — a matriz de CLI (8 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>A CLI é a primeira coisa que o usuário toca; uma matriz de argumentos garante que defaults, portas e flags não regridam.</div>
   <p><code>parseArgs(argv, opts)</code> recebe o argv como argumento (nunca lê <code>process.argv</code> direto), o que o torna uma função pura testável em matriz. Defaults (<code>serve</code>, <code>.</code>, porta 8000, abrir browser); <code>defaultPort</code> substituível; <code>-p/--port</code> marca a porta como <strong>explícita</strong>; <code>--port abc</code> (NaN) mantém o default mas ainda conta como explícita; subcomandos <code>init</code>/<code>export --out site</code>/<code>manager</code>; <code>-h/--help</code> viram <code>mode: "help"</code> — uma decisão de retorno, não um efeito colateral de <code>process.exit</code>; flags <code>--no-open</code>, <code>--no-register</code>, <code>--unregister</code> e o re-armar com <code>-o</code>.</p>
 
   <h3>serve-port.test.js — a semântica de fallback de porta (4 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>"Tentar a próxima porta" versus "morrer com mensagem clara" é a diferença entre um usuário feliz e um script quebrado — e depende de um único flag.</div>
   <p>Aqui mora o comportamento que os usuários realmente sentem. Com um <code>listen</code> falso que registra cada tentativa:</p>
   <ul>
     <li><strong>Sem <code>--port</code></strong>, dois <code>EADDRINUSE</code> seguidos → o servidor avança 9001 → 9002 → 9003 e segue vivo. Fallback automático é o comportamento amigável.</li>
@@ -189,6 +196,7 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
   </div>
 
   <h3>export.test.js — o export estático de verdade (2 testes)</h3>
+  <div class="callout tip"><div class="title">Por que esta suíte existe</div>O export é o único caminho que escreve em disco de verdade nos testes — para garantir que o site gerado é estático, completo e não mexe no original.</div>
   <p>O caminho triste primeiro: pasta inexistente <strong>lança</strong> (<code>/pasta não encontrada/</code>) em vez de chamar <code>process.exit</code> — o que antes matava o próprio test runner. O caminho feliz monta uma mini-site em um temp dir (index, guia, <code>_config.json</code>) e roda <code>run(src, out)</code> de verdade, conferindo no disco: <code>manifest.json</code> existe; <code>__docs__/lib.js</code> foi copiado; <code>_config.json</code> <strong>não</strong> é embarcado; o shell ganha as tags <code>/__docs__/lib.js</code>, <code>/__docs__/nav.js</code> e <code>window.DOCS_EXPORT</code> mas <strong>nenhum reload.js</strong> (sites estáticos não têm watcher); os docs recebem <code>data-injected</code>; e a pasta <em>fonte</em> permanece intocada — o export nunca reescreve o original.</p>
 </section>
 
@@ -202,6 +210,7 @@ node --test       # idem, a partir da raiz do repo</code></pre>
 
 <section id="fora">
   <h2><span class="num">6</span>O que não é testado — e por quê</h2>
+  <p class="lead">As lacunas são deliberadas: cada linha abaixo explica o trade-off de zero dependências.</p>
   <table>
     <thead><tr><th>Área</th><th>Coberta?</th><th>Motivo</th></tr></thead>
     <tbody>
