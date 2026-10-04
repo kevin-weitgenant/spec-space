@@ -4,7 +4,7 @@
 // its roots' events into ONE multiplexed SSE (one connection per browser, not
 // one per root: HTTP/1.1 caps the origin at ~6).
 
-const ops = require("./ops.js");
+const ops = require("../env/ops.js");
 
 function createReload(root, onEvent) {
   const clients = new Set();

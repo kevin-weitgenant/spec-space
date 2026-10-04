@@ -18,11 +18,11 @@
 const http = require("node:http");
 const fs = require("node:fs");
 const path = require("node:path");
-const ops = require("./ops.js");
-const { createRoot } = require("./roots.js");
-const { readConfig, writeConfig, defaultConfig } = require("./config.js");
-const registry = require("./registry.js");
-const { MANAGER_PORT, managerPort, pingManager, addToManager } = require("./delegation.js");
+const ops = require("../env/ops.js");
+const { createRoot } = require("../server/roots.js");
+const { readConfig, writeConfig, defaultConfig } = require("../domain/config.js");
+const registry = require("../domain/registry.js");
+const { MANAGER_PORT, managerPort, pingManager, addToManager } = require("../server/delegation.js");
 
 // ── CLI ──────────────────────────────────────────────────────────────────
 function help() {
@@ -108,7 +108,7 @@ async function main(args, deps = {}) {
   if (o.mode === "manager") {
     // port precedence: explicit --port > $DOCS_MANAGER_PORT > 4400 (the CLI's
     // delegation reads the same precedence — see delegation.js managerPort()).
-    require("./manager.js").start({ port: o.portWasExplicit ? o.port : managerPort(), portWasExplicit: o.portWasExplicit, doOpen: o.doOpen });
+    require("../server/manager.js").start({ port: o.portWasExplicit ? o.port : managerPort(), portWasExplicit: o.portWasExplicit, doOpen: o.doOpen });
     return; // manager keeps the process alive (its own server)
   }
 

@@ -2,8 +2,8 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { SHELL } = require("./shell.js");
-const { defaultConfig, writeConfig } = require("./config.js");
+const { SHELL } = require("../domain/shell.js");
+const { defaultConfig, writeConfig } = require("../domain/config.js");
 
 function init(dir) {
   fs.mkdirSync(dir, { recursive: true });

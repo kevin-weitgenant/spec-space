@@ -7,8 +7,8 @@
 const http = require("node:http");
 const path = require("node:path");
 const { createRoot, readJsonBody } = require("./roots.js");
-const ops = require("./ops.js");
-const registry = require("./registry.js");
+const ops = require("../env/ops.js");
+const registry = require("../domain/registry.js");
 const { managerBaseUrl } = require("./delegation.js");
 
 // ── Warp launcher resolution ─────────────────────────────────────────────
@@ -223,7 +223,7 @@ function start(opts = {}) {
       return readJsonBody(req, (j) => {
         if (!isJson) { res.writeHead(400); return res.end("400"); }
         const extra = j && Array.isArray(j.extraDirs) ? j.extraDirs.filter((s) => typeof s === "string") : [];
-        require("./scan.js").scan({ extraDirs: extra }).then((found) => {
+        require("../domain/scan.js").scan({ extraDirs: extra }).then((found) => {
           res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
           res.end(JSON.stringify({ found }));
         });
@@ -232,7 +232,7 @@ function start(opts = {}) {
 
     // ── cards page ───────────────────────────────────────────────────────
     if (raw === "/" || raw === "/index.html" || raw === "/__manager__") {
-      const html = ops.readFileSync(path.join(__dirname, "client", "manager.html"));
+      const html = ops.readFileSync(path.join(__dirname, "..", "..", "client", "manager.html"));
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       return res.end(html);
     }

@@ -3,9 +3,9 @@
 // `docs-in-html <dir>` / `npx docs-in-html` keep working.
 let serve;
 try {
-  serve = require.resolve("spec-space/serve.js");
+  serve = require.resolve("spec-space/src/cli/serve.js");
 } catch (_) {
   // fallback: resolve from the project the user ran the command in
-  serve = require.resolve("spec-space/serve.js", { paths: [process.cwd()] });
+  serve = require.resolve("spec-space/src/cli/serve.js", { paths: [process.cwd()] });
 }
 require(serve);

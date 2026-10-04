@@ -5,15 +5,15 @@
 //   - manager.js → N roots at "/<slug>/"   (base = "/<slug>/")
 // The handler contract: fn(req, res) — same as an http.Server listener.
 
-const ops = require("./ops.js");
+const ops = require("../env/ops.js");
 const path = require("node:path");
 const { createReload } = require("./reload.js");
-const { buildTree } = require("./manifest.js");
-const { SHELL } = require("./shell.js");
-const { injectScripts } = require("./inject.js");
-const { readConfig, writeConfig, applyShellConfig } = require("./config.js");
+const { buildTree } = require("../domain/manifest.js");
+const { SHELL } = require("../domain/shell.js");
+const { injectScripts } = require("../domain/inject.js");
+const { readConfig, writeConfig, applyShellConfig } = require("../domain/config.js");
 
-const CLIENT_DIR = path.join(__dirname, "client");
+const CLIENT_DIR = path.join(__dirname, "..", "..", "client");
 
 const MIME = {
   ".html": "text/html; charset=utf-8", ".htm": "text/html; charset=utf-8",

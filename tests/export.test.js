@@ -5,7 +5,7 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { run } = require("../export.js");
+const { run } = require("../src/cli/export.js");
 
 test("missing folder: throws instead of exiting the process", () => {
   assert.throws(() => run(path.join(os.tmpdir(), "no-such-spec-space-dir"), "out"), /pasta não encontrada/);

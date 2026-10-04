@@ -11,7 +11,7 @@ function managerPort() {
   let port = Number(process.env.DOCS_MANAGER_PORT) || 4400;
   if (!process.env.DOCS_MANAGER_PORT) {
     try {
-      const reg = require("./registry.js").load();
+      const reg = require("../domain/registry.js").load();
       if (Number(reg.managerPort) > 0) port = Number(reg.managerPort);
     } catch {}
   }
@@ -29,7 +29,7 @@ function pingManager(timeoutMs = 300) {
   const envSet = !!process.env.DOCS_MANAGER_PORT;
   let registryPort = 0;
   try {
-    const reg = require("./registry.js").load();
+    const reg = require("../domain/registry.js").load();
     if (Number(reg.managerPort) > 0) registryPort = Number(reg.managerPort);
   } catch {}
   const candidates = [...new Set([Number(process.env.DOCS_MANAGER_PORT) || 0, registryPort, 4400].filter(Boolean))];

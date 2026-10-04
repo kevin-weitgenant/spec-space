@@ -4,7 +4,7 @@
 // here), missing file = empty registry, corrupt file = backed up + reset.
 
 const path = require("node:path");
-const ops = require("./ops.js");
+const ops = require("../env/ops.js");
 
 // Resolved on demand (NOT at require time): reads homeDir() from the current
 // ops adapter, so tests with a fake ops get a fake registry dir.

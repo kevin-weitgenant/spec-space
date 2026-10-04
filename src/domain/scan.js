@@ -8,7 +8,7 @@
 // registry is the source of truth.
 
 const path = require("node:path");
-const ops = require("./ops.js");
+const ops = require("../env/ops.js");
 
 const SKIP = new Set(["node_modules", ".git", "AppData", "Library", ".cache", ".npm", ".venv", "venv", "__pycache__", "target", "dist", "build", ".gradle"]);
 const MAX_DEPTH = 6;

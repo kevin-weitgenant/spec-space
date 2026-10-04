@@ -15,12 +15,12 @@
 
 const fs = require("node:fs");
 const path = require("node:path");
-const { buildTree } = require("./manifest.js");
-const { SHELL } = require("./shell.js");
-const { injectScripts } = require("./inject.js");
-const { readConfig, applyShellConfig } = require("./config.js");
+const { buildTree } = require("../domain/manifest.js");
+const { SHELL } = require("../domain/shell.js");
+const { injectScripts } = require("../domain/inject.js");
+const { readConfig, applyShellConfig } = require("../domain/config.js");
 
-const CLIENT_DIR = path.join(__dirname, "client");
+const CLIENT_DIR = path.join(__dirname, "..", "..", "client");
 
 // Settings are baked into the output (manifest.json/index.html), not shipped:
 // the static site has no server, so _config.json itself would be dead weight.

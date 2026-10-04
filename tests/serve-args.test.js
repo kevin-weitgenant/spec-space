@@ -1,7 +1,7 @@
 // parseArgs matrix — pure, no process.argv/process.env reads
 const { test } = require("node:test");
 const assert = require("node:assert");
-const { parseArgs } = require("../serve.js");
+const { parseArgs } = require("../src/cli/serve.js");
 
 test("defaults: serve current dir, port 8000, open browser", () => {
   const o = parseArgs([]);

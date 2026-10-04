@@ -6,7 +6,7 @@ const assert = require("node:assert");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const ops = require("../ops.js");
+const ops = require("../src/env/ops.js");
 
 // ── setOps / resetOps ──────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ test("registry add/list/save with a fake in-memory ops", () => {
     statSync: () => ({ isDirectory: () => true }),
   };
   ops.setOps(fake);
-  const registry = require("../registry.js");
+  const registry = require("../src/domain/registry.js");
 
   const added = registry.add("/some/docs");
   assert.strictEqual(added, true);
@@ -66,7 +66,7 @@ test("reload broadcast triggered by a fake watcher emit (no real fs.watch)", () 
   };
   ops.setOps(fake);
   // fresh module instance would be nicer, but createReload reads ops per call
-  const { createReload } = require("../reload.js");
+  const { createReload } = require("../src/server/reload.js");
   const seen = [];
   const reload = createReload("/fake/root", (rel) => seen.push(rel));
 

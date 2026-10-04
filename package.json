@@ -26,31 +26,18 @@
   },
   "type": "commonjs",
   "bin": {
-    "spec-space": "serve.js"
+    "spec-space": "src/cli/serve.js"
   },
-  "main": "./serve.js",
+  "main": "./src/cli/serve.js",
   "files": [
-    "serve.js",
-    "ops.js",
-    "reload.js",
-    "manifest.js",
-    "shell.js",
-    "config.js",
-    "init.js",
-    "export.js",
-    "inject.js",
-    "roots.js",
-    "registry.js",
-    "manager.js",
-    "scan.js",
-    "delegation.js",
+    "src/",
     "client/"
   ],
   "engines": {
     "node": ">=18"
   },
   "scripts": {
-    "start": "node serve.js .",
+    "start": "node src/cli/serve.js .",
     "test": "node --test"
   }
 }
