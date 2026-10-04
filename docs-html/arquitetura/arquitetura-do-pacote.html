@@ -1,353 +1,269 @@
-<!DOCTYPE html>
-<html lang="pt-BR"><head>
-<meta charset="UTF-8">
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Arquitetura do Pacote — spec-space</title>
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true, theme: "neutral", securityLevel: "loose" });
-</script>
 <style>
-:root{
-  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
-  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
-  --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1;
-  --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1;
-}
+:root{ --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472; --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa; --green:#1a7f37; --green-soft:#e7f5ec; --amber:#9a6700; --amber-soft:#fff8e1; --red:#cf222e; --red-soft:#ffebe9; --purple:#6f42c1; }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg);margin:0}
-.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+body{margin:0;font:17px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--text);background:var(--bg)}
+.hero{width:100%;background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
 .hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
-.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 .4em;line-height:1.2}
-.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 .6em}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
 .meta{font-size:.86rem;color:var(--soft)}
 .toc{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);z-index:10}
 .toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
-.toc a{padding:5px 14px;border-radius:20px;border:1px solid var(--border);text-decoration:none;color:var(--soft);font-size:.88rem;background:var(--bg)}
-.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.toc a{padding:4px 14px;border-radius:999px;border:1px solid var(--border);color:var(--soft);text-decoration:none;font-size:.88rem;white-space:nowrap;background:var(--bg)}
+.toc a.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 .wrap{max-width:920px;margin:0 auto;padding:0 24px}
-section{padding:34px 0;border-bottom:1px solid var(--border)}
+section{border-bottom:1px solid var(--border);padding:34px 0}
 section:last-of-type{border-bottom:none}
-h2{display:flex;align-items:baseline;gap:10px;font-size:1.5rem;margin:0 0 .5em;letter-spacing:-.01em}
-h2 .num{color:var(--accent);font-size:1.1rem}
-h3{margin:1.4em 0 .4em;font-size:1.12rem}
-.lead{color:var(--soft);margin:0 0 1em}
-p{margin:.6em 0}
-a{color:var(--accent)}
-code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:.1em .35em;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
-pre{background:var(--code-bg);border:1px solid var(--border);border-radius:10px;padding:14px 16px;overflow-x:auto;font-size:.86rem;line-height:1.55}
-pre code{background:none;border:0;padding:0}
-table{border-collapse:collapse;width:100%;font-size:.95rem;margin:1em 0}
-th,td{padding:8px 12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border)}
-th{background:var(--panel2);border-bottom:2px solid var(--border)}
-kbd{border:1px solid var(--border);border-bottom-width:2px;border-radius:5px;padding:.1em .4em;font-size:.85em;background:var(--panel)}
-.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:12px 16px;margin:1.2em 0}
-.callout .title{font-weight:700;margin-bottom:.2em}
-.callout.tip{border-left-color:var(--green);background:var(--green-soft)}
-.callout.warn{border-left-color:var(--amber);background:var(--amber-soft)}
-.callout.danger{border-left-color:var(--red);background:var(--red-soft)}
-.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:16px;margin:1.2em 0;text-align:center}
-details.mod{border:1px solid var(--border);border-radius:12px;margin:1.2em 0;background:var(--bg);padding:0;overflow:hidden}
-details.mod>summary{cursor:pointer;padding:16px 20px;font-weight:700;font-size:1.05rem;list-style:none;display:flex;align-items:baseline;gap:10px;background:var(--panel)}
-details.mod>summary::-webkit-details-marker{display:none}
-details.mod>summary::before{content:"▸";transition:transform .15s;color:var(--accent);font-size:.9em}
-details.mod[open]>summary::before{transform:rotate(90deg)}
-details.mod>summary .files{font-weight:400;font-size:.8rem;color:var(--soft);font-family:ui-monospace,Consolas,monospace}
-details.mod>.modbody{padding:4px 20px 16px}
-details.mod>.modbody>p:first-child{margin-top:.8em}
-.tag{display:inline-block;font-size:.75rem;font-weight:700;border-radius:20px;padding:.15em .7em;vertical-align:middle}
-.tag.srv{background:#ddf4ff;color:#0969da}.tag.cli{background:#e7e0f5;color:#6f42c1}.tag.both{background:var(--amber-soft);color:#9a6700}
-footer{border-top:1px solid var(--border)}
-.footer-inner{max-width:920px;margin:0 auto;padding:22px 24px;text-align:center;color:var(--soft);font-size:.9rem}
-.ramp{border:2px dashed var(--border);border-radius:12px;padding:14px 18px;margin:0 0 1.4em;background:var(--panel)}
-.ramp .ramp-title{font-weight:700;font-size:.9rem;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.3em}
-.ramp p{margin:.4em 0;color:var(--text)}
-.qcard{background:var(--bg);border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:0 10px 10px 0;padding:16px 18px;margin:1.2em 0}
-.q-title{font-weight:700;margin:0 0 .6em}
-.opts{display:flex;flex-direction:column;gap:8px}
-.opt{text-align:left;font:inherit;padding:10px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg);cursor:pointer}
+h2{font-size:1.45rem;margin:0 0 14px}
+h2 .num{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:1.05rem;margin-right:10px;vertical-align:-4px}
+.lead{color:var(--soft);margin-top:-4px}
+h3{font-size:1.1rem;margin:26px 0 8px}
+p{margin:12px 0}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em;font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace}
+.callout{border:1px solid var(--border);border-left:4px solid var(--accent);background:var(--panel);border-radius:8px;padding:14px 18px;margin:18px 0}
+.callout .title{font-weight:700;margin-bottom:4px}
+.callout.tip{border-left-color:var(--green)} .callout.tip .title{color:var(--green)}
+.callout.warn{border-left-color:var(--amber)} .callout.warn .title{color:var(--amber)}
+.ramp{border:1.5px dashed var(--border);border-radius:10px;padding:16px 20px;margin:20px 0;background:var(--bg);color:var(--soft);font-size:.95rem}
+.ramp b{color:var(--text)}
+.tldr{border:1px solid var(--border);border-left:4px solid var(--green);background:var(--green-soft);border-radius:8px;padding:14px 18px;margin:20px 0}
+.tldr .title{font-weight:700;color:var(--green);margin-bottom:6px}
+.tldr ol{margin:6px 0 0;padding-left:22px}
+.tldr li{margin:4px 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem;margin:14px 0}
+th{background:var(--panel2);text-align:left;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
+/* template "problema → ideia → onde vive" */
+.pgt{display:flex;flex-direction:column;gap:0;margin:18px 0}
+.pgt .step{border:1px solid var(--border);border-radius:10px;padding:12px 16px;background:var(--bg)}
+.pgt .step+.step{margin-top:-1px;border-top-left-radius:0;border-top-right-radius:0}
+.pgt .step:first-child{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.pgt .step .lbl{font:700 .72rem/1 -apple-system,'Segoe UI',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#fff;background:var(--soft);border-radius:99px;padding:4px 10px;display:inline-block;margin-bottom:8px}
+.pgt .step.prob .lbl{background:var(--red)}
+.pgt .step.idea .lbl{background:var(--green)}
+.pgt .step.where .lbl{background:var(--accent)}
+.pgt .step p{margin:4px 0;font-size:.95rem}
+/* progressive disclosure */
+details.deep{border:1px solid var(--border);border-radius:10px;margin:14px 0;background:var(--bg)}
+details.deep>summary{cursor:pointer;padding:11px 16px;list-style:none;font-weight:600;font-size:.95rem;color:var(--accent)}
+details.deep>summary::-webkit-details-marker{display:none}
+details.deep>summary::before{content:"▸ ";color:var(--soft)}
+details.deep[open]>summary::before{content:"▾ "}
+details.deep>summary:hover{background:var(--panel)}
+details.deep>div{padding:2px 18px 14px;border-top:1px solid var(--border)}
+details.deep>div p{font-size:.94rem}
+details.deep>div p:first-child{margin-top:10px}
+/* mini flow diagrams */
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;justify-content:center;margin:16px 0;padding:14px 10px;background:var(--panel);border-radius:10px}
+.flow .node{border:1px solid var(--border);border-radius:8px;background:var(--bg);padding:5px 12px;font:600 .82rem/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap}
+.flow .node.dev{border-color:var(--green);color:var(--green)}
+.flow .arr{color:var(--soft);font-size:.9rem}
+/* layered architecture map */
+.layers{margin:22px 0;display:flex;flex-direction:column;gap:0}
+.lbox{border:1.5px solid var(--border);border-radius:12px;padding:12px 14px;background:var(--bg)}
+.lbox.lsrc{background:var(--panel)}
+.ltitle{font-weight:700;font-size:.95rem;margin-bottom:8px}
+.ltitle .lsub{font-weight:400;color:var(--soft);font-size:.85rem}
+.lrow{display:flex;flex-wrap:wrap;gap:10px}
+.lrow .lbox{flex:1 1 150px;background:var(--bg)}
+.lfiles{font:600 .82rem/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--text)}
+.lnote{color:var(--soft);font-size:.78rem;margin-top:6px}
+.larr{text-align:center;color:var(--soft);font-size:.88rem;padding:10px 0}
+.lbox.lclient{background:var(--panel)}
+.lbox.lcli{border-left:4px solid var(--accent)}
+.lbox.lsrv{border-left:4px solid var(--purple)}
+.lbox.ldom{border-left:4px solid var(--green)}
+.lbox.lenv{border-left:4px solid var(--amber)}
+.lbox.lclient{border-left:4px solid var(--accent)}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;margin:16px 0}
+/* glossary */
+.gloss{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;margin:16px 0}
+.gloss .g{border:1px solid var(--border);border-radius:10px;padding:10px 14px;background:var(--bg);font-size:.9rem}
+.gloss .g b{color:var(--accent)}
+.gloss .g span{color:var(--soft)}
+/* quiz */
+.qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:18px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{text-align:left;font:inherit;font-size:.92rem;border:1px solid var(--border);background:var(--bg);border-radius:8px;padding:8px 14px;cursor:pointer}
 .opt:hover{background:var(--panel)}
-.opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:700}
+.opt.right{background:var(--green-soft);border-color:var(--green);color:var(--green);font-weight:600}
 .opt.wrong{background:var(--red-soft);border-color:var(--red);color:var(--red)}
-.q-feedback{display:none;margin-top:.8em;padding:10px 14px;background:var(--panel);border-radius:8px;font-size:.95rem}
+.q-feedback{display:none;margin-top:10px;background:var(--panel);border-radius:8px;padding:10px 14px;font-size:.92rem;color:var(--soft)}
 .q-feedback.show{display:block}
+footer{border-top:1px solid var(--border);text-align:center;color:var(--soft);font-size:.88rem;padding:26px 24px}
 .top{position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:1.2rem;box-shadow:0 3px 10px rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .25s}
 .top.show{opacity:1;pointer-events:auto}
 </style>
 </head>
 <body>
 
-<header class="hero">
-  <div class="hero-inner">
-    <h1>📦 Arquitetura do Pacote — spec-space</h1>
-    <p class="lede">Como o <strong>spec-space</strong> é montado por dentro: módulos, costuras de teste, tabela de endpoints e os clientes do browser.</p>
-    <p class="meta">docs-html/arquitetura/arquitetura-do-pacote.html · spec-space 0.14.0</p>
-  </div>
-</header>
+<header class="hero"><div class="hero-inner">
+  <h1>📦 Arquitetura do Pacote — spec-space</h1>
+  <p class="lede">Como o spec-space é montado por dentro: módulos, costuras de teste e os clientes do browser — o essencial à vista, a profundidade sob demanda.</p>
+  <p class="meta">docs-html/arquitetura/arquitetura-do-pacote.html · spec-space 0.14.0</p>
+</div></header>
 
 <nav class="toc"><div class="toc-inner">
-  <a href="#visao-geral">1 · Visão geral</a>
-  <a href="#seam-ops">2 · A costura ops</a>
-  <a href="#cli">3 · CLI requireable</a>
-  <a href="#contexto">4 · Contexto por pasta</a>
-  <a href="#manager">5 · Multi-docs</a>
-  <a href="#export">6 · Export</a>
-  <a href="#clientes">7 · Clientes</a>
-  <a href="#fluxos">8 · Fluxos</a>
-  <a href="#testes">9 · Testes</a>
-  <a href="#resumo">10 · Resumo</a>
-  <a href="#quiz">11 · Quiz</a>
+  <a href="#visao">1 · Visão geral</a>
+  <a href="#camadas">2 · Camadas</a>
+  <a href="#manager">3 · Manager</a>
+  <a href="#clientes">4 · Clientes</a>
+  <a href="#export">5 · Export</a>
+  <a href="#glossario">6 · Glossário</a>
+  <a href="#quiz">7 · Quiz</a>
 </div></nav>
 
 <main class="wrap">
 
-<section id="visao-geral">
-<h2><span class="num">1</span>Visão geral</h2>
-<p class="lead">O pacote <strong>spec-space</strong> (antes <code>docs-in-html</code> — o nome antigo segue disponível via pacote de alias) é um servidor de desenvolvimento <em>zero-build</em> para pastas de documentação em HTML puro: sidebar em árvore automática, live reload, edição WYSIWYG inline, highlights do que mudou desde sua última visita, pan/zoom para Mermaid e SVGs — e um manager que serve todas as suas pastas num único processo.</p>
+<!-- ══ 1 · VISÃO GERAL ══════════════════════════════════════════════ -->
+<section id="visao">
+  <h2><span class="num">1</span>Visão geral</h2>
+  <p class="lead">O pacote inteiro em cinco frases; o resto do doc só detalha o que elas resumem.</p>
 
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p>"Zero-build" significa que não há etapa de compilação: você escreve HTML puro e o servidor entrega as páginas direto, enriquecendo-as na hora com scripts (sidebar, reload, edição). "Módulo profundo" é um pedaço de código que faz UMA coisa bem, esconde os detalhes e mostra só uma interface pequena para os outros — como um aparelho de som com poucos botões, porém cheio de engenharia dentro. Os cinco módulos abaixo são as "peças" do pacote; o resto do doc visita cada uma.</p>
-</div>
+  <div class="tldr"><div class="title">⚡ Em 30 segundos</div>
+    <ol>
+      <li><strong>spec-space é um servidor de docs zero-build</strong>: você escreve HTML puro, ele entrega as páginas enriquecidas na hora (sidebar, reload, edição, diff, zoom).</li>
+      <li><strong>O servidor tem 4 camadas em <code>src/</code></strong>: <code>cli</code> (comandos) → <code>server</code> (HTTP) → <code>domain</code> (as regras) → <code>env</code> (a única porta pro mundo).</li>
+      <li><strong>O browser recebe scripts injetados</strong> de <code>client/</code> a cada resposta — a página ganha vida sem build nenhum.</li>
+      <li><strong>Tudo é testável</strong> porque efeitos colaterais moram atrás de duas costuras: o seam <code>env/ops.js</code> e o rodapé <code>require.main</code> da CLI (45 testes, zero deps, sem disco/rede/browser).</li>
+      <li><strong>Um manager serve N pastas</strong> num processo só (<code>:4400</code>), e o export congela tudo em estático para publicar.</li>
+    </ol>
+  </div>
 
-<div class="callout"><div class="title">📋 Dois documentos, duas perguntas</div>
-Este responde <em>"como funciona por dentro"</em>. Para <em>"o que o pacote oferece"</em> (a lista completa de features pela jornada de uso), veja <a href="features.html">✨ Features</a>.</div>
+  <div class="callout"><div class="title">📋 Dois documentos, duas perguntas</div>
+  Este responde <em>"como funciona por dentro"</em>. Para <em>"o que o pacote oferece"</em> (features pela jornada de uso), veja <a href="features.html">✨ Features</a>. Para o mapa completo dos testes, <a href="testes-do-pacote.html">🧪 Testes</a>.</div>
 
-<p>A arquitetura se organiza em <strong>cinco módulos profundos</strong> — cada um com uma responsabilidade única e uma interface pequena:</p>
+  <div class="ramp"><b>Rampa para iniciante (pode pular)</b> — siga a vida de um comando, em três passos:
+  <b>①</b> você digita <code>spec-space docs/</code> — o <b>cli</b> decide o destino: manager já no ar? registra lá. Senão, sobe um servidor.
+  <b>②</b> cada request que chega cai no <b>server</b> (<code>roots.js</code>), que pergunta ao <b>domain</b> ("qual é a árvore? qual o título? como é o shell?") e monta a resposta.
+  <b>③</b> a resposta sai com scripts do <b>client/</b> injetados no HTML — a página ganha vida (sidebar, reload, edição).
+  E atravessando tudo: qualquer toque no mundo externo (arquivo, processo, relógio) passa pela única porta <b>env/ops.js</b>.</div>
 
-<table>
-<tbody><tr><th>Módulo</th><th>Responsabilidade</th><th>Interface</th></tr>
-<tr><td>🚀 <strong>CLI &amp; ciclo de vida</strong></td><td>Transformar argumentos em um servidor rodando (ou não — delegando pro manager)</td><td><code>serve.js</code> como binário (requireable: <code>parseArgs</code>/<code>main</code> exportadas)</td></tr>
-<tr><td>🧩 <strong>Contexto por pasta</strong></td><td>Tudo que UMA pasta de docs precisa na web: shell, árvore, CRUD de arquivos, injeção, reload</td><td><code>createRoot(root, {base}) → { handle, reload }</code></td></tr>
-<tr><td>🛰️ <strong>Ecossistema multi-docs</strong></td><td>Servir N pastas num processo, registrá-las, encontrá-las, organizá-las num mural</td><td>manager em <code>:4400</code> + <code>~/.docs-in-html/registry.json</code></td></tr>
-<tr><td>📤 <strong>Publicação estática</strong></td><td>Congelar a experiência dev em arquivos puros para Surge/GH Pages</td><td><code>export [dir] [--out]</code></td></tr>
-<tr><td>🌐 <strong>Clientes do browser</strong></td><td>A vida na página: sidebar, reload, edição, diff, zoom</td><td>scripts injetados via <code>/__docs__/*</code></td></tr>
-</tbody></table>
+  <div class="layers" role="img" aria-label="Mapa em camadas do pacote">
+    <div class="lbox lsrc">
+      <div class="ltitle">📁 src/ <span class="lsub">— o servidor Node</span></div>
+      <div class="lrow">
+        <div class="lbox lcli">
+          <div class="ltitle">⌨️ cli/</div>
+          <div class="lfiles">serve.js<br>init.js · export.js</div>
+          <div class="lnote">entrypoints do bin</div>
+        </div>
+        <div class="lbox lsrv">
+          <div class="ltitle">🖥️ server/</div>
+          <div class="lfiles">manager.js · roots.js<br>delegation.js · reload.js</div>
+          <div class="lnote">HTTP, watchers, /api</div>
+        </div>
+        <div class="lbox ldom">
+          <div class="ltitle">🧠 domain/</div>
+          <div class="lfiles">manifest · config · registry<br>scan · shell · inject</div>
+          <div class="lnote">as regras da docs</div>
+        </div>
+        <div class="lbox lenv">
+          <div class="ltitle">🌍 env/</div>
+          <div class="lfiles">ops.js</div>
+          <div class="lnote">a única porta pro<br>mundo (fs · spawn · clock)</div>
+        </div>
+      </div>
+    </div>
+    <div class="larr">⬇︎ <b>inject</b> escreve as tags <code>&lt;script&gt;</code> na resposta ⬇︎</div>
+    <div class="lbox lclient">
+      <div class="ltitle">🌐 client/ <span class="lsub">— o que roda no browser, injetado a cada página</span></div>
+      <div class="lfiles">lib.js (identidade) → reload.js · nav.js &nbsp;|&nbsp; edit.js → diff.js → changes.js · mermaid-zoom.js</div>
+    </div>
+  </div>
 
-<div class="mermaid">
-flowchart LR
-  subgraph Server["🖥️ Servidor (Node.js)"]
-    serve["serve.js<br>CLI requireable<br>(parseArgs/main)"]
-    ops["ops.js<br>costura de ambiente<br>(fs/spawn/execFile/<br>openPath/openUrl/homeDir)"]
-    manager["manager.js<br>multi-root /api/*"]
-    roots["roots.js<br>ENDPOINTS dispatch table<br>shell · manifest · CRUD"]
-    reload["reload.js<br>watcher + SSE"]
-    manifest["manifest.js"]
-    config["config.js"]
-    registry["registry.js"]
-  end
-  subgraph Client["🌐 Cliente (browser)"]
-    lib["lib.js<br>me()/api()/isShell()"]
-    rcli["reload.js<br>SSE + leader election"]
-    nav["nav.js<br>sidebar viva"]
-    diff["diff.js (UMD)"]
-    changes["changes.js"]
-    edit["edit.js"]
-    mz["mermaid-zoom.js"]
-  end
-  serve --> registry
-  serve -- "delega pasta" --> manager
-  manager -- "roteia por /slug/" --> roots
-  serve -- "base = ''" --> roots
-  roots --> reload
-  roots --> manifest
-  roots --> config
-  roots --> ops
-  reload --> ops
-  roots -- "/__docs__/*" --> lib
-  lib --> rcli
-  lib --> nav
-  lib --> edit
-  diff --> changes
-</div>
+  <details class="deep"><summary>🔁 O alias docs-in-html</summary>
+    <div><p>O pacote <code>docs-in-html</code> é agora um stub de alias: seu <code>bin/cli.js</code> apenas resolve <code>spec-space/src/cli/serve.js</code> (com fallback pro cwd) e faz <code>require</code>. Instalações antigas continuam funcionando sob o nome antigo.</p></div>
+  </details>
 
-<div class="callout tip"><div class="title">🔁 O alias docs-in-html</div>
-O pacote <code>docs-in-html</code> é agora um stub de alias: seu <code>bin/cli.js</code> apenas resolve <code>spec-space/serve.js</code> (com fallback pro cwd) e faz <code>require</code>. Instalações antigas continuam funcionando sob o nome antigo.</div>
+  <details class="deep"><summary>📊 Resumo por arquivo — a tabela completa</summary>
+    <div>
+    <table>
+    <tbody><tr><th>Arquivo</th><th>Camada</th><th>Em uma frase</th></tr>
+    <tr><td><code>src/cli/serve.js</code></td><td>cli</td><td>Argumentos (requireable), delegação, registry, portas honestas (20 fallbacks).</td></tr>
+    <tr><td><code>src/env/ops.js</code></td><td>env</td><td>Proxy sobre fs/spawn/execFile/openPath/openUrl/homeDir; <code>setOps()</code> troca o mundo.</td></tr>
+    <tr><td><code>src/server/roots.js</code></td><td>server</td><td>Handler por pasta: ENDPOINTS declarativo, shell, estáticos, deep links.</td></tr>
+    <tr><td><code>src/domain/inject.js</code></td><td>domain</td><td>Ordem de injeção (lib primeiro) — compartilhada entre dev e export.</td></tr>
+    <tr><td><code>src/domain/config.js</code></td><td>domain</td><td><code>_config.json</code>: título, favicon, ordem, ícones (+ humanize).</td></tr>
+    <tr><td><code>src/domain/manifest.js</code></td><td>domain</td><td>Pasta → árvore JSON da sidebar (com ordem e mtime).</td></tr>
+    <tr><td><code>src/server/reload.js</code></td><td>server</td><td><code>ops.watch</code> + debounce unref → SSE (+ hook pro hub).</td></tr>
+    <tr><td><code>src/domain/shell.js</code> / <code>src/cli/init.js</code></td><td>domain/cli</td><td>Layout embutido (contrato <code>#docList</code>) e scaffolding.</td></tr>
+    <tr><td><code>src/server/manager.js</code></td><td>server</td><td>Multi-root: /api/*, roteio por slug, hub SSE, Warp, layout atômico.</td></tr>
+    <tr><td><code>src/domain/registry.js</code></td><td>domain</td><td><code>~/.docs-in-html/registry.json</code>: docs, slugs, layout do mural.</td></tr>
+    <tr><td><code>src/server/delegation.js</code></td><td>server</td><td>CLI pinga/adiciona no manager em vez de subir servidor.</td></tr>
+    <tr><td><code>src/domain/scan.js</code></td><td>domain</td><td>Importação em lote: acha pastas com <code>_config.json</code> válido.</td></tr>
+    <tr><td><code>src/cli/export.js</code></td><td>cli</td><td>Congela a docs em estático; requireable com footer; lança em pasta ausente.</td></tr>
+    <tr><td><code>client/lib.js</code></td><td>client</td><td>Identidade UMD: <code>me()/api()/isShell()/BASE</code> — primeiro em toda página.</td></tr>
+    <tr><td><code>client/diff.js</code></td><td>client</td><td>Núcleo LCS puro (UMD, <code>window.DIFF</code>), testável com node:test.</td></tr>
+    <tr><td><code>client/nav.js</code></td><td>client</td><td>Sidebar viva: árvore, URLs, kebab, CRUD, read-only no export.</td></tr>
+    <tr><td><code>client/reload.js</code></td><td>client</td><td>SSE com leader election (Web Locks + BroadcastChannel).</td></tr>
+    <tr><td><code>client/edit.js</code></td><td>client</td><td>Editor WYSIWYG inline com Ctrl+S e strip de <code>data-injected</code>.</td></tr>
+    <tr><td><code>client/changes.js</code></td><td>client</td><td>Diff da última visita: chips, word-diff, minimap, favicon dot.</td></tr>
+    <tr><td><code>client/mermaid-zoom.js</code></td><td>client</td><td>Lightbox pan/zoom robusto a rewrites do Mermaid.</td></tr>
+    <tr><td><code>client/manager.html</code></td><td>client</td><td>Mural de cards do manager (Warp, reveal, remover, scan).</td></tr>
+    <tr><td><code>alias/docs-in-html/</code></td><td>compat</td><td>Stub que faz require do spec-space — o CLI antigo segue vivo.</td></tr>
+    </tbody></table>
+    </div>
+  </details>
 </section>
 
-<section id="seam-ops">
-<h2><span class="num">2</span>A costura <code>ops</code> — uma porta para o mundo</h2>
-<p class="lead"><code>ops.js</code> é a ÚNICA porta pela qual o projeto fala com o mundo exterior: sistema de arquivos, processos, home dir.</p>
+<!-- ══ 2 · CAMADAS ══════════════════════════════════════════════════ -->
+<section id="camadas">
+  <h2><span class="num">2</span>Camadas — como um pedido atravessa o pacote</h2>
+  <p class="lead">Cada camada conta a mesma história em três blocos: o problema, a ideia, onde vive.</p>
 
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p>Uma <strong>"costura" (seam)</strong> é um ponto do código onde você pode trocar uma peça por outra sem mexer em mais nada — como um zíper numa roupa. Aqui, a peça é o <em>mundo exterior</em> (disco, processos, home do usuário): em produção a costura deixa passar o mundo real; em teste, você "descostura" o real e costura uma imitação em memória. Assim os testes rodam sem apagar arquivos seus e sem abrir programas.</p>
-</div>
+  <h3>🌍 env/ops.js — a única porta pro mundo</h3>
+  <div class="pgt">
+    <div class="step prob"><span class="lbl">O problema</span>
+      <p>Nove módulos usavam <code>node:fs</code> direto; abrir-no-OS existia em 4 cópias; testar qualquer coisa exigia disco real, processos reais, home real.</p></div>
+    <div class="step idea"><span class="lbl">A ideia</span>
+      <p>Uma costura única: todo efeito colateral (fs, spawn, home, abrir URL/caminho) passa por <code>src/env/ops.js</code>. Em produção, o adaptador default envolve o Node; em teste, <code>ops.setOps(fakeOps)</code> troca o mundo inteiro por uma imitação em memória — e <code>resetOps()</code> devolve o real.</p></div>
+    <div class="step where"><span class="lbl">Onde vive</span>
+      <p><code>src/env/ops.js</code> · consomem: roots, reload, serve, manager, registry, scan</p></div>
+  </div>
+  <div class="flow">
+    <span class="node">server/* + domain/*</span><span class="arr">→</span>
+    <span class="node dev">env/ops.js</span><span class="arr">→</span>
+    <span class="node">fs · spawn · clock · home</span>
+  </div>
+  <details class="deep"><summary>O Proxy, os métodos e por que <code>setOps()</code> vale globalmente</summary>
+    <div>
+      <p>O <code>module.exports</code> é um <strong>Proxy</strong> que delega sempre ao adaptador corrente — então <code>setOps()</code> vale até para módulos que capturaram <code>ops</code> no require. As assinaturas espelham o <code>node:fs</code>: migrar um call site é um rename, não um rewrite.</p>
+      <p>Além do fs, a costura expõe: <code>homeDir()</code> (registry e scan); <code>spawn(bin, args)</code> (processo detached fire-and-forget); <code>execFile</code> (resolução do binário do Warp); <code>openPath(abs)</code> (reveal — Explorer <code>/select</code>, Finder <code>-R</code>, Linux abre o pai — escrito uma vez só); <code>openUrl(url)</code> (<code>start</code>/<code>open</code>/<code>xdg-open</code> conforme o SO).</p>
+      <p>É por aqui que os testes simulam EADDRINUSE, um manager no ar ou um disco inteiro sem tocar em nenhum deles.</p>
+    </div>
+  </details>
 
-<p>Em produção, o adaptador default envolve <code>node:fs</code>, <code>node:child_process</code> e <code>node:os</code> diretamente. Em teste, <code>ops.setOps(fakeOps)</code> troca o adaptador inteiro por uma versão em memória — sem disco real, sem processo real, sem home real. <code>ops.resetOps()</code> devolve o mundo verdadeiro.</p>
-
-<div class="callout"><div class="title">💡 O módulo é um Proxy</div>
-O <code>module.exports</code> é um <code>Proxy</code> que delega sempre ao adaptador <em>corrente</em>. Isso significa que <code>setOps()</code> vale <strong>globalmente</strong>, até para módulos que capturaram <code>ops</code> no <code>require</code> — o proxy sempre encaminha para <code>current</code>. Os nomes/assinaturas dos métodos de fs espelham o <code>node:fs</code>: migrar um call site é um rename, não um rewrite.</div>
-
-<p>O que a costura expõe, além do fs:</p>
-<ul>
-<li><code>homeDir()</code> — o home do usuário (registry e scan);</li>
-<li><code>spawn(bin, args)</code> — processo em background detached, fire-and-forget;</li>
-<li><code>execFile</code> — para resolução do binário do Warp;</li>
-<li><code>openPath(abs)</code> — reveal no gerenciador de arquivos (Explorer <code>/select</code>, Finder <code>-R</code>, Linux abre o pai), escrito uma vez só;</li>
-<li><code>openUrl(url)</code> — abrir o browser default (<code>start</code>/<code>open</code>/<code>xdg-open</code> conforme o SO).</li>
-</ul>
-
-<p>Quem consome: <code>roots.js</code> (endpoints, estáticos, shell), <code>reload.js</code> (<code>ops.watch</code>), <code>serve.js</code> (<code>openUrl</code>), manager e registry. É por aqui que os testes simulam EADDRINUSE, um manager no ar ou um disco inteiro sem tocar em nenhum deles.</p>
-</section>
-
-<section id="cli">
-<h2><span class="num">3</span>CLI requireable — <code>serve.js</code></h2>
-<p class="lead">O arquivo é ao mesmo tempo programa (binário) e módulo: <code>parseArgs()</code> e <code>main()</code> são exportadas e testáveis in-process.</p>
-
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p>"Requireable" significa que o arquivo pode ser <em>requerido</em> (importado com <code>require()</code>) como uma biblioteca, além de executado como comando. O truque é o rodapé <code>if (require.main === module)</code>: "só rode o programa de verdade se fui chamado diretamente pela linha de comando". Quem apenas importa as funções recebe só as funções — nenhum servidor sobe, nenhum texto é impresso. É isso que permite testar a CLI como qualquer função.</p>
-</div>
-
-<ul>
-<li><strong>Puro no parse.</strong> <code>parseArgs(argv, opts)</code> recebe um ARRAY de argumentos (não <code>process.argv</code>) e devolve opções como dados; <code>-h</code> vira <code>mode:"help"</code> — imprimir é trabalho do <code>main()</code>.</li>
-<li><strong>Deps injetáveis.</strong> <code>main(args, deps)</code> recebe <code>pingManagerDep</code>, <code>addToManagerDep</code> e <code>openUrl</code> por injeção — os testes simulam um manager vivo ou o browser abrindo sem que nada disso exista. Nunca chama <code>process.exit</code>: devolve o exit code, e o footer decide.</li>
-<li><strong>Footer <code>require.main</code>.</strong> Todo efeito colateral que antes rodava no require-time (parse do argv, exit, server) mora atrás de <code>if (require.main === module)</code>. Requerer o módulo é silencioso.</li>
-<li><strong>Servidor vivo resolve <code>undefined</code>.</strong> Quando o serve sobe de verdade, <code>main</code> resolve <code>undefined</code> — o footer não faz exit; o próprio server mantém o processo vivo (mesmo contrato do script pré-refactor).</li>
-</ul>
-
-<div class="callout"><div class="title">🔌 Portas honestas: dica vs. exigência</div>
-Sem <code>--port</code>, a padrão (8000 ou <code>$PORT</code>) é uma <em>dica</em>: ocupada, cai para a próxima livre com um aviso, até <code>MAX_FALLBACKS = 20</code> tentativas. Com <code>--port</code> explícito é uma <em>exigência</em>: ocupada, morre com erro claro em vez de trocar em silêncio (inclusive com a dica "pode ser outra instância de spec-space").</div>
-
-<h3>Os outros comportamentos do modo serve</h3>
-<ul>
-<li><strong>Delegação:</strong> pinga o manager primeiro; se está no ar (e sem <code>--no-register</code>), registra a pasta via <code>POST /api/add</code>, imprime o link e <em>nem abre servidor</em> — com aviso se <code>--port</code> foi ignorado.</li>
-<li><strong>Auto-scaffold:</strong> primeiro serve de uma pasta sem <code>_config.json</code> cria um com defaults amigáveis (título derivado do nome da pasta).</li>
-<li><strong>Higiene:</strong> <code>registry.add</code> silencioso; <code>server.on("close")</code> fecha o watcher do root.</li>
-</ul>
-
-<div class="callout"><div class="title">🧭 Subcomandos</div>
-<code>init</code>, <code>export</code> e <code>manager</code> são apenas requires + retorno: <code>manager</code> mantém o processo vivo (server próprio), os outros dois devolvem exit code 0/1 para o footer. <code>--unregister</code> remove do registry e sai.</div>
-</section>
-
-<section id="contexto">
-<h2><span class="num">4</span>Contexto por pasta — <code>roots.js</code> e cia.</h2>
-<p class="lead"><code>createRoot(root, opts)</code> devolve <code>{ root, base, handle, reload }</code>: o handler tem a mesma assinatura de um listener do <code>http.Server</code>. <code>opts.base</code> é o prefixo de URL (<code>""</code> no single-root, <code>"/&lt;slug&gt;"</code> no manager). Dois consumidores, um handler — a correção se escreve uma vez.</p>
-
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p>Um <strong>handler</strong> é a função que responde a cada pedido HTTP ("me dê <code>auth.html</code>"). Um <strong>endpoint</strong> é um "caminho especial" que o servidor entende além dos arquivos — aqui, rotas como <code>/__save__</code> que gravam edits ou apagam docs. A tabela <code>ENDPOINTS</code> é só uma lista declarativa: caminho → função, escrita de uma vez num lugar só, em vez de espalhada em <code>if</code>s pelo código.</p>
-</div>
-
-<h3>Handlers nomeados + tabela ENDPOINTS</h3>
-<p>Cada endpoint <code>/__*__</code> é <strong>uma função nomeada de escopo de módulo</strong> com a mesma forma <code>(ctx, req, res)</code> — onde <code>ctx</code> carrega o root dir e o bookkeeping de config por root (<code>shiftIcons</code>/<code>pruneIcons</code>/<code>readAnim</code>). O <code>handle</code> despacha pela <strong>tabela declarativa <code>ENDPOINTS</code></strong> — toda a superfície <code>/__*__</code> num relance:</p>
-
-<table>
-<tbody><tr><th>Rota</th><th>Método</th><th>Handler</th><th>O que faz</th></tr>
-<tr><td><code>/__manifest__</code></td><td>GET</td><td><code>endpointManifest</code></td><td>JSON com <code>tree</code> + título + animação + <code>root</code>/<code>sep</code>/<code>platform</code>.</td></tr>
-<tr><td><code>/__delete__</code></td><td>POST</td><td><code>endpointDelete</code></td><td>Apaga doc (<code>.html</code> apenas) ou pasta <em>vazia</em> (409 se não). Sincroniza <code>config.icons</code>.</td></tr>
-<tr><td><code>/__rename__</code></td><td>POST</td><td><code>endpointRename</code></td><td>Renomeia/move doc ou pasta; recusa mover pasta pra dentro de si; reescreve chaves de <code>icons</code>.</td></tr>
-<tr><td><code>/__mkdir__</code></td><td>POST</td><td><code>endpointMkdir</code></td><td>Cria pasta (409 se já existe).</td></tr>
-<tr><td><code>/__save__</code></td><td>POST</td><td><code>endpointSave</code></td><td>Grava o HTML inteiro de volta (editor inline; até 10 MB).</td></tr>
-<tr><td><code>/__reveal__</code></td><td>POST</td><td><code>endpointReveal</code></td><td>Abre o gerenciador de arquivos — uma linha, <code>ops.openPath()</code>.</td></tr>
-<tr><td><code>/__order__</code></td><td>POST</td><td><code>endpointOrder</code></td><td>Persiste a ordem manual por pasta no <code>_config.json</code>.</td></tr>
-<tr><td><code>/__title__</code></td><td>POST</td><td><code>endpointTitle</code></td><td>Persiste o título (trim, cap de 200 chars) no <code>_config.json</code>.</td></tr>
-</tbody></table>
-
-<p>Além da tabela, o módulo <strong>exporta as peças testáveis</strong>: <code>readJsonBody</code> (JSON com cap de tamanho — default 4 KB, sobrecarregado destrói a conexão), <code>safeRelPath</code> (<code>"guides/v2"</code> → válido | <code>null</code>: sem <code>..</code>, sem <code>\</code>, sem nomes esquisitos), <code>resolveIn</code> (resolve dentro do root ou <code>null</code>), <code>ENDPOINTS</code>, <code>MIME</code> e <code>send</code> — unit-testáveis sem subir servidor.</p>
-
-<div class="callout tip"><div class="title">🗺️ O que a tabela ENDPOINTS compra</div>
-Toda a superfície HTTP especial (<code>/__*__</code>) fica visível num único lugar: rever segurança, achar um endpoint e testar a tabela inteiros ficam triviais — o <code>handle</code> só despacha, cada endpoint é uma função nomeada testável isoladamente.</div>
-
-<h3>As decisões que atravessam o módulo</h3>
-<ul>
-<li><strong>O contrato <code>#docList</code></strong> — o shell é reconhecido por <em>estrutura</em> (uma tag real com <code>id="docList"</code>), não por URL. A detecção usa regex de contexto de tag: uma página que só <em>menciona</em> <code>id="docList"</code> em prosa (como este doc!) não é enganada.</li>
-<li><strong>Injeção em tempo de resposta</strong> — nenhum arquivo em disco é transformado no dev. A lógica de <em>quais scripts entram</em> (<code>inject.js</code>) é compartilhada com o export: uma heurística, dois destinos. Toda tag injetada carrega <code>data-injected</code> — é assim que o editor devolve o arquivo limpo ao disco.</li>
-<li><strong>Deep links sem recursão</strong> — navegação top-level para <code>/pasta/doc.html</code> (com <code>Sec-Fetch-Dest: document</code>, exceto o próprio <code>index.html</code>) devolve o shell em volta; o iframe pede de novo com <code>Sec-Fetch-Dest: iframe</code> e recebe o doc puro. Sem o header (curl, browsers antigos), doc puro também.</li>
-<li><strong>O servidor nunca confia no cliente</strong> — guardas de caminho em todos os endpoints, JSON com cap, HTML sempre <code>no-store</code> (um live reload nunca mostra doc velho), estáticos bloqueados fora da pasta (403), <code>%</code>-escapes malformados → 400.</li>
-<li><strong>Config é lida a cada pedido</strong> — <code>_config.json</code> muda título/favicon/ordem/ícones com hot reload, sem restart. <code>config.js</code> também mora nele o <code>humanize()</code> (Unicode-aware) e o <code>applyShellConfig()</code>.</li>
-<li><strong><code>manifest.js</code></strong> — <code>buildTree(root)</code>: só pastas e <code>.html</code>/<code>.htm</code>, esconde dotfiles/prefixo <code>_</code>/<code>index.html</code>; pastas vazias são mantidas; <code>order</code> fixa a ordem; cada doc carrega <code>mtime</code> (alimenta o "dot verde").</li>
-<li><strong><code>reload.js</code></strong> — <code>createReload(root, onEvent?)</code>: <code>ops.watch</code> recursivo com debounce por arquivo (150 ms; timers e o próprio watcher são <code>unref()</code>ados — ficam fora do critério "o processo ainda tem trabalho?") e broadcast SSE em <code>/__reload__</code>. <code>onEvent(relPath)</code> é o gancho do hub do manager. Sem <code>fs.watch</code>, degrada graciosamente.</li>
-</ul>
-</section>
-
-<section id="manager">
-<h2><span class="num">5</span>Ecossistema multi-docs</h2>
-<p class="lead">Servir pastas uma a uma para de escalar no segundo projeto: o manager serve todas as suas docs num processo só, cada uma em <code>http://localhost:4400/&lt;slug&gt;/</code>.</p>
-
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p>Imagine que você tem cinco projetos, cada um com sua pasta de docs. Em vez de rodar cinco servidores (cinco portas, cinco terminais), o <strong>manager</strong> é um único servidor em <code>:4400</code> que conhece todas as pastas. O <strong>slug</strong> é o "apelido de URL" derivado do título (<code>/my-project-handbook/</code>), e o <strong>registry</strong> é um arquivinho no seu home (<code>~/.docs-in-html/registry.json</code>) onde ficam anotadas as pastas, os slugs e o layout do mural.</p>
-</div>
-
-<ul>
-<li><strong>Um handler, N instâncias</strong> — o manager não reimplementa nada: cria um contexto <code>roots.js</code> por pasta e roteia por prefixo de slug (reescreve <code>req.url</code> e chama <code>ctx.handle</code>). Roots são sincronizados com o registry a quente.</li>
-<li><strong>Slug do título</strong> — <code>/my-project-handbook/</code> do <code>title</code>; colisões ganham <code>-2</code>; <code>api</code> é reservado.</li>
-<li><strong>SSE multiplexado</strong> — todos os roots faneeam eventos num hub único: <strong>uma conexão SSE por browser</strong>, não uma por root. A mensagem carrega <code>{ base, path }</code>.</li>
-<li><strong>API</strong> — <code>/api/ping</code>, <code>/api/docs</code>, <code>/api/add</code>, <code>/api/remove</code>, <code>/api/layout</code> (atômico e sempre saneado — <code>saneLayout</code> poda órfãos, grupos vazios, e acrescenta docs novas no fim), <code>/api/reveal</code>, <code>/api/open-warp</code>, <code>/api/scan</code>. POSTs exigem <code>Content-Type: application/json</code> — um form cross-origin não consegue setar isso, bloqueando chamadas drive-by. Reveal/Warp só agem sobre pastas registradas.</li>
-<li><strong>Warp</strong> — <code>resolveWarp()</code>: <code>$WARP_BIN</code> → locais padrão por SO → PATH, com cache por processo; no Windows o caminho vira URL <code>file://</code> (o Warp parseia argumento posicional como URI).</li>
-<li><strong><code>registry.js</code></strong> — <code>~/.docs-in-html/registry.json</code>: arquivo corrompido é backupeado e resetado, layout do mural revalidado contra os docs reais. O manager persiste a própria porta ao subir (a delegação funciona mesmo sem a env var).</li>
-<li><strong><code>delegation.js</code></strong> — <code>pingManager()</code> nas portas candidatas (env &gt; registry &gt; 4400) com timeout curto; <code>addToManager()</code> devolve o slug escolhido. <code>scan.js</code> importa em lote: acha pastas com <code>_config.json</code> que "pareça nosso" sob o home, com skip-list e profundidade máxima.</li>
-</ul>
-</section>
-
-<section id="export">
-<h2><span class="num">6</span>Publicação estática — <code>export.js</code></h2>
-<p class="lead">O que o servidor decide por requisição, o export decide UMA vez e escreve em disco: arquivos puros, zero servidor, sidebar e pan/zoom funcionando (<code>surge dist</code>).</p>
-
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p>Um <strong>site estático</strong> é só um punhado de arquivos entregues por qualquer servidor burro (ou de graça: Surge, GitHub Pages) — sem Node rodando. O export "congela" a experiência do modo dev: copia os arquivos, gera o <code>manifest.json</code> da sidebar e injeta os scripts nas páginas, tudo decidido de antemão. O preço: nada que precise de servidor (editar, apagar, live reload) existe no estático.</p>
-</div>
-
-<p><code>run(root, outDir)</code> também é requireable, com footer <code>require.main</code>: pasta inexistente <strong>lança</strong> ("pasta não encontrada") e o footer imprime + exit 1. Cinco passos:</p>
-<ol>
-<li><strong>Copia</strong> a pasta pro output — pulando <code>SKIP_FILES</code> (<code>_config.json</code> e os legados <code>_order.json</code>/<code>_icons.json</code>: config não embarca, vai <em>assada</em>) e evitando copiar o output pra dentro de si mesmo;</li>
-<li><strong>manifest.json</strong> — <code>buildTree(src)</code> na raiz do output (ordem + ícones já aplicados, título pro tab title);</li>
-<li><strong>client/ → __docs__/</strong> — mesmo caminho que as tags injetadas referenciam;</li>
-<li><strong>Shell garantido</strong> — <code>index.html</code> embutido (se a pasta não tem) com title/favicon aplicados, reescrito também se existe;</li>
-<li><strong>Reinjeção</strong> — cada <code>.html</code> reescrito com <code>injectScripts(html, { staticMode: true })</code>.</li>
-</ol>
-
-<div class="callout"><div class="title">🔗 Deep link no estático</div>
-No modo estático, <code>inject.js</code> adiciona ao <code>&lt;head&gt;</code> de todo doc (antes de qualquer render) o <strong>bootstrap de deep link</strong>: doc aberto direto na janela top pula para <code>/?p=&lt;path&gt;</code> (âncora preservada), e o shell pega o parâmetro e abre o doc no iframe. Também define <code>window.DOCS_EXPORT = true</code> — o <code>nav.js</code> entra em modo read-only (lê <code>/manifest.json</code>) e edit/changes nem são injetados.</div>
-</section>
-
-<section id="clientes">
-<h2><span class="num">7</span>Clientes do browser</h2>
-<p class="lead">Scripts injetados nas páginas, servidos de <code>/__docs__/*</code>. Três princípios atravessam todos: identidade por estrutura (não por URL), comunicação via eventos DOM (<code>docs-in-html:change</code>) e UI própria marcada <code>data-injected</code>.</p>
-
-<div class="ramp"><div class="ramp-title">🧗 Rampa para iniciante (pode pular)</div>
-<p><strong>UMD</strong> (Universal Module Definition) é um modo de escrever um arquivo JavaScript que funciona tanto numa tag <code>&lt;script&gt;</code> no browser (publicando, p.ex., <code>window.DIFF</code>) quanto via <code>require()</code> no Node. Assim o MESMO arquivo roda na página e nos testes com <code>node --test</code> — sem duplicar código. <strong>SSE</strong> (Server-Sent Events) é um canal onde o servidor empurra eventos para o browser sem que ele pergunte — é o trem do live reload.</p>
-</div>
-
-<h3>A ordem de injeção (<code>inject.js</code>)</h3>
-<ol>
-<li><strong><code>lib.js</code> sempre primeiro</strong> — em toda página, dev e export: o módulo de identidade que os demais consomem (<code>window.docsLib</code>).</li>
-<li><strong>Dev only:</strong> um <code>&lt;script&gt;</code> define <code>DOCS_BASE</code> no manager (prefixo <code>/slug/</code>) e <code>reload.js</code> entra em toda página; no export, define <code>DOCS_EXPORT</code> e nada de reload.</li>
-<li><strong>Shell</strong> (tag real com <code>id="docList"</code>): <code>nav.js</code>. <strong>Doc não-shell</strong> (dev): <code>edit.js</code> + <code>diff.js</code> + <code>changes.js</code>, todos <code>defer</code> — <strong>diff.js imediatamente antes de changes.js</strong>, para a ordem de execução valer (o changes consome <code>window.DIFF</code>).</li>
-<li><strong><code>mermaid-zoom.js</code></strong> (<code>defer</code>) pela heurística: blocos <code>.mermaid</code>, <code>&lt;figure&gt;</code> ou <code>.panzoom/.diagram/.zoomable</code> — e sem pan/zoom próprio (mesmo cuidado anti-prosa da detecção de shell).</li>
-</ol>
-
-<details class="mod" open><summary>client/lib.js — o módulo de identidade <span class="files">UMD</span></summary><div class="modbody">
-<p>A interface cabe num cartão-postal: <code>me(pathname?, base?)</code> → caminho relativo ao root da docs (<code>"guias/a.html"</code>; tira a barra inicial, tira o prefixo do manager case-insensitivamente, cai em <code>index.html</code>); <code>api(path, body?)</code> → <code>fetch</code> POST com <code>BASE_N + path</code> e corpo JSON (o tratamento da resposta fica com cada chamador); <code>isShell()</code> → <code>!!document.getElementById("docList")</code>; <code>BASE</code>/<code>BASE_N</code> → <code>window.DOCS_BASE</code> cru e sem barra final. Esse bloco "quem sou eu?" era copiado em <code>reload.js</code>, <code>changes.js</code> e <code>edit.js</code>; o wrapper de fetch vivia em <code>nav.js</code> e <code>edit.js</code> — agora mora aqui, uma vez só. UMD: tag <code>&lt;script&gt;</code> publica <code>window.docsLib</code>; <code>require()</code> ganha <code>module.exports</code> — a regra do prefixo é testável com <code>node --test</code>, sem browser.</p>
-</div></details>
-
-<details class="mod"><summary>client/diff.js — o núcleo puro de diff <span class="files">UMD</span></summary><div class="modbody">
-<p>Extraído de <code>changes.js</code> para ser testável com <code>node:test</code> (sem DOM, sem <code>window</code>, sem localStorage). Os algoritmos foram copiados ipsis litteris, com duas diferenças conscientes: o guard UMD no rodapé (mesmo arquivo serve <code>&lt;script&gt;</code>, anexando <code>window.DIFF</code>, e <code>require()</code>) e <code>marks()</code> recebendo a lista de textos novos como parâmetro, fechando sua única impureza. Dentro: <code>diffOps(a, b)</code> — LCS com trim de prefixo/sufixo comuns (docs grandes demais, &gt; 4M células, degradam sem marcação), e <code>wordDiff</code> — diff por tokens para o word-diff dentro de um bloco editado.</p>
-</div></details>
-
-<details class="mod"><summary>client/nav.js — a sidebar viva</summary><div class="modbody">
-<p>Busca <code>/__manifest__</code> (ou <code>/manifest.json</code> no export) e renderiza a árvore: pastas colapsáveis com memória em localStorage, ícones Lucide embutidos + emoji, animação configurável, ordem manual por drag &amp; drop, doc ativo + ancestrais expandidos, URL com <code>pushState</code>/<code>popstate</code>, tab title "Doc · Site", esconder sidebar. <strong>Assinatura da árvore</strong>: a cada mudança re-busca o manifest, mas só reconstrói o DOM se o <em>conjunto</em> de arquivos mudou. Gerenciamento: menu kebab "⋯" por item (copy path, copy full path, reveal, move-to, delete com confirmação em dois cliques), menu de contexto da sidebar (new folder, collapse all), rename inline, drag &amp; drop — tudo pelos endpoints <code>POST /__*</code>. No export: read-only + deep link <code>/?p=</code>.</p>
-</div></details>
-
-<details class="mod"><summary>client/reload.js — quando recarregar (e uma conexão só)</summary><div class="modbody">
-<p>HTTP/1.1 permite ~6 conexões por origem — um SSE por tab travaria a 7ª. As tabs elegem <strong>um líder via Web Locks</strong> que mantém a única conexão SSE (origin-root: multiplexada sob o manager) e re-transmite <em>todos</em> os eventos crus por um <code>BroadcastChannel</code>; cada receptor filtra pelo seu root (<code>base</code>) e decide com <code>shouldReload()</code>: meu arquivo mudou → recarrega; sou o shell → só eu mesmo (preserva a sidebar); <code>.js/.css</code> compartilhado → o doc em exibição recarrega. A tab líder fecha? O lock passa adiante. Usa <code>window.docsLib</code> para saber quem é.</p>
-</div></details>
-
-<details class="mod"><summary>client/edit.js · changes.js · mermaid-zoom.js · manager.html</summary><div class="modbody">
-<p><strong>edit.js</strong> — botão "✏ Editar" (<kbd>Ctrl+E</kbd>) liga <code>contenteditable</code>; <kbd>Ctrl+S</kbd> grava via <code>/__save__</code> (clone do body com tudo que é <code>data-injected</code> removido; <code>pre/code</code> como texto puro; estado dirty no botão; beforeunload com mudanças pendentes).</p>
-<p><strong>changes.js</strong> — achata os blocos do doc, diff LCS contra o snapshot do localStorage da última visita, marca diferenças (chip "novo"; word-diff com o velho riscado), sobrescreve o snapshot. Minimap estilo VS Code, favicon com ponto azul + prefixo "● " no título (sinais no <code>window.top</code>), pílula "N mudanças · ↓ próxima · ✓ já vi tudo". Consome <code>window.DIFF</code>.</p>
-<p><strong>mermaid-zoom.js</strong> — lightbox pan/zoom com event delegation + pseudo-elemento CSS (sobrevive aos rewrites do Mermaid) e lista <code>INTERACTIVE</code> (nunca sequestra SVG em <code>button</code>, <code>a</code>, <code>[onclick]</code>, <code>label</code>, <code>summary</code>). Carrega <code>svg-pan-zoom</code> do CDN sob demanda.</p>
-<p><strong>manager.html</strong> — o mural de cards: título + favicon por docs, pastas/grupos com drag &amp; drop persistido via <code>POST /api/layout</code>, ações Warp/reveal/remover, botão Escanear.</p>
-</div></details>
-</section>
-
-<section id="fluxos">
-<h2><span class="num">8</span>Fluxos</h2>
-
-<h3>1. Startup: CLI → servidor ou manager</h3>
-<div class="mermaid">
+  <h3>⌨️ cli/serve.js — programa e biblioteca ao mesmo tempo</h3>
+  <div class="pgt">
+    <div class="step prob"><span class="lbl">O problema</span>
+      <p>O CLI inteiro era efeito colateral de <code>require</code>: argv no top-level, <code>process.exit()</code> em 4 pontos. Requerer <code>serve.js</code> num teste ou matava o runner ou subia um servidor de verdade.</p></div>
+    <div class="step idea"><span class="lbl">A ideia</span>
+      <p><strong>Requireable</strong>: <code>parseArgs(argv)</code> pura (o <code>-h</code> vira <code>mode:"help"</code> — decisão como dado) e <code>main(args, deps)</code> que devolve o exit code em vez de chamar <code>exit</code>. Todo efeito colateral mora atrás do rodapé <code>if (require.main === module)</code> — requerer é silencioso.</p></div>
+    <div class="step where"><span class="lbl">Onde vive</span>
+      <p><code>src/cli/serve.js</code> (bin do package.json) · testado por <code>serve-args</code> e <code>serve-port</code></p></div>
+  </div>
+  <div class="callout warn"><div class="title">🔌 Portas honestas: dica vs. exigência</div>
+  Sem <code>--port</code>, a padrão (8000 ou <code>$PORT</code>) é uma <em>dica</em>: ocupada, cai para a próxima livre com aviso, até <code>MAX_FALLBACKS = 20</code>. Com <code>--port</code> explícito é uma <em>exigência</em>: ocupada, morre com erro claro — nunca troca em silêncio.</div>
+  <details class="deep"><summary>Comportamentos do modo serve e subcomandos</summary>
+    <div>
+      <p><strong>Delegação:</strong> pinga o manager primeiro; se está no ar (e sem <code>--no-register</code>), registra a pasta via <code>POST /api/add</code>, imprime o link e <em>nem abre servidor</em> — com aviso se <code>--port</code> foi ignorado.</p>
+      <p><strong>Auto-scaffold:</strong> primeiro serve de uma pasta sem <code>_config.json</code> cria um com defaults amigáveis. <strong>Higiene:</strong> <code>registry.add</code> silencioso; <code>server.on("close")</code> fecha o watcher.</p>
+      <p><strong>Servidor vivo resolve <code>undefined</code>:</strong> quando o serve sobe de verdade, <code>main</code> resolve <code>undefined</code> — o footer não faz exit; o server mantém o processo vivo.</p>
+      <p><strong>Subcomandos:</strong> <code>init</code>, <code>export</code> e <code>manager</code> são requires + retorno (<code>manager</code> mantém o processo vivo; os outros devolvem exit code ao footer). <code>--unregister</code> remove do registry e sai.</p>
+      <div class="mermaid">
 flowchart TD
   A["spec-space docs-html"] --> B{subcomando?}
-  B -- "init / export" --> C["init.js / export.js → exit code"]
-  B -- "manager" --> M["manager.js<br>4400 · registry → N roots"]
+  B -- "init / export" --> C["cli/init.js · cli/export.js → exit code"]
+  B -- "manager" --> M["server/manager.js<br>4400 · registry → N roots"]
   B -- "serve (padrão)" --> D{"--no-register?"}
   D -- não --> E["pingManager()"]
   E -- "manager no ar" --> F["POST /api/add<br>imprime o link → 0"]
@@ -359,13 +275,128 @@ flowchart TD
   J -- sim --> K["ocupada → erro e exit 1"]
   J -- não --> L["ocupada → próxima livre + aviso<br>(até 20 tentativas)"]
   L --> O["main() resolve undefined —<br>server mantém o processo vivo"]
-</div>
+      </div>
+    </div>
+  </details>
 
-<h3>2. Live reload: do save à página atualizada</h3>
-<div class="mermaid">
+  <h3>🖥️ server/roots.js — um contexto por pasta</h3>
+  <div class="pgt">
+    <div class="step prob"><span class="lbl">O problema</span>
+      <p>Toda a lógica de segurança e bookkeeping de uma pasta de docs vivia closure-private atrás de um <code>(req,res)</code> cru — a maior quantidade de código não-testado do pacote, duplicada entre serve e manager.</p></div>
+    <div class="step idea"><span class="lbl">A ideia</span>
+      <p><code>createRoot(root, {base}) → { handle, reload }</code>: cada endpoint <code>/__*__</code> é uma <strong>função nomeada</strong> <code>(ctx, req, res)</code>, despachada por uma <strong>tabela declarativa <code>ENDPOINTS</code></strong> — toda a superfície HTTP especial num relance. Dois consumidores (serve e manager), um handler: a correção se escreve uma vez.</p></div>
+    <div class="step where"><span class="lbl">Onde vive</span>
+      <p><code>src/server/roots.js</code> + seus assessores de <code>domain/</code></p></div>
+  </div>
+  <div class="flow">
+    <span class="node">serve.js</span><span class="arr">·</span>
+    <span class="node">manager.js</span><span class="arr">→</span>
+    <span class="node dev">createRoot(root, base)</span><span class="arr">→</span>
+    <span class="node">manifest · config · shell · inject</span>
+  </div>
+  <details class="deep"><summary>A tabela ENDPOINTS completa e as peças exportadas</summary>
+    <div>
+    <table>
+    <tbody><tr><th>Rota</th><th>Método</th><th>Handler</th><th>O que faz</th></tr>
+    <tr><td><code>/__manifest__</code></td><td>GET</td><td><code>endpointManifest</code></td><td>JSON com <code>tree</code> + título + animação + <code>root</code>/<code>sep</code>/<code>platform</code>.</td></tr>
+    <tr><td><code>/__delete__</code></td><td>POST</td><td><code>endpointDelete</code></td><td>Apaga doc (<code>.html</code> apenas) ou pasta <em>vazia</em> (409 se não). Sincroniza <code>config.icons</code>.</td></tr>
+    <tr><td><code>/__rename__</code></td><td>POST</td><td><code>endpointRename</code></td><td>Renomeia/move; recusa mover pasta pra dentro de si; reescreve chaves de <code>icons</code>.</td></tr>
+    <tr><td><code>/__mkdir__</code></td><td>POST</td><td><code>endpointMkdir</code></td><td>Cria pasta (409 se já existe).</td></tr>
+    <tr><td><code>/__save__</code></td><td>POST</td><td><code>endpointSave</code></td><td>Grava o HTML inteiro de volta (editor inline; até 10 MB).</td></tr>
+    <tr><td><code>/__reveal__</code></td><td>POST</td><td><code>endpointReveal</code></td><td>Abre o gerenciador de arquivos — uma linha, <code>ops.openPath()</code>.</td></tr>
+    <tr><td><code>/__order__</code></td><td>POST</td><td><code>endpointOrder</code></td><td>Persiste a ordem manual por pasta no <code>_config.json</code>.</td></tr>
+    <tr><td><code>/__title__</code></td><td>POST</td><td><code>endpointTitle</code></td><td>Persiste o título (trim, cap de 200 chars) no <code>_config.json</code>.</td></tr>
+    </tbody></table>
+    <p>O módulo também <strong>exporta as peças testáveis</strong>: <code>readJsonBody</code> (JSON com cap de tamanho — default 4 KB), <code>safeRelPath</code> (<code>"guides/v2"</code> → válido | <code>null</code>: sem <code>..</code>, sem <code>\</code>, sem nomes esquisitos), <code>resolveIn</code>, <code>ENDPOINTS</code>, <code>MIME</code> e <code>send</code> — unit-testáveis sem subir servidor.</p>
+    </div>
+  </details>
+  <details class="deep"><summary>As decisões que atravessam o módulo</summary>
+    <div>
+      <p><strong>O contrato <code>#docList</code></strong> — o shell é reconhecido por <em>estrutura</em> (uma tag real com <code>id="docList"</code>), não por URL; a regex de contexto de tag não é enganada por prosa (como neste doc!).</p>
+      <p><strong>Injeção em tempo de resposta</strong> — nenhum arquivo em disco é transformado no dev; a lógica de quais scripts entram (<code>src/domain/inject.js</code>) é compartilhada com o export. Toda tag carrega <code>data-injected</code> — é assim que o editor devolve o arquivo limpo.</p>
+      <p><strong>Deep links sem recursão</strong> — navegação top-level para <code>/pasta/doc.html</code> (<code>Sec-Fetch-Dest: document</code>) devolve o shell em volta; o iframe pede de novo com <code>iframe</code> e recebe o doc puro. Sem o header (curl), doc puro também.</p>
+      <p><strong>O servidor nunca confia no cliente</strong> — guardas de caminho em todos os endpoints, JSON com cap, HTML sempre <code>no-store</code>, estáticos bloqueados fora da pasta (403), <code>%</code>-escapes malformados → 400.</p>
+      <p><strong>Config lida a cada pedido</strong> — <code>_config.json</code> muda título/favicon/ordem/ícones com hot reload; <code>config.js</code> também mora nele o <code>humanize()</code> (Unicode-aware) e o <code>applyShellConfig()</code>.</p>
+      <p><strong>Assessores do domain</strong> — <code>manifest.js</code> (<code>buildTree</code>: só pastas e <code>.html</code>/<code>.htm</code>, esconde dotfiles/<code>_</code>/<code>index.html</code>, pastas vazias mantidas, <code>order</code> fixa a ordem, cada doc carrega <code>mtime</code> pro "dot verde"); <code>reload.js</code> (<code>ops.watch</code> recursivo com debounce de 150 ms, timers e watcher <code>unref()</code>ados, broadcast SSE em <code>/__reload__</code>; sem <code>fs.watch</code>, degrada graciosamente).</p>
+    </div>
+  </details>
+</section>
+
+<!-- ══ 3 · MANAGER ══════════════════════════════════════════════════ -->
+<section id="manager">
+  <h2><span class="num">3</span>Ecossistema multi-docs</h2>
+  <p class="lead">Servir pastas uma a uma para de escalar no segundo projeto: o manager serve todas as suas docs num processo só.</p>
+
+  <div class="ramp"><b>Rampa para iniciante (pode pular)</b> — imagine cinco projetos, cada um com sua pasta de docs. Em vez de cinco servidores (cinco portas, cinco terminais), o <b>manager</b> é um único servidor em <code>:4400</code> que conhece todas as pastas. O <b>slug</b> é o "apelido de URL" derivado do título (<code>/my-project-handbook/</code>), e o <b>registry</b> é um arquivinho no seu home (<code>~/.docs-in-html/registry.json</code>) com as pastas, slugs e o layout do mural.</div>
+
+  <div class="pgt">
+    <div class="step prob"><span class="lbl">O problema</span>
+      <p>N projetos = N servidores, N portas para decorar, N terminais abertos.</p></div>
+    <div class="step idea"><span class="lbl">A ideia</span>
+      <p>Um handler, N instâncias: o manager não reimplementa nada — cria um contexto <code>roots.js</code> por pasta e roteia por prefixo de slug (reescreve <code>req.url</code> e chama <code>ctx.handle</code>), sincronizado com o registry a quente. Servir uma pasta nova = registrá-la (o CLI até delega e nem sobe servidor).</p></div>
+    <div class="step where"><span class="lbl">Onde vive</span>
+      <p><code>src/server/manager.js</code> · <code>delegation.js</code> · <code>domain/registry.js</code> · <code>domain/scan.js</code> · UI em <code>client/manager.html</code></p></div>
+  </div>
+
+  <div class="callout"><div class="title">🔑 Uma conexão SSE por browser</div>
+  Todos os roots faneeam eventos num hub único: uma conexão SSE por browser, não uma por root. A mensagem carrega <code>{ base, path }</code> — cada tab filtra o seu. Com 10 tabs e 5 docs há 1 conexão, não 50.</div>
+
+  <details class="deep"><summary>API do manager, Warp e as peças do registry</summary>
+    <div>
+      <p><strong>Slug do título</strong> — <code>/my-project-handbook/</code> do <code>title</code>; colisões ganham <code>-2</code>; <code>api</code> é reservado.</p>
+      <p><strong>API</strong> — <code>/api/ping</code>, <code>/api/docs</code>, <code>/api/add</code>, <code>/api/remove</code>, <code>/api/layout</code> (atômico e sempre saneado — <code>saneLayout</code> poda órfãos, grupos vazios, e acrescenta docs novas no fim), <code>/api/reveal</code>, <code>/api/open-warp</code>, <code>/api/scan</code>. POSTs exigem <code>Content-Type: application/json</code> — um form cross-origin não consegue setar isso, bloqueando chamadas drive-by. Reveal/Warp só agem sobre pastas registradas.</p>
+      <p><strong>Warp</strong> — <code>resolveWarp()</code>: <code>$WARP_BIN</code> → locais padrão por SO → PATH, com cache por processo; no Windows o caminho vira URL <code>file://</code> (o Warp parseia argumento posicional como URI).</p>
+      <p><strong>registry.js</strong> — arquivo corrompido é backupeado e resetado; layout do mural revalidado contra os docs reais; o manager persiste a própria porta ao subir (a delegação funciona mesmo sem a env var).</p>
+      <p><strong>delegation.js</strong> — <code>pingManager()</code> nas portas candidatas (env &gt; registry &gt; 4400) com timeout curto; <code>addToManager()</code> devolve o slug escolhido.</p>
+      <p><strong>scan.js</strong> — importa em lote: acha pastas com <code>_config.json</code> que "pareça nosso" sob o home, com skip-list e profundidade máxima.</p>
+    </div>
+  </details>
+</section>
+
+<!-- ══ 4 · CLIENTES ═════════════════════════════════════════════════ -->
+<section id="clientes">
+  <h2><span class="num">4</span>Clientes do browser</h2>
+  <p class="lead">Scripts injetados nas páginas, servidos de <code>/__docs__/*</code>. Três princípios atravessam todos: identidade por estrutura (não por URL), comunicação via eventos DOM, UI própria marcada <code>data-injected</code>.</p>
+
+  <div class="ramp"><b>Rampa para iniciante (pode pular)</b> — <b>UMD</b> é um modo de escrever JavaScript que funciona tanto numa tag <code>&lt;script&gt;</code> no browser (publicando, p.ex., <code>window.DIFF</code>) quanto via <code>require()</code> no Node — o MESMO arquivo roda na página e nos testes. <b>SSE</b> é um canal onde o servidor empurra eventos sem que o browser pergunte — é o trem do live reload.</div>
+
+  <h3>A ordem de injeção</h3>
+  <div class="flow">
+    <span class="node dev">lib.js</span><span class="arr">→</span>
+    <span class="node">reload.js</span><span class="arr">→</span>
+    <span class="node">nav.js <em>(shell)</em></span><span class="arr">|</span>
+    <span class="node">edit.js</span><span class="arr">→</span>
+    <span class="node dev">diff.js</span><span class="arr">→</span>
+    <span class="node">changes.js</span><span class="arr">·</span>
+    <span class="node">mermaid-zoom?</span>
+  </div>
+  <p><code>lib.js</code> <strong>sempre primeiro</strong>, dev e export: é o módulo de identidade que os demais consomem (<code>window.docsLib</code>). No manager, um <code>&lt;script&gt;</code> define <code>DOCS_BASE</code>; no export, <code>DOCS_EXPORT</code> (e nada de reload). Shell ganha <code>nav.js</code>; doc não-shell ganha <code>edit.js</code> + <code>diff.js</code> + <code>changes.js</code> (todos <code>defer</code>, <strong>diff imediatamente antes de changes</strong> — o changes consome <code>window.DIFF</code>). <code>mermaid-zoom.js</code> pela heurística (blocos <code>.mermaid</code>, <code>&lt;figure&gt;</code> ou <code>.panzoom/.diagram/.zoomable</code>, sem pan/zoom próprio).</p>
+
+  <details class="deep"><summary>client/lib.js — o módulo de identidade (UMD)</summary>
+    <div>
+      <p>A interface cabe num cartão-postal: <code>me(pathname?, base?)</code> → caminho relativo ao root da docs (tira a barra inicial, tira o prefixo do manager case-insensitivamente, cai em <code>index.html</code>); <code>api(path, body?)</code> → <code>fetch</code> POST com <code>BASE_N + path</code> e corpo JSON (tratamento da resposta fica com cada chamador); <code>isShell()</code> → <code>!!document.getElementById("docList")</code>; <code>BASE</code>/<code>BASE_N</code> → <code>window.DOCS_BASE</code> cru e sem barra final.</p>
+      <p>Esse bloco "quem sou eu?" era copiado em <code>reload.js</code>, <code>changes.js</code> e <code>edit.js</code>; o wrapper de fetch vivia em <code>nav.js</code> e <code>edit.js</code> — agora mora aqui, uma vez só.</p>
+    </div>
+  </details>
+  <details class="deep"><summary>client/diff.js — o núcleo puro de diff (UMD)</summary>
+    <div>
+      <p>Extraído de <code>changes.js</code> para ser testável com <code>node:test</code> (sem DOM, sem <code>window</code>, sem localStorage). Os algoritmos foram copiados ipsis litteris, com duas diferenças conscientes: o guard UMD no rodapé e <code>marks()</code> recebendo a lista de textos novos como parâmetro, fechando sua única impureza.</p>
+      <p>Dentro: <code>diffOps(a, b)</code> — LCS com trim de prefixo/sufixo comuns (docs grandes demais, &gt; 4M células, degradam sem marcação) — e <code>wordDiff</code> — diff por tokens para o word-diff dentro de um bloco editado.</p>
+    </div>
+  </details>
+  <details class="deep"><summary>client/nav.js — a sidebar viva</summary>
+    <div>
+      <p>Busca <code>/__manifest__</code> (ou <code>/manifest.json</code> no export) e renderiza a árvore: pastas colapsáveis com memória em localStorage, ícones Lucide embutidos + emoji, animação configurável, ordem manual por drag &amp; drop, doc ativo + ancestrais expandidos, URL com <code>pushState</code>/<code>popstate</code>, tab title "Doc · Site", esconder sidebar.</p>
+      <p><strong>Assinatura da árvore</strong>: a cada mudança re-busca o manifest, mas só reconstrói o DOM se o <em>conjunto</em> de arquivos mudou. Gerenciamento: menu kebab "⋯" (copy path, copy full path, reveal, move-to, delete com confirmação em dois cliques), menu de contexto (new folder, collapse all), rename inline, drag &amp; drop — tudo pelos endpoints <code>POST /__*</code>. No export: read-only + deep link <code>/?p=</code>.</p>
+    </div>
+  </details>
+  <details class="deep"><summary>client/reload.js — quando recarregar (e uma conexão só) · o fluxo completo</summary>
+    <div>
+      <p>HTTP/1.1 permite ~6 conexões por origem — um SSE por tab travaria a 7ª. As tabs elegem <strong>um líder via Web Locks</strong> que mantém a única conexão SSE e re-transmite <em>todos</em> os eventos crus por um <code>BroadcastChannel</code>; cada receptor filtra pelo seu root e decide com <code>shouldReload()</code>: meu arquivo mudou → recarrega; sou o shell → só eu mesmo (preserva a sidebar); <code>.js/.css</code> compartilhado → o doc em exibição recarrega. A tab líder fecha? O lock passa adiante.</p>
+      <div class="mermaid">
 sequenceDiagram
   participant E as ✏️ Editor
-  participant W as reload.js (ops.watch)
+  participant W as server/reload.js (env/ops.watch)
   participant L as Tab líder (SSE)
   participant Bc as BroadcastChannel
   participant C as client/reload.js (qualquer tab)
@@ -378,165 +409,163 @@ sequenceDiagram
   C->>N: CustomEvent docs-in-html:change
   C->>C: shouldReload()? → location.reload()
   N->>N: re-busca /__manifest__<br/>(só re-renderiza se a árvore mudou)
-</div>
-
-<div class="callout"><div class="title">🔑 Uma conexão por browser</div>
-Só a tab líder segura o SSE (Web Locks); a liderança migra sozinha quando ela fecha. Sob o manager o hub multiplexa todos os roots nessa única conexão — com 10 tabs e 5 docs há 1 conexão, não 50.</div>
-
-<h3>3. Uma requisição: do clique na sidebar ao doc renderizado</h3>
-<div class="mermaid">
-sequenceDiagram
-  participant U as 👤 Usuário
-  participant S as Shell (nav.js)
-  participant F as iframe
-  participant R as roots.js
-  U->>S: clica em "Auth Service"
-  S->>F: iframe.src = /auth-service.html
-  S->>S: setActive() + pushState
-  F->>R: GET /auth-service.html (Sec-Fetch-Dest: iframe)
-  R->>F: doc + lib.js · reload.js · edit.js<br/>diff.js · changes.js · zoom?
-  F->>S: load → syncFromIframe()
-</div>
+      </div>
+    </div>
+  </details>
+  <details class="deep"><summary>edit.js · changes.js · mermaid-zoom.js · manager.html</summary>
+    <div>
+      <p><strong>edit.js</strong> — botão "✏ Editar" (<code>Ctrl+E</code>) liga <code>contenteditable</code>; <code>Ctrl+S</code> grava via <code>/__save__</code> (clone do body com tudo que é <code>data-injected</code> removido; <code>pre/code</code> como texto puro; estado dirty no botão; beforeunload com mudanças pendentes).</p>
+      <p><strong>changes.js</strong> — achata os blocos do doc, diff LCS contra o snapshot do localStorage da última visita, marca diferenças (chip "novo"; word-diff com o velho riscado), sobrescreve o snapshot. Minimap estilo VS Code, favicon com ponto azul + "● " no título (sinais no <code>window.top</code>), pílula "N mudanças · ↓ próxima · ✓ já vi tudo". Consome <code>window.DIFF</code>.</p>
+      <p><strong>mermaid-zoom.js</strong> — lightbox pan/zoom com event delegation + pseudo-elemento CSS (sobrevive aos rewrites do Mermaid) e lista <code>INTERACTIVE</code> (nunca sequestra SVG em <code>button</code>, <code>a</code>, <code>[onclick]</code>, <code>label</code>, <code>summary</code>). Carrega <code>svg-pan-zoom</code> do CDN sob demanda.</p>
+      <p><strong>manager.html</strong> — o mural de cards: título + favicon por docs, pastas/grupos com drag &amp; drop persistido via <code>POST /api/layout</code>, ações Warp/reveal/remover, botão Escanear.</p>
+    </div>
+  </details>
 </section>
 
-<section id="testes">
-<h2><span class="num">9</span>Testes — o desenho a serviço da verificação</h2>
-<p class="lead">7 arquivos em <code>tests/</code>, rodando com <code>node --test</code> puro. A arquitetura existe para que eles não precisem de disco, rede nem browser:</p>
-<table>
-<tbody><tr><th>Arquivo</th><th>O que verifica (e qual costura permite)</th></tr>
-<tr><td><code>ops.test.js</code></td><td>A própria costura: <code>setOps</code>/<code>resetOps</code>, o Proxy, o adaptador em memória.</td></tr>
-<tr><td><code>serve-args.test.js</code></td><td><code>parseArgs()</code> puro — arrays → opções, sem argv real.</td></tr>
-<tr><td><code>serve-port.test.js</code></td><td>Política de portas: <code>main()</code> com deps injetadas simulando EADDRINUSE e manager vivo.</td></tr>
-<tr><td><code>roots.test.js</code></td><td><code>safeRelPath</code>/<code>resolveIn</code>/<code>readJsonBody</code>/<code>ENDPOINTS</code> — handlers nomeados sem subir servidor.</td></tr>
-<tr><td><code>export.test.js</code></td><td><code>run()</code> requireable: os cinco passos, SKIP_FILES, bootstrap <code>/?p=</code>.</td></tr>
-<tr><td><code>lib.test.js</code></td><td><code>me()/api()/isShell()</code> — UMD dá <code>module.exports</code> sem browser.</td></tr>
-<tr><td><code>diff.test.js</code></td><td><code>diffOps/wordDiff/marks</code> — LCS puro, sem DOM nem localStorage.</td></tr>
-</tbody></table>
+<!-- ══ 5 · EXPORT ═══════════════════════════════════════════════════ -->
+<section id="export">
+  <h2><span class="num">5</span>Publicação estática</h2>
+  <p class="lead">O que o servidor decide por requisição, o export decide UMA vez e escreve em disco.</p>
+
+  <div class="ramp"><b>Rampa para iniciante (pode pular)</b> — um <b>site estático</b> é um punhado de arquivos entregues por qualquer servidor burro (ou de graça: Surge, GitHub Pages) — sem Node rodando. O export "congela" a experiência do modo dev; o preço: nada que precise de servidor (editar, apagar, live reload) existe no estático.</div>
+
+  <div class="pgt">
+    <div class="step prob"><span class="lbl">O problema</span>
+      <p>Publicar as docs sem carregar um Node junto — e sem perder sidebar, ordem, ícones e deep links.</p></div>
+    <div class="step idea"><span class="lbl">A ideia</span>
+      <p>Decidir de antemão tudo que o dev decide por request e escrever em disco: arquivos puros, zero servidor, prontos pra <code>surge dist</code>. <code>run(root, outDir)</code> também é requireable (pasta inexistente <em>lança</em>; o footer imprime + exit 1).</p></div>
+    <div class="step where"><span class="lbl">Onde vive</span>
+      <p><code>src/cli/export.js</code>, usando <code>buildTree</code> e <code>injectScripts(staticMode)</code> do domain</p></div>
+  </div>
+
+  <div class="flow">
+    <span class="node">copia a pasta<br><small>(pula _config.json + legados)</small></span><span class="arr">→</span>
+    <span class="node dev">manifest.json</span><span class="arr">→</span>
+    <span class="node">client/ → __docs__/</span><span class="arr">→</span>
+    <span class="node">shell garantido</span><span class="arr">→</span>
+    <span class="node">reinjeta cada .html</span>
+  </div>
+
+  <div class="callout"><div class="title">🔗 Deep link no estático</div>
+  No modo estático, o <code>inject.js</code> adiciona ao <code>&lt;head&gt;</code> de todo doc o bootstrap de deep link: doc aberto direto na janela top pula para <code>/?p=&lt;path&gt;</code> (âncora preservada), e o shell abre o doc no iframe. Também define <code>window.DOCS_EXPORT = true</code> — o <code>nav.js</code> entra em modo read-only e edit/changes nem são injetados.</div>
+
+  <div class="callout tip"><div class="title">🧪 E os testes?</div>
+  7 suítes em <code>tests/</code> rodando com <code>node --test</code> puro (45 testes, zero deps) — a arquitetura existe para que eles não precisem de disco, rede nem browser. O mapa completo, suíte por suíte, está no doc dedicado: <a href="testes-do-pacote.html">🧪 Testes do Pacote</a>.</div>
 </section>
 
-<section id="resumo">
-<h2><span class="num">10</span>Resumo em uma tabela</h2>
-<table>
-<tbody><tr><th>Arquivo</th><th>Módulo</th><th>Em uma frase</th></tr>
-<tr><td><code>serve.js</code></td><td>CLI</td><td>Argumentos (requireable), delegação, registry, portas honestas (20 fallbacks).</td></tr>
-<tr><td><code>ops.js</code></td><td>Costura</td><td>Proxy sobre fs/spawn/execFile/openPath/openUrl/homeDir; <code>setOps()</code> troca o mundo.</td></tr>
-<tr><td><code>roots.js</code></td><td>Contexto</td><td>Handler por pasta: ENDPOINTS declarativo, shell, estáticos, deep links.</td></tr>
-<tr><td><code>inject.js</code></td><td>Contexto</td><td>Ordem de injeção (lib primeiro) — compartilhada entre dev e export.</td></tr>
-<tr><td><code>config.js</code></td><td>Contexto</td><td><code>_config.json</code>: título, favicon, ordem, ícones (+ humanize).</td></tr>
-<tr><td><code>manifest.js</code></td><td>Contexto</td><td>Pasta → árvore JSON da sidebar (com ordem e mtime).</td></tr>
-<tr><td><code>reload.js</code></td><td>Contexto</td><td><code>ops.watch</code> + debounce unref → SSE (+ hook pro hub).</td></tr>
-<tr><td><code>shell.js</code> / <code>init.js</code></td><td>Contexto</td><td>Layout embutido (contrato <code>#docList</code>) e scaffolding.</td></tr>
-<tr><td><code>manager.js</code></td><td>Multi-docs</td><td>Multi-root: /api/*, roteio por slug, hub SSE, Warp, layout atômico.</td></tr>
-<tr><td><code>registry.js</code></td><td>Multi-docs</td><td><code>~/.docs-in-html/registry.json</code>: docs, slugs, layout do mural.</td></tr>
-<tr><td><code>delegation.js</code></td><td>Multi-docs</td><td>CLI pinga/adiciona no manager em vez de subir servidor.</td></tr>
-<tr><td><code>scan.js</code></td><td>Multi-docs</td><td>Importação em lote: acha pastas com <code>_config.json</code> válido.</td></tr>
-<tr><td><code>export.js</code></td><td>Publicação</td><td>Congela a docs em estático; requireable com footer; lança em pasta ausente.</td></tr>
-<tr><td><code>client/lib.js</code></td><td>Clientes</td><td>Identidade UMD: <code>me()/api()/isShell()/BASE</code> — primeiro em toda página.</td></tr>
-<tr><td><code>client/diff.js</code></td><td>Clientes</td><td>Núcleo LCS puro (UMD, <code>window.DIFF</code>), testável com node:test.</td></tr>
-<tr><td><code>client/nav.js</code></td><td>Clientes</td><td>Sidebar viva: árvore, URLs, kebab, CRUD, read-only no export.</td></tr>
-<tr><td><code>client/reload.js</code></td><td>Clientes</td><td>SSE com leader election (Web Locks + BroadcastChannel).</td></tr>
-<tr><td><code>client/edit.js</code></td><td>Clientes</td><td>Editor WYSIWYG inline com Ctrl+S e strip de <code>data-injected</code>.</td></tr>
-<tr><td><code>client/changes.js</code></td><td>Clientes</td><td>Diff da última visita: chips, word-diff, minimap, favicon dot.</td></tr>
-<tr><td><code>client/mermaid-zoom.js</code></td><td>Clientes</td><td>Lightbox pan/zoom robusto a rewrites do Mermaid.</td></tr>
-<tr><td><code>client/manager.html</code></td><td>Clientes</td><td>Mural de cards do manager (Warp, reveal, remover, scan).</td></tr>
-<tr><td><code>alias/docs-in-html/</code></td><td>Compat</td><td>Stub que faz require do spec-space — o CLI antigo segue vivo.</td></tr>
-</tbody></table>
+<!-- ══ 6 · GLOSSÁRIO ════════════════════════════════════════════════ -->
+<section id="glossario">
+  <h2><span class="num">6</span>Glossário de domínio</h2>
+  <p class="lead">O vocabulário que o resto do doc usa sem re-explicar.</p>
+  <div class="gloss">
+    <div class="g"><b>seam (costura)</b> <span>— ponto do código onde uma peça pode ser trocada sem mexer em mais nada; aqui: a fronteira com o mundo exterior (fs, processos).</span></div>
+    <div class="g"><b>adapter</b> <span>— implementação de um lado do seam: o Node real em produção, uma imitação em memória nos testes.</span></div>
+    <div class="g"><b>módulo profundo</b> <span>— faz UMA coisa bem, esconde os detalhes, mostra uma interface pequena — aparelho de som com poucos botões.</span></div>
+    <div class="g"><b>requireable</b> <span>— arquivo que funciona como programa E como biblioteca; efeitos colaterais atrás de <code>if (require.main === module)</code>.</span></div>
+    <div class="g"><b>UMD</b> <span>— mesmo arquivo JS na tag <code>&lt;script&gt;</code> (publica no <code>window</code>) e no <code>require()</code> do Node (<code>module.exports</code>).</span></div>
+    <div class="g"><b>SSE</b> <span>— Server-Sent Events: canal onde o servidor empurra eventos ao browser sem polling.</span></div>
+    <div class="g"><b>root</b> <span>— uma pasta de docs servida; contexto criado por <code>createRoot</code>.</span></div>
+    <div class="g"><b>shell</b> <span>— a página com <code>id="docList"</code>; o contrato estrutural do layout.</span></div>
+    <div class="g"><b>doc</b> <span>— um <code>.html</code> da pasta, renderizado no iframe do shell.</span></div>
+    <div class="g"><b>manifest</b> <span>— árvore JSON (docs/pastas/ordem/mtime) que alimenta a sidebar.</span></div>
+    <div class="g"><b>registry</b> <span>— <code>~/.docs-in-html/registry.json</code>: pastas conhecidas + layout do mural.</span></div>
+    <div class="g"><b>slug</b> <span>— apelido de URL derivado do título da docs (<code>/my-project-handbook/</code>).</span></div>
+    <div class="g"><b>mural</b> <span>— página de cards do manager com grupos e ordenação.</span></div>
+    <div class="g"><b>data-injected</b> <span>— marca em toda UI injetada pelo dev server; o editor a remove ao salvar o arquivo limpo.</span></div>
+  </div>
+</section>
+
+<!-- ══ 7 · QUIZ ═════════════════════════════════════════════════════ -->
 <section id="quiz">
-<h2><span class="num">11</span>Quiz</h2>
-<p class="lead">Cinco perguntas para checar se o <em>porquê</em> das decisões ficou claro. Clique numa resposta para ver o feedback — pode tentar de novo à vontade.</p>
+  <h2><span class="num">7</span>🎯 Quiz</h2>
+  <p class="lead">Cinco perguntas para checar se o <em>porquê</em> das decisões ficou claro — clique numa resposta; pode tentar de novo à vontade.</p>
 
-<div class="qcard" data-answer="c">
-  <p class="q-title">1. Por que o projeto concentra todo acesso a fs/processos num único módulo <code>ops.js</code>?</p>
-  <div class="opts">
-    <button class="opt" data-k="a">A) Para reduzir o número de <code>require</code>s e acelerar o startup do servidor.</button>
-    <button class="opt" data-k="b">B) Porque o Node vai depreicar <code>node:fs</code> e assim a migração fica mais fácil.</button>
-    <button class="opt" data-k="c">C) Porque cria uma costura única: <code>setOps(fakeOps)</code> troca o mundo inteiro por uma imitação em memória, e os testes rodam sem disco, rede ou processos reais.</button>
-    <button class="opt" data-k="d">D) Para que cada módulo possa escolher seu próprio adaptador de fs independentemente.</button>
+  <div class="qcard" data-answer="c">
+    <p class="q-title">1. Por que o projeto concentra todo acesso a fs/processos num único módulo <code>src/env/ops.js</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Para reduzir o número de <code>require</code>s e acelerar o startup do servidor.</button>
+      <button class="opt" data-k="b">B) Porque o Node vai depreicar <code>node:fs</code> e assim a migração fica mais fácil.</button>
+      <button class="opt" data-k="c">C) Porque cria uma costura única: <code>setOps(fakeOps)</code> troca o mundo inteiro por uma imitação em memória, e os testes rodam sem disco, rede ou processos reais.</button>
+      <button class="opt" data-k="d">D) Para que cada módulo possa escolher seu próprio adaptador de fs independentemente.</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> A costura existe a serviço da verificação: um único ponto de troca (o Proxy delega ao adaptador corrente) simula EADDRINUSE, manager no ar ou um disco inteiro nos testes, sem efeitos colaterais.</div>
   </div>
-  <div class="q-feedback">✅ <b>C.</b> A costura existe a serviço da verificação: um único ponto de troca (o Proxy delega ao adaptador corrente) simula EADDRINUSE, manager no ar ou um disco inteiro nos testes, sem efeitos colaterais.</div>
-</div>
 
-<div class="qcard" data-answer="b">
-  <p class="q-title">2. Para que serve o rodapé <code>if (require.main === module)</code> em <code>serve.js</code>?</p>
-  <div class="opts">
-    <button class="opt" data-k="a">A) Garante que o servidor só aceite requisições vindas do processo principal.</button>
-    <button class="opt" data-k="b">B) Separa biblioteca de programa: efeitos colaterais (parse do argv, exit, subir server) só rodam quando o arquivo é executado como binário — requerer o módulo é silencioso e testável in-process.</button>
-    <button class="opt" data-k="c">C) Faz cache do módulo para o require ficar mais rápido nos testes.</button>
-    <button class="opt" data-k="d">D) É exigência do Node para todo arquivo que exporta <code>main()</code>.</button>
+  <div class="qcard" data-answer="b">
+    <p class="q-title">2. Para que serve o rodapé <code>if (require.main === module)</code> em <code>src/cli/serve.js</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Garante que o servidor só aceite requisições vindas do processo principal.</button>
+      <button class="opt" data-k="b">B) Separa biblioteca de programa: efeitos colaterais (parse do argv, exit, subir server) só rodam quando o arquivo é executado como binário — requerer o módulo é silencioso e testável in-process.</button>
+      <button class="opt" data-k="c">C) Faz cache do módulo para o require ficar mais rápido nos testes.</button>
+      <button class="opt" data-k="d">D) É exigência do Node para todo arquivo que exporta <code>main()</code>.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Sem o footer, o simples <code>require("./serve")</code> num teste já dispararia o servidor. Com ele, <code>parseArgs</code>/<code>main</code> viram funções puras importáveis; o "modo programa" fica atrás da guarda.</div>
   </div>
-  <div class="q-feedback">✅ <b>B.</b> Sem o footer, o simples <code>require("./serve")</code> num teste já dispararia o servidor. Com ele, <code>parseArgs</code>/<code>main</code> viram funções puras importáveis; o "modo programa" fica atrás da guarda.</div>
-</div>
 
-<div class="qcard" data-answer="a">
-  <p class="q-title">3. Por que o <code>inject.js</code> garante que <code>diff.js</code> seja injetado imediatamente antes de <code>changes.js</code>?</p>
-  <div class="opts">
-    <button class="opt" data-k="a">A) Porque o <code>changes.js</code> consome <code>window.DIFF</code>: a ordem no HTML garante que o núcleo de diff esteja definido quando o changes executar.</button>
-    <button class="opt" data-k="b">B) Porque o <code>diff.js</code> só carrega o Mermaid se o changes já rodou.</button>
-    <button class="opt" data-k="c">C) É apenas ordem alfabética — nenhuma dependência real entre eles.</button>
-    <button class="opt" data-k="d">D) Porque o changes precisa abrir a conexão SSE antes do diff ser calculado.</button>
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. Por que o <code>src/domain/inject.js</code> garante que <code>diff.js</code> seja injetado imediatamente antes de <code>changes.js</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque o <code>changes.js</code> consome <code>window.DIFF</code>: a ordem no HTML garante que o núcleo de diff esteja definido quando o changes executar.</button>
+      <button class="opt" data-k="b">B) Porque o <code>diff.js</code> só carrega o Mermaid se o changes já rodou.</button>
+      <button class="opt" data-k="c">C) É apenas ordem alfabética — nenhuma dependência real entre eles.</button>
+      <button class="opt" data-k="d">D) Porque o changes precisa abrir a conexão SSE antes do diff ser calculado.</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> <code>diff.js</code> (UMD) anexa <code>window.DIFF</code>; <code>changes.js</code> depende dele para diff LCS e word-diff. Injetados com <code>defer</code> na ordem certa, a execução respeita a dependência.</div>
   </div>
-  <div class="q-feedback">✅ <b>A.</b> <code>diff.js</code> (UMD) anexa <code>window.DIFF</code>; <code>changes.js</code> depende dele para diff LCS e word-diff. Injetados com <code>defer</code> na ordem certa, a execução respeita a dependência.</div>
-</div>
 
-<div class="qcard" data-answer="d">
-  <p class="q-title">4. O que a tabela declarativa <code>ENDPOINTS</code> em <code>roots.js</code> compra, na prática?</p>
-  <div class="opts">
-    <button class="opt" data-k="a">A) Rotas mais rápidas, pois evita uma cadeia de <code>if</code>s no handler.</button>
-    <button class="opt" data-k="b">B) Permite expor os endpoints também como comandos de CLI automaticamente.</button>
-    <button class="opt" data-k="c">C) Substitui a validação de caminhos (<code>safeRelPath</code>), que vira desnecessária.</button>
-    <button class="opt" data-k="d">D) Toda a superfície <code>/__*__</code> fica visível e auditável num lugar só — endpoints são funções nomeadas testáveis isoladamente, e o <code>handle</code> só despacha.</button>
+  <div class="qcard" data-answer="d">
+    <p class="q-title">4. O que a tabela declarativa <code>ENDPOINTS</code> em <code>src/server/roots.js</code> compra, na prática?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Rotas mais rápidas, pois evita uma cadeia de <code>if</code>s no handler.</button>
+      <button class="opt" data-k="b">B) Permite expor os endpoints também como comandos de CLI automaticamente.</button>
+      <button class="opt" data-k="c">C) Substitui a validação de caminhos (<code>safeRelPath</code>), que vira desnecessária.</button>
+      <button class="opt" data-k="d">D) Toda a superfície <code>/__*__</code> fica visível e auditável num lugar só — endpoints são funções nomeadas testáveis isoladamente, e o <code>handle</code> só despacha.</button>
+    </div>
+    <div class="q-feedback">✅ <b>D.</b> A tabela é sobre legibilidade e verificabilidade, não performance: um relance mostra cada rota, método e handler; revisar segurança e escrever <code>roots.test.js</code> contra <code>ENDPOINTS</code> fica trivial.</div>
   </div>
-  <div class="q-feedback">✅ <b>D.</b> A tabela é sobre legibilidade e verificabilidade, não performance: um relance mostra cada rota, método e handler; revisar segurança e escrever <code>roots.test.js</code> contra <code>ENDPOINTS</code> fica trivial.</div>
-</div>
 
-<div class="qcard" data-answer="b">
-  <p class="q-title">5. Por que <code>lib.js</code> precisa entrar <strong>primeiro</strong>, em toda página — no dev e no export?</p>
-  <div class="opts">
-    <button class="opt" data-k="a">A) Porque é o maior arquivo e precisa começar a baixar antes para não travar a página.</button>
-    <button class="opt" data-k="b">B) Porque é o módulo de identidade (<code>window.docsLib</code>): <code>reload.js</code>, <code>nav.js</code>, <code>edit.js</code> e cia. consomem <code>me()/api()/isShell()</code> para saber quem são — sem ele, os demais não sabem nem a qual root pertencem.</button>
-    <button class="opt" data-k="c">C) Porque define o CSS da sidebar, que precisa existir antes do HTML renderizar.</button>
-    <button class="opt" data-k="d">D) Porque abre a conexão SSE que os outros scripts apenas reutilizam.</button>
+  <div class="qcard" data-answer="b">
+    <p class="q-title">5. Por que <code>lib.js</code> precisa entrar <em>primeiro</em>, em toda página — no dev e no export?</p>
+    <div class="opts">
+      <button class="opt" data-k="a">A) Porque é o maior arquivo e precisa começar a baixar antes para não travar a página.</button>
+      <button class="opt" data-k="b">B) Porque é o módulo de identidade (<code>window.docsLib</code>): <code>reload.js</code>, <code>nav.js</code>, <code>edit.js</code> e cia. consomem <code>me()/api()/isShell()</code> para saber quem são — sem ele, os demais não sabem nem a qual root pertencem.</button>
+      <button class="opt" data-k="c">C) Porque define o CSS da sidebar, que precisa existir antes do HTML renderizar.</button>
+      <button class="opt" data-k="d">D) Porque abre a conexão SSE que os outros scripts apenas reutilizam.</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> Antes do <code>lib.js</code>, cada cliente copiava seu próprio bloco "quem sou eu?". Agora ele entra primeiro (dev E export) e publica <code>window.docsLib</code> — a pergunta de identidade é respondida uma vez só, para todos.</div>
   </div>
-  <div class="q-feedback">✅ <b>B.</b> Antes do <code>lib.js</code>, cada cliente copiava seu próprio bloco "quem sou eu?". Agora ele entra primeiro (dev E export) e publica <code>window.docsLib</code> — a pergunta de identidade é respondida uma vez só, para todos.</div>
-</div>
 </section>
 
 </main>
+<footer>Arquitetura · Arquitetura do Pacote · spec-space</footer>
+<a class="top" href="#" title="voltar ao topo">↑</a>
 
-<footer><div class="footer-inner">Arquitetura · Arquitetura do Pacote · spec-space</div></footer>
-<a class="top" href="#" aria-label="Voltar ao topo">↑</a>
-
-<script>
-(function () {
-  var links = document.querySelectorAll(".toc a");
-  var sections = [];
-  links.forEach(function (a) { var s = document.querySelector(a.getAttribute("href")); if (s) sections.push({ a: a, s: s }); });
-  function onScroll() {
-    var y = window.scrollY + 120, cur = sections[0];
-    sections.forEach(function (o) { if (o.s.offsetTop <= y) cur = o; });
-    links.forEach(function (a) { a.classList.remove("active"); });
-    if (cur) cur.a.classList.add("active");
-    var t = document.querySelector(".top");
-    if (t) t.classList.toggle("show", window.scrollY > 600);
-  }
-  window.addEventListener("scroll", onScroll, { passive: true });
-  onScroll();
-})();
-(function () {
-  document.querySelectorAll(".qcard").forEach(function (c) {
-    var ans = c.dataset.answer, fb = c.querySelector(".q-feedback");
-    c.querySelectorAll(".opt").forEach(function (b) {
-      b.addEventListener("click", function () {
-        c.querySelectorAll(".opt").forEach(function (o) { o.classList.remove("right", "wrong"); });
-        if (b.dataset.k === ans) { b.classList.add("right"); }
-        else {
-          b.classList.add("wrong");
-          var cor = c.querySelector('.opt[data-k="' + ans + '"]'); if (cor) cor.classList.add("right");
-        }
-        fb.classList.add("show");
-      });
-    });
-  });
-})();
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
 </script>
-</body></html>
+<script>
+document.querySelectorAll(".qcard").forEach(c=>{
+  const ans=c.dataset.answer,fb=c.querySelector(".q-feedback");
+  c.querySelectorAll(".opt").forEach(b=>b.addEventListener("click",()=>{
+    c.querySelectorAll(".opt").forEach(o=>o.classList.remove("right","wrong"));
+    if(b.dataset.k===ans){b.classList.add("right");}
+    else{
+      b.classList.add("wrong");
+      const cor=c.querySelector('.opt[data-k="'+ans+'"]');cor&&cor.classList.add("right");
+    }
+    fb.classList.add("show");
+  }));
+});
+var links=[...document.querySelectorAll(".toc a")];
+var secs=links.map(a=>document.querySelector(a.getAttribute("href")));
+function onScroll(){
+  var y=scrollY+120, cur=secs.findIndex(s=>s&&s.offsetTop>y)-1;
+  if(cur<0)cur=0;
+  links.forEach((a,i)=>a.classList.toggle("active",i===cur));
+  document.querySelector(".top").classList.toggle("show", scrollY>600);
+}
+addEventListener("scroll",onScroll,{passive:true}); onScroll();
+</script>
+</body>
+</html>

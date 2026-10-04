@@ -89,13 +89,13 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
 
 <section id="contexto">
   <h2><span class="num">1</span>Contexto</h2>
-  <p class="lead">O spec-space é um servidor de documentação em HTML puro: um <code>serve.js</code> que publica uma pasta de docs, um <code>manager</code> multi-raiz, um cliente de navegador (edição, navegação, diff) e um exportador estático.</p>
-  <p>O projeto nasceu com uma decisão de arquitetura que define todo o resto: <strong>toda interação com o mundo exterior passa por um único adapter</strong> — o módulo <code>ops.js</code>. Sistema de arquivos, diretório home, <code>spawn</code>, <code>watch</code>, abrir URLs: tudo isso é chamado via <code>ops.*</code>, nunca diretamente via <code>node:fs</code>. Em produção, o adapter padrão delega ao Node real; nos testes, <code>ops.setOps(fake)</code> troca a porta de entrada por uma implementação em memória.</p>
+  <p class="lead">O spec-space é um servidor de documentação em HTML puro: um <code>src/cli/serve.js</code> que publica uma pasta de docs, um <code>manager</code> multi-raiz, um cliente de navegador (edição, navegação, diff) e um exportador estático.</p>
+  <p>O projeto nasceu com uma decisão de arquitetura que define todo o resto: <strong>toda interação com o mundo exterior passa por um único adapter</strong> — o módulo <code>src/env/ops.js</code>. Sistema de arquivos, diretório home, <code>spawn</code>, <code>watch</code>, abrir URLs: tudo isso é chamado via <code>ops.*</code>, nunca diretamente via <code>node:fs</code>. Em produção, o adapter padrão delega ao Node real; nos testes, <code>ops.setOps(fake)</code> troca a porta de entrada por uma implementação em memória.</p>
   <div class="ramp" style="border:1px dashed var(--border);border-radius:8px;padding:14px 18px;margin:18px 0;background:var(--panel)">
     <b>Rampa para iniciante (pode pular)</b>
     <p style="margin:8px 0 0">Um <em>teste de unidade</em> é um pedacinho de código que chama uma função ou módulo sozinho e confere se a saída é a esperada — sem servidor, sem navegador, sem rede. Para isso funcionar, o código precisa de <em>seams</em> ("costuras"): pontos únicos onde um comportamento pode ser trocado sem alterar quem chama — aqui, em vez de o código chamar <code>fs.readFileSync</code> direto, ele chama <code>ops.readFileSync</code>. Nos testes, um <em>fake</em> (uma imitação em memória, ex.: um sistema de arquivos que é só um <code>Map</code>) ocupa esse lugar: o módulo acha que está falando com o disco, mas nenhuma pasta real é tocada.</p>
   </div>
-  <p>A segunda decisão: o servidor é um conglomerado de <strong>funções puras e contextos por raiz</strong> (<code>roots.js</code>), de modo que guardas de segurança, resolução de caminhos e a tabela de endpoints são testáveis sem subir um servidor HTTP de verdade. A terceira: o código de cliente que precisa ser confiável (<code>diff.js</code>, <code>lib.js</code>) é escrito em <strong>UMD</strong> — funciona tanto via <code>&lt;script&gt;</code> no navegador quanto via <code>require()</code> no Node — para que a lógica crítica rode em <code>node --test</code> sem navegador algum.</p>
+  <p>A segunda decisão: o servidor é um conglomerado de <strong>funções puras e contextos por raiz</strong> (<code>src/server/roots.js</code>), de modo que guardas de segurança, resolução de caminhos e a tabela de endpoints são testáveis sem subir um servidor HTTP de verdade. A terceira: o código de cliente que precisa ser confiável (<code>diff.js</code>, <code>lib.js</code>) é escrito em <strong>UMD</strong> — funciona tanto via <code>&lt;script&gt;</code> no navegador quanto via <code>require()</code> no Node — para que a lógica crítica rode em <code>node --test</code> sem navegador algum.</p>
 </section>
 
 <section id="estrategia">
@@ -107,7 +107,7 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
     <li><strong>Funções puras</strong> — <code>safeRelPath</code>, <code>resolveIn</code>, <code>parseArgs</code>, <code>diffOps</code>, <code>me()</code> são testadas por chamada direta: entrada → saída, sem mocks.</li>
     <li><strong><code>listen</code> falso</strong> — nos testes de porta, <code>http.createServer</code> é substituído por um servidor de mentira cujo <code>listen(port, cb)</code> falha sob demanda (<code>EADDRINUSE</code>, <code>EACCES</code>) e registra todas as portas tentadas.</li>
     <li><strong>Diretórios temporários</strong> — <code>fs.mkdtempSync(os.tmpdir())</code> cria pastas de verdade quando o teste precisa de disco real (deleção, export), com <code>t.after</code> limpando tudo.</li>
-    <li><strong>Resposta/req de mentira</strong> — objetos <code>{ writeHead, end }</code> e Readables cumprem o contrato HTTP mínimo que <code>roots.js</code> exige.</li>
+    <li><strong>Resposta/req de mentira</strong> — objetos <code>{ writeHead, end }</code> e Readables cumprem o contrato HTTP mínimo que <code>src/server/roots.js</code> exige.</li>
   </ul>
   <div class="flow">
     <span class="node">teste</span><span class="arr">→</span>
@@ -123,13 +123,13 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
   <table>
     <thead><tr><th>Suíte</th><th>Módulo sob teste</th><th>Testes</th><th>Foco</th></tr></thead>
     <tbody>
-      <tr><td><code>ops.test.js</code></td><td><code>ops.js</code> (+ registry, reload)</td><td>5</td><td>A costura do ambiente: troca de adapter, registro sem tocar o home, debounce do watcher, launchers gravados</td></tr>
-      <tr><td><code>roots.test.js</code></td><td><code>roots.js</code></td><td>6</td><td>Guardas de path traversal, resolução dentro da raiz, tabela de endpoints, 400 antes do fs, leitura de JSON</td></tr>
+      <tr><td><code>ops.test.js</code></td><td><code>src/env/ops.js</code> (+ registry, reload)</td><td>5</td><td>A costura do ambiente: troca de adapter, registro sem tocar o home, debounce do watcher, launchers gravados</td></tr>
+      <tr><td><code>roots.test.js</code></td><td><code>src/server/roots.js</code></td><td>6</td><td>Guardas de path traversal, resolução dentro da raiz, tabela de endpoints, 400 antes do fs, leitura de JSON</td></tr>
       <tr><td><code>diff.test.js</code></td><td><code>client/diff.js</code></td><td>11</td><td>Núcleo de diff puro: ops mínimas, orçamento de células, marks (new/edit/movido), wordDiff, similaridade</td></tr>
       <tr><td><code>lib.test.js</code></td><td><code>client/lib.js</code></td><td>9</td><td>Identidade da página (<code>me()</code>): prefixo case-insensitive, decodificação, index.html, segurança no Node</td></tr>
-      <tr><td><code>serve-args.test.js</code></td><td><code>serve.js</code> (parseArgs)</td><td>8</td><td>Matriz de CLI: defaults, portas explícitas, NaN, subcomandos, flags booleanas</td></tr>
-      <tr><td><code>serve-port.test.js</code></td><td><code>serve.js</code> (main)</td><td>4</td><td>Máquina de fallback de porta (EADDRINUSE × porta explícita), EACCES, delegação ao manager</td></tr>
-      <tr><td><code>export.test.js</code></td><td><code>export.js</code></td><td>2</td><td>Export estático real em temp dir: manifest, <code>__docs__/</code>, tags injetadas, fonte intacta</td></tr>
+      <tr><td><code>serve-args.test.js</code></td><td><code>src/cli/serve.js</code> (parseArgs)</td><td>8</td><td>Matriz de CLI: defaults, portas explícitas, NaN, subcomandos, flags booleanas</td></tr>
+      <tr><td><code>serve-port.test.js</code></td><td><code>src/cli/serve.js</code> (main)</td><td>4</td><td>Máquina de fallback de porta (EADDRINUSE × porta explícita), EACCES, delegação ao manager</td></tr>
+      <tr><td><code>export.test.js</code></td><td><code>src/cli/export.js</code></td><td>2</td><td>Export estático real em temp dir: manifest, <code>__docs__/</code>, tags injetadas, fonte intacta</td></tr>
     </tbody>
   </table>
 </section>
@@ -140,7 +140,7 @@ footer{text-align:center;color:var(--soft);padding:28px 24px;font-size:.9rem}
 
   <h3>ops.test.js — a costura do ambiente (5 testes)</h3>
   <div class="callout tip"><div class="title">Por que esta suíte existe</div>Se a troca de adapter (<code>setOps</code>) não funcionar, nenhum outro teste consegue mentir sobre o mundo — esta é a suíte que valida a fundação de todas as demais.</div>
-  <p><code>ops.js</code> é a única porta para o mundo exterior; se ela quebrar, todos os módulos que dependem dela ficam cegos. A suíte verifica que <code>setOps</code>/<code>resetOps</code> realmente trocam e restauram o adapter, que o <code>registry</code> funciona por inteiro (add/list/save, add duplicado é no-op, <code>registry.json</code> vai para o home <em>falso</em>), e que o <code>reload</code> colapsa dois eventos do mesmo arquivo em um único broadcast — <strong>debounce de 150 ms</strong> que existe porque o Windows dispara vários eventos por salvamento. Um último teste grava lançamentos de <code>openPath</code>/<code>openUrl</code>/<code>spawn</code> sem executar nada, e um teste de sanidade confere que o adapter padrão lê um arquivo real como o <code>node:fs</code>.</p>
+  <p><code>src/env/ops.js</code> é a única porta para o mundo exterior; se ela quebrar, todos os módulos que dependem dela ficam cegos. A suíte verifica que <code>setOps</code>/<code>resetOps</code> realmente trocam e restauram o adapter, que o <code>registry</code> funciona por inteiro (add/list/save, add duplicado é no-op, <code>registry.json</code> vai para o home <em>falso</em>), e que o <code>reload</code> colapsa dois eventos do mesmo arquivo em um único broadcast — <strong>debounce de 150 ms</strong> que existe porque o Windows dispara vários eventos por salvamento. Um último teste grava lançamentos de <code>openPath</code>/<code>openUrl</code>/<code>spawn</code> sem executar nada, e um teste de sanidade confere que o adapter padrão lê um arquivo real como o <code>node:fs</code>.</p>
 
   <h3>roots.test.js — as guardas de segurança (6 testes)</h3>
   <div class="callout tip"><div class="title">Por que esta suíte existe</div>Um servidor que escreve arquivos a pedido do navegador precisa provar que nenhum caminho malicioso escapa da raiz de docs.</div>
