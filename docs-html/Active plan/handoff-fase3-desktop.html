@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Handoff: fase 3 do app desktop spec-space (Tauri)</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-bg:#e7f5ec; --amber:#9a6700; --amber-bg:#fff8e1;
+  --red:#cf222e; --red-bg:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{background:#fff;border-bottom:1px solid var(--border)}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{text-decoration:none;color:var(--text);background:var(--panel);border:1px solid var(--border);
+  border-radius:999px;padding:5px 14px;font-size:.88rem}
+.toc a:hover{background:var(--accent-soft);border-color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 14px}
+h2 .num{color:var(--accent);margin-right:10px}
+h3{font-size:1.12rem;margin:26px 0 8px}
+.lead{color:var(--soft);margin-top:-6px;max-width:70ch}
+p{max-width:76ch}
+a{color:var(--accent)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:.88rem;line-height:1.5}
+pre code{background:none;border:none;padding:0}
+.callout{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
+  border-radius:8px;padding:14px 18px;margin:18px 0}
+.callout .title{font-weight:700;margin-bottom:6px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+table{border-collapse:collapse;width:100%;max-width:820px;margin:16px 0;font-size:.95rem}
+th{background:var(--panel2);text-align:left;padding:9px 14px;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border)}
+.sim{color:var(--green);font-weight:700}.nao{color:var(--red);font-weight:700}.talvez{color:var(--amber);font-weight:700}
+ul,ol{max-width:76ch}
+li{margin:4px 0}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:18px 0;overflow-x:auto}
+footer{max-width:920px;margin:0 auto;padding:26px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+.top{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border-radius:10px;
+  width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;
+  font-size:1.2rem;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Handoff: fase 3 do app desktop (Tauri)</h1>
+    <p class="lede">Tudo o que um agente sem memória desta sessão precisa saber para continuar o spec-space desktop — arquitetura, lições pagas a caro preço no WebView2, e o passo-a-passo da fase 3.</p>
+    <p class="meta">docs-html/Active plan/handoff-fase3-desktop.html · spec-space</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#arquitetura">2 · Arquitetura</a>
+    <a href="#licoes">3 · Lições (críticas)</a>
+    <a href="#fase3">4 · Passo-a-passo fase 3</a>
+    <a href="#devel">5 · Ambiente &amp; comandos</a>
+    <a href="#quiz">6 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+  <p class="lead">Onde o projeto está, o que já foi entregue e onde estão os commits.</p>
+
+  <p>O <strong>spec-space</strong> é um dev server Node zero-dependencies que serve pastas de docs HTML com sidebar, live reload (SSE), diffs e edição inline. O objetivo maior: virar um <strong>app desktop Tauri 2</strong> multiplataforma — janela nativa com abas, sem terminal e sem navegador.</p>
+
+  <table>
+    <tr><th>Fase</th><th>Estado</th><th>Commit</th></tr>
+    <tr><td>1 — shell Tauri apontando pro manager</td><td class="sim">entregue</td><td><code>2f6f8d5</code></td></tr>
+    <tr><td>2 — abas + sidecar Node</td><td class="sim">entregue</td><td><code>96c1525</code></td></tr>
+    <tr><td>3 — instaladores + Node embutido</td><td class="nao">não iniciada</td><td>—</td></tr>
+  </table>
+
+  <p>Existe um <strong>atalho na área de trabalho</strong> do usuário (<code>spec-space.lnk</code>) apontando para o exe de <em>debug</em>: <code>desktop/src-tauri/target/debug/spec-space-desktop.exe</code>. A fase 3 o substitui pelo instalador oficial.</p>
+
+  <div class="callout">
+    <div class="title">Documentos irmãos</div>
+    O plano completo está em <code>docs-html/Active plan/tauri-desktop-app-plan.html</code> (com a seção "Lições da fase 2"). Este handoff é o guia operacional do estado atual.
+  </div>
+</section>
+
+<section id="arquitetura">
+  <h2><span class="num">2</span>Arquitetura atual (fase 2, funcionando)</h2>
+  <p class="lead">Quatro peças conversando — decorar este desenho economiza horas de debug.</p>
+
+  <div class="mermaid">
+flowchart TD
+  U["Duplo clique no atalho"] --> EXE["spec-space-desktop.exe (Tauri/Rust)"]
+  EXE -->|"porta 4400 ou 4490 já responde?"| UP{manager no ar?}
+  UP -->|sim| REUSE["reusa o manager existente"]
+  UP -->|não| SPAWN["spawn: node serve.js manager --no-open"]
+  SPAWN --> MGR["manager (localhost:4490)"]
+  REUSE --> MGR
+  EXE --> SHELL["janela: desktop/ui/index.html (tauri.localhost)"]
+  SHELL -->|"1 iframe único cross-origin"| MGR
+  MGR -->|"páginas com tabs.js injetado"| SHELL
+  TABS["client/tabs.js (inject.js + manager.js)"] <-->|"postMessage: ping/pong, tab-open, tab-nav, spec-key"| SHELL
+  </div>
+
+  <h3>Peça por peça</h3>
+  <ul>
+    <li><strong><code>desktop/src-tauri/src/main.rs</code></strong> — no boot, testa TCP em 4400/4490; se nenhum responder, spawna <code>node &lt;repo&gt;/src/cli/serve.js manager --no-open</code> como filho (acha o repo subindo diretórios até achar <code>src/cli/serve.js</code>). Ao fechar a janela, mata o filho.</li>
+    <li><strong><code>desktop/ui/index.html</code></strong> — o shell: barra de abas + <strong>UM único iframe compartilhado</strong> (id <code>view</code>, com <code>allow="fullscreen"</code>). Aba = URL; trocar de aba navega o iframe. Sonda o manager em 4400 e 4490 (fetch <code>no-cors</code> — CORS do manager não responde, e <code>fetch</code> comum falha). Estado das abas em <code>localStorage</code> (<code>spec-space-tabs</code>). Toda aba é fechável; zero abas = só o "+".</li>
+    <li><strong><code>client/tabs.js</code></strong> — ponte injetada nas páginas servidas (vira no-op em browser comum: só age quando <code>window.parent !== window.self</code> e o shell responde um <code>spec-ping</code> com <code>spec-pong</code>). Faz: Ctrl/Cmd+clique e clique do meio → nova aba; repassa Ctrl+T/W/ESC; reporta navegação (título/URL da aba). Fullscreen nativo roda <em>sem interceptação</em>.</li>
+    <li><strong><code>src/domain/inject.js</code></strong> — injeta <code>tabs.js</code> em toda página servida (dev). <strong><code>src/server/manager.js</code></strong> — além disso, serve a cards page (<code>manager.html</code>) com a tag do <code>tabs.js</code> (rota <code>/__docs__/tabs.js</code>; query <code>?notabs</code> pula a injeção — útil pra debug).</li>
+  </ul>
+
+  <div class="callout tip">
+    <div class="title">Protocolo postMessage (shell ⇄ tabs.js)</div>
+    <code>spec-ping</code>/<code>spec-pong</code> (handshake), <code>spec-tab-open {href}</code>, <code>spec-tab-nav {href,title}</code>, <code>spec-key {key: t|w|escape}</code>. Origens: shell é <code>tauri.localhost</code>, páginas são <code>localhost:PORTA</code> — cross-origin, mensagens sempre com <code>"*"</code>.
+  </div>
+</section>
+
+<section id="licoes">
+  <h2><span class="num">3</span>Lições críticas do WebView2 (pagas com sangue)</h2>
+  <p class="lead">Ignorar qualquer uma destas reabre bugs que custaram horas. Elas são o porquê de cada decisão estranha do código.</p>
+
+  <div class="callout danger">
+    <div class="title">1. NUNCA use dois iframes cross-origin vivos</div>
+    Um segundo iframe apontando para o manager, ao <em>terminar de carregar</em>, <strong>deadlocka a main thread do renderer</strong> do WebView2 — sem exceção, sem console, CDP para de responder. Não é rede (iframes de JSON/404 não travam), é renderer. Por isso o shell usa <strong>iframe único</strong> e trocar de aba = navegar. Se a fase 3/quatro quiser abas vivas em paralelo, o caminho é múltiplos <em>webviews nativos</em> do Tauri, não iframes.
+  </div>
+
+  <div class="callout danger">
+    <div class="title">2. NUNCA force-mate o app durante desenvolvimento</div>
+    <code>taskkill /F</code> corrompe o LevelDB do perfil WebView2 (<code>%LOCALAPPDATA%\com.kevinweitgenant.specspace\EBWebView\Default\Local Storage</code>). Sintoma diabólico: <code>localStorage.getItem</code> funciona, mas qualquer <code>setItem</code> <strong>trava a janela inteira</strong> — disfarçou-se de bug de abas/fullscreen por uma sessão inteira. Fix: app fechado, apagar a pasta <code>Local Storage</code>. Para fechar graciosamente por CLI, use <code>taskkill /IM spec-space-desktop.exe</code> (sem <code>/F</code>) quando possível.
+  </div>
+
+  <div class="callout">
+    <div class="title">3. Fullscreen nativo funciona (mas exige allow)</div>
+    <code>requestFullscreen()</code> do mermaid-zoom dentro dos iframes aninhados funciona <strong>desde que o iframe externo tenha <code>allow="fullscreen"</code></strong>. Houve um "fake fullscreen" por CSS que foi removido — os freezes da época eram a lição nº 2, não a API.
+  </div>
+
+  <div class="callout">
+    <div class="title">4. Detalhes que mordem</div>
+    <ul style="margin:6px 0 0">
+      <li>O teclado mora dentro do iframe — o shell <strong>nunca</strong> vê Ctrl+T/W; o <code>tabs.js</code> repassa via postMessage.</li>
+      <li>A cards page é servida crua (sem <code>injectScripts</code>) — por isso a rota dedicada <code>/__docs__/tabs.js</code>.</li>
+      <li>O manager neste ambiente sobe na <strong>4490</strong> (não na 4400 padrão) — o shell sonda ambas.</li>
+      <li>Debug remoto: lance o exe com <code>WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9223</code> e use CDP em <code>http://localhost:9223/json</code>. Um <em>avaliar que não responde</em> = main thread travada (ver lições 1/2).</li>
+      <li><code>ui/index.html</code> é <strong>embutido no binário em tempo de compilação</strong> — mudou o shell, precisa <code>cargo build</code> de novo (tabs.js/manager.js NÃO: são lidos do disco a cada request).</li>
+      <li>Managers órfãos: se o app for morto com /F, o filho Node sobrevive; o próximo app o reusa (código velho!). Mate órfãos antes de testar mudanças no server.</li>
+    </ul>
+  </div>
+</section>
+
+<section id="fase3">
+  <h2><span class="num">4</span>Passo-a-passo da fase 3</h2>
+  <p class="lead">Meta: instaladores multiplataforma que funcionam em máquina <em>sem Node instalado</em>, substituindo o atalho de dev.</p>
+
+  <h3>Passo 1 — Modo sidecar no CLI</h3>
+  <p>Em <code>src/cli/serve.js</code>, adicionar flag <code>--sidecar</code>: não abre browser (já existe <code>--no-open</code>), escolhe <strong>porta livre dinamicamente</strong> (evita colisão com manager do usuário) e <strong>reporta a porta escolhida no stdout</strong> (linha tipo <code>PORT 45123</code>) para o Rust ler. Sem mudar comportamento do CLI normal. Testar: <code>node src/cli/serve.js manager --sidecar</code>.</p>
+
+  <h3>Passo 2 — Rust lê a porta e a passa ao shell</h3>
+  <p>Em <code>main.rs</code>: ao spawnar o filho, ler o stdout até a linha <code>PORT</code>; guardar porta em state Tauri. O shell passa a receber a porta via <a href="https://v2.tauri.app/develop/calling-rust/"><code>invoke</code></a> (ou injetando via <code>initialization script</code>) em vez de sondar 4400/4490. Remover a sonda das duas portas (vira fallback).</p>
+
+  <h3>Passo 3 — Embutir o runtime Node</h3>
+  <p>Opções: (a) <strong>sidecar por plataforma</strong> com binário Node oficial por alvo (recomendado; o Tauri suporta "external binaries" por target — <code>desktop/src-tauri/binaries/</code>); ou (b) compilar o server a um executável único (ex.: <code>pkg</code> — mas atenção: o projeto se orgulha de zero-dependencies). Entregar <code>src/</code> + <code>client/</code> empacotados junto. O <code>main.rs</code> passa a invocar o binário embutido, não o <code>node</code> do PATH.</p>
+
+  <h3>Passo 4 — Build release + instaladores</h3>
+  <pre><code>cd desktop
+npm run tauri build   # gera .msi + NSIS .exe (Windows); .dmg/.app (macOS); .AppImage/.deb (Linux)</code></pre>
+  <p>Ícones já existem (<code>desktop/src-tauri/icons/</code>, gerados de <code>desktop/appicon.png</code> — o <code>icon.png</code> da raiz é na verdade um JPEG; usar o <code>appicon.png</code>). Validar <code>tauri.conf.json</code> (bundle targets, identifier <code>com.kevinweitgenant.specspace</code>). Instalar num Windows limpo <strong>sem Node</strong> e abrir as docs — critério de aceite da fase.</p>
+
+  <h3>Passo 5 — Substituir o atalho de dev</h3>
+  <p>Após instalar, remover/reapontar o <code>spec-space.lnk</code> da área de trabalho (hoje aponta pro exe debug). Considerar plugin de auto-update do Tauri 2 como follow-up (não bloquear a fase nele).</p>
+
+  <div class="callout warn">
+    <div class="title">Riscos conhecidos da fase 3</div>
+    Binário cresce (~40–70 MB com Node embutido — ainda muito menor que Electron); assinatura macOS exige Apple Developer ID se distribuir fora do círculo pessoal; testar o deadlock da lição nº 1 não se aplica (não mexer no modelo de iframe único); portas — sempre dinâmica no modo sidecar.
+  </div>
+</section>
+
+<section id="devel">
+  <h2><span class="num">5</span>Ambiente &amp; comandos de dev</h2>
+  <p class="lead">Réguas de medição do dia-a-dia — rodar antes de commitar.</p>
+
+  <pre><code># testes do projeto (45 hoje, devem passar)
+npm test
+
+# build do app desktop (embeds desktop/ui no binário)
+cd desktop/src-tauri && cargo build
+
+# lançar o app (sem debugger — estado real de uso)
+start "" target/debug/spec-space-desktop.exe
+
+# lançar com debug remoto (CDP em localhost:9223)
+WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS="--remote-debugging-port=9223" start "" target/debug/spec-space-desktop.exe
+
+# limpar perfil WebView2 SE (e só se) suspeita de LevelDB corrompido (app fechado!)
+rm -rf "$LOCALAPPDATA/com.kevinweitgenant.specspace/EBWebView/Default/Local Storage"</code></pre>
+
+  <ul>
+    <li><strong>Rust 1.98, Node 22</strong> na máquina do usuário; <code>desktop/node_modules</code> já instalado (@tauri-apps/cli 2).</li>
+    <li><code>.gitignore</code> já cobre <code>target/</code>, <code>gen/schemas/</code>, ícones android/ios/MSIX, <code>node_modules</code>, <code>dist/</code>. Lockfiles (<code>Cargo.lock</code>, <code>package-lock.json</code>) <em>se</em> commitam (app).</li>
+    <li>Convenção de commits: <code>feat(desktop): …</code>, <code>docs(plan): …</code>, pt-BR no corpo.</li>
+    <li>Fluxo de teste com o usuário: lançar o exe e pedir pra ele exercitar (abas, Ctrl+clique, maximize) — o feedback dele é o teste de aceitação.</li>
+  </ul>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">6</span>Quiz</h2>
+
+  <div class="qcard" data-answer="b" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0">
+    <p class="q-title" style="font-weight:600;margin:0 0 10px">1. Por que o shell usa UM único iframe em vez de um por aba?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">A) Economia de memória — cada iframe é pesado</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">B) Um segundo iframe cross-origin vivo deadlocka a main thread do renderer do WebView2 ao carregar</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">C) Porque o HTTP/1.1 limita conexões SSE por origem</button>
+    </div>
+    <div class="q-feedback" style="display:none;background:var(--panel);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.93rem">✅ <b>B.</b> Foi medido por bissecção via CDP: JSON/404 em segundo iframe não travam; página real travava o renderer inteiro, sem exceção. A aba virou URL, e trocar de aba navega o iframe único (custo: recarrega a página).</div>
+  </div>
+
+  <div class="qcard" data-answer="c" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0">
+    <p class="q-title" style="font-weight:600;margin:0 0 10px">2. O app congela "do nada" ao abrir abas. Qual a primeira suspeita e o fix?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">A) Bug no tabs.js — ler o console do navegador</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">B) Porta errada do manager — checar netstat</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">C) LevelDB do localStorage corrompido (force-kill) — apagar a pasta Local Storage com o app fechado</button>
+    </div>
+    <div class="q-feedback" style="display:none;background:var(--panel);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.93rem">✅ <b>C.</b> <code>getItem</code> funciona mas <code>setItem</code> trava a main thread — sem erro, sem log. Se alguém rodou <code>taskkill /F</code>, essa é a suspeita nº 1. Fix: remover <code>…EBWebView/Default/Local Storage</code> com o app fechado.</div>
+  </div>
+
+  <div class="qcard" data-answer="a" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0">
+    <p class="q-title" style="font-weight:600;margin:0 0 10px">3. Você editou <code>desktop/ui/index.html</code>. O que é preciso para o app refletir a mudança?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">A) <code>cargo build</code> — o ui é embutido no binário em tempo de compilação</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">B) Nada — é lido do disco a cada request</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">C) Reiniciar só o manager Node</button>
+    </div>
+    <div class="q-feedback" style="display:none;background:var(--panel);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.93rem">✅ <b>A.</b> O frontendDist é embutido pelo codegen do Tauri. Já <code>client/tabs.js</code> e os arquivos do server são lidos do disco por request — esses pegam sem rebuild (mas o manager velho em memória precisa reiniciar para código de server).</div>
+  </div>
+
+  <div class="qcard" data-answer="b" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0">
+    <p class="q-title" style="font-weight:600;margin:0 0 10px">4. Na fase 3, por que o modo sidecar deve escolher porta dinâmica e reportá-la?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">A) Para economizar conexões TCP</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">B) A porta fixa pode estar ocupada por outro manager do usuário — e o Rust/shell precisa saber onde conectar</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">C) Porque o WebView2 exige portas altas</button>
+    </div>
+    <div class="q-feedback" style="display:none;background:var(--panel);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.93rem">✅ <b>B.</b> Hoje o shell sonda 4400/4490 e reusa o que estiver no ar — funciona, mas é frágil (manager órfão com código velho já confundiu testes). Porta livre dinâmica + reporte via stdout/IPC elimina a adivinhação.</div>
+  </div>
+
+  <div class="qcard" data-answer="a" style="background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0">
+    <p class="q-title" style="font-weight:600;margin:0 0 10px">5. Ctrl+T não funciona quando o foco está numa doc. Por quê?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">A) O keydown acontece dentro do iframe — o shell não o vê; o tabs.js precisa repassá-lo via postMessage</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">B) O WebView2 captura Ctrl+T como acelerador do sistema</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')" style="display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit">C) Porque a doc captura todos os eventos de teclado</button>
+    </div>
+    <div class="q-feedback" style="display:none;background:var(--panel);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.93rem">✅ <b>A.</b> Eventos de teclado ficam no documento focado (dentro do iframe). O <code>tabs.js</code> escuta keydown em capture e posta <code>spec-key</code> pro shell — que é também por que a cards page precisou da injeção do tabs.js (rota <code>/__docs__/tabs.js</code>).</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Handoff · fase 3 do app desktop spec-space · spec-space</footer>
+<a class="top" href="#" title="Voltar ao topo">↑</a>
+
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+<script>
+const top=document.querySelector(".top");
+addEventListener("scroll",()=>top.classList.toggle("show",scrollY>600));
+</script>
+</body>
+</html>
