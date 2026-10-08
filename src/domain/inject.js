@@ -44,7 +44,17 @@ function injectScripts(html, opts = {}) {
   if (!staticMode && base) tags.push(`<script>window.DOCS_BASE=${JSON.stringify(base + "/")}</script>`);
   if (staticMode) tags.push(`<script>window.DOCS_EXPORT=true</script>`);
   else tags.push(`<script src="${base}/__docs__/reload.js" data-injected></script>`);
-  if (isShell) tags.push(`<script src="${base}/__docs__/nav.js" data-injected></script>`);
+  if (isShell) {
+    // sidebar styles first, then the nav modules (they attach functions to
+    // window.docsNav and define nothing on their own), then the boot file
+    // that wires everything up. Export copies client/ → __docs__/ wholesale,
+    // so nav/ + nav.css come along for free.
+    tags.push(`<link rel="stylesheet" href="${base}/__docs__/nav.css" data-injected>`);
+    for (const f of ["nav/util.js", "nav/icons.js", "nav/menu.js", "nav/rename.js", "nav/dnd.js", "nav/badges.js", "nav/tree.js"]) {
+      tags.push(`<script src="${base}/__docs__/${f}" data-injected></script>`);
+    }
+    tags.push(`<script src="${base}/__docs__/nav.js" data-injected></script>`);
+  }
   else if (!staticMode) {
     tags.push(`<script src="${base}/__docs__/edit.js" data-injected defer></script>`);
     // pure diff core first — changes.js consumes window.DIFF; same defer flag,

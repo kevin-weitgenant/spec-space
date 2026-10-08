@@ -1,0 +1,79 @@
+/* spec-space nav client — sidebar styles.
+   Injected as <link data-injected> into the shell only (a page with #docList),
+   by src/domain/inject.js. Kept as a real .css file (served from /__docs__/)
+   for syntax highlighting and readable diffs. */
+
+.dl-folder{position:relative;display:flex;align-items:center;gap:6px;font-weight:600;padding:7px 8px;cursor:pointer;border-radius:6px;user-select:none;color:#1f2329}
+.dl-folder:hover{background:#f6f7f9}
+#docList .dl-nested{list-style:none;margin:2px 0 4px 8px;padding-left:14px;border-left:1px solid #eef1f5}
+#docList a{display:block;position:relative;padding:7px 10px;border-radius:6px;text-decoration:none;color:#1f2329;cursor:pointer;font-size:.95rem;-webkit-user-drag:none;user-select:none}
+#docList a:hover{background:#f6f7f9}
+#docList a.active{background:#e8f0fe;color:#1f6feb;font-weight:600}
+/* change badge: doc changed while not being viewed (docs-in-html:change) */
+#docList a.dl-changed::after{content:"";position:absolute;right:10px;top:50%;transform:translateY(-50%);width:7px;height:7px;border-radius:50%;background:#1a7f37;box-shadow:0 0 0 2px #fff}
+#dl-toggle{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;border:1px solid #d9dee6;background:#fff;border-radius:7px;cursor:pointer;font-size:14px;line-height:1;color:#1f2329}
+#dl-toggle:hover{background:#f6f7f9}
+#dl-toggle img{display:block;width:18px;height:18px}
+#dl-toggle.dl-off{background:#e8f0fe;border-color:#1f6feb}
+header #dl-toggle{margin-right:8px}
+#dl-toggle.dl-floating{position:fixed;top:10px;left:10px;z-index:200;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+aside.dl-collapsed{display:none!important}
+#docList li{position:relative}
+/* kebab button (revealed on hover, like the old delete button) */
+.dl-act{position:absolute;right:4px;top:50%;transform:translateY(-50%);display:none;align-items:center;justify-content:center;width:22px;height:22px;padding:0;border:none;background:transparent;border-radius:5px;cursor:pointer;color:#9aa4b2;font-size:15px;font-weight:700;line-height:1}
+.dl-act:hover{background:#e9edf3;color:#1f2329}
+#docList .dl-folder:hover>.dl-act,#docList a:hover>.dl-act,#docList .dl-act:hover,#docList .dl-act:focus-visible{display:inline-flex}
+/* ⋯ dropdown menu */
+.dl-menu{position:fixed;z-index:400;min-width:160px;background:#fff;border:1px solid #d9dee6;border-radius:9px;box-shadow:0 4px 14px rgba(0,0,0,.14);padding:4px;font-size:.9rem}
+.dl-menu button{display:block;width:100%;text-align:left;padding:7px 12px;border:none;background:transparent;border-radius:6px;cursor:pointer;color:#1f2329;font:inherit}
+.dl-menu button:hover{background:#f6f7f9}
+.dl-menu button.dl-danger{color:#cf222e}
+.dl-menu button.dl-danger:hover{background:#ffebe9}
+.dl-menu button.dl-armed{background:#ffebe9;color:#cf222e;font-weight:700}
+/* inline edit (rename / new folder) */
+.dl-edit input{width:100%;padding:4px 8px;border:1px solid #1f6feb;border-radius:6px;font:inherit;color:#1f2329;background:#fff;outline:none}
+.dl-edit input.dl-bad{border-color:#cf222e;background:#fff1f0}
+.dl-ext{font-size:.8em;color:#5b6472;margin-left:4px}
+/* ghost that follows the cursor during a drag */
+.dl-ghost{position:fixed;z-index:500;pointer-events:none;background:#fff;border:1px solid #1f6feb;border-radius:8px;padding:6px 12px;box-shadow:0 6px 18px rgba(0,0,0,.2);font-size:.9rem;color:#1f6feb;font-weight:600;opacity:.95;white-space:nowrap}
+body.dl-grabbing,body.dl-grabbing *{cursor:grabbing!important}
+/* drag & drop */
+#docList .dl-drop{background:#e8f0fe !important;outline:2px dashed #1f6feb;outline-offset:-2px;border-radius:6px}
+#docList li.dl-ins::before{content:"";position:absolute;left:6px;right:6px;top:-3px;height:0;border-top:2px solid #1f6feb;pointer-events:none}
+#docList li.dl-dragging{opacity:.35}
+.dl-ctx{position:fixed;z-index:60;min-width:150px;background:#fff;border:1px solid #d9dee6;border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.13);padding:5px;font-size:.88rem;display:none}
+.dl-ctx.on{display:block}
+.dl-ctx div{padding:6px 10px;border-radius:6px;cursor:pointer;display:flex;gap:8px;align-items:center;color:#1f2329}
+.dl-ctx div:hover{background:#f6f7f9}
+.dl-ctx hr{border:none;border-top:1px solid #eef1f5;margin:4px 2px}
+.dl-ctx svg{width:14px;height:14px;color:#5b6472;flex:none}
+/* move-to popover */
+.dl-pop{position:fixed;z-index:400;min-width:200px;max-height:260px;overflow-y:auto;background:#fff;border:1px solid #d9dee6;border-radius:9px;box-shadow:0 4px 14px rgba(0,0,0,.14);padding:4px;font-size:.9rem}
+.dl-pop button{display:block;width:100%;text-align:left;padding:6px 12px;border:none;background:transparent;border-radius:6px;cursor:pointer;color:#1f2329;font:inherit;white-space:nowrap}
+.dl-pop button:hover{background:#f6f7f9}
+.dl-pop button.dl-cur{color:#1f6feb;font-weight:600}
+/* toast */
+.dl-toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:500;max-width:80vw;padding:10px 18px;border-radius:9px;background:#1f2329;color:#fff;font-size:.9rem;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.dl-toast.dl-err{background:#cf222e}
+/* chevron + folder/doc icons live in their own elements (animatable, stylable) */
+.dl-chev{width:14px;height:14px;flex:none;display:inline-flex;color:#9aa4b2}
+.dl-chev svg{width:100%;height:100%;transition:transform .22s cubic-bezier(.4,0,.2,1)}
+.dl-folder.closed .dl-chev svg{transform:rotate(-90deg)}
+.dl-ico{width:15px;height:15px;flex:none;display:inline-flex;color:#5b6472}
+.dl-ico img{width:100%;height:100%;display:block}
+.dl-ico.dl-emoji{font-size:14px;line-height:1.15}
+.dl-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* collapse animation — the nested list sits in a .dl-wrap "frame" whose
+   grid-template-rows interpolates 1fr → 0fr (no height measuring needed) */
+.dl-wrap{display:grid;grid-template-rows:1fr;transition:grid-template-rows .24s cubic-bezier(.4,0,.2,1)}
+.dl-folder.closed + .dl-wrap{grid-template-rows:0fr}
+.dl-wrap>ul{overflow:hidden;min-height:0}
+/* variant B — slide & fade (aside.dl-anim-slide) */
+.dl-anim-slide .dl-wrap>ul{transition:opacity .2s,transform .24s ease}
+.dl-anim-slide .dl-folder.closed + .dl-wrap>ul{opacity:0;transform:translateX(-8px)}
+/* variant C — guide line (aside.dl-anim-guide): the indentation rail
+   grows with the content and recedes when closing, in accent blue */
+.dl-anim-guide .dl-wrap{position:relative}
+.dl-anim-guide .dl-nested{border-left:none;margin-left:8px}
+.dl-anim-guide .dl-wrap::before{content:"";position:absolute;left:5px;top:0;bottom:0;width:2px;border-radius:2px;background:#1f6feb;opacity:.45;transition:top .26s ease,opacity .2s}
+.dl-anim-guide .dl-folder.closed + .dl-wrap::before{top:100%;opacity:0}
