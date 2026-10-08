@@ -211,11 +211,20 @@ flowchart TD
   <h3>Fase 1 — Prova de conceito (dev machine)</h3>
   <p><code>desktop/</code> com Tauri apontando para um manager rodando manualmente. Janela sem abas, carregando <code>localhost:4400</code>. Meta: validar que injeção, SSE, diffs e edição inline funcionam dentro do webview. <em>Verificação: abrir 3 projetos, editar um arquivo, ver o reload na janela.</em></p>
 
-  <h3>Fase 2 — Barra de abas + sidecar</h3>
+  <h3>Fase 2 — Barra de abas + sidecar <span class="sim" style="font-size:.8rem">✓ ENTREGUE</span></h3>
   <p>Tauri lança o servidor como filho, espera a porta, aí abre a janela. <code>tabs.js</code> entra. <em>Verificação: fechar a janela encerra o processo Node (sem órfãos no gerenciador de tarefas).</em></p>
 
+  <div class="callout tip">
+    <div class="title">Lições da fase 2 (WebView2, documentadas para a fase 3)</div>
+    <strong>1. Dois iframes cross-origin vivos = deadlock.</strong> O design original (um iframe por aba) travava a main thread do renderer do WebView2 sem exceção nem log ao carregar a segunda página. Solução: <strong>um único iframe compartilhado</strong> — trocar de aba navega o iframe (aba = URL, não frame). Custo: trocar aba recarrega a página (perde scroll). Melhoria futura: snapshot de scroll/histórico por aba, ou múltiplos webviews nativos do Tauri.
+    <br><strong>2. localStorage corrompível.</strong> <code>taskkill /F</code> durante o dev corrompeu o LevelDB do perfil WebView2 (<code>%LOCALAPPDATA%\com.*\EBWebView\Default\Local Storage</code>): leituras funcionam, mas qualquer <code>setItem</code> trava a janela inteira — disfarçou-se de bug de fullscreen/abas por horas. Fix: apagar a pasta do storage; e nunca force-matar o app em dev.
+    <br><strong>3. Fullscreen nativo funciona</strong> — desde que o iframe externo leve <code>allow="fullscreen"</code>. O "fake fullscreen" por CSS foi removido; não era necessário.
+    <br><strong>4. Cards page crua.</strong> O manager serve <code>manager.html</code> sem injeção — adicionada rota <code>/__docs__/tabs.js</code> + tag no HTML para que Ctrl+T/clique do meio funcionem com o foco nela.
+    <br><strong>5. Teclado mora dentro do iframe.</strong> Ctrl+T/W/ESC precisam ser repassados via postMessage (<code>tabs.js</code>) — o shell nunca vê os keydowns.
+    </div>
+
   <h3>Fase 3 — Distribuição</h3>
-  <p>Runtime Node embutido por plataforma, builds de instalador nos 3 OSes, ícones. <em>Verificação: instalar num Windows limpo sem Node e abrir as docs.</em></p>
+  <p>Runtime Node embutido por plataforma, builds de instalador nos 3 OSes, ícones. <em>Verificação: instalar num Windows limpo sem Node e abrir as docs.</em> Inclui migrar o atalho de dev (exe debug) para o instalador <code>.msi</code>/NSIS com build <code>release</code>.</p>
 
   <div class="callout warn">
     <div class="title">Riscos conhecidos</div>
