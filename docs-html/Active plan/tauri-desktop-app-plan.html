@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano: spec-space Desktop com Tauri</title>
+<style>
+:root{
+  --bg:#fff; --panel:#f6f7f9; --panel2:#eef1f5; --text:#1f2329; --soft:#5b6472;
+  --border:#d9dee6; --accent:#1f6feb; --accent-soft:#e8f0fe; --code-bg:#f6f8fa;
+  --green:#1a7f37; --green-bg:#e7f5ec; --amber:#9a6700; --amber-bg:#fff8e1;
+  --red:#cf222e; --red-bg:#ffebe9; --purple:#6f42c1;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:17px;line-height:1.65}
+.hero{background:linear-gradient(180deg,var(--accent-soft),var(--bg));border-bottom:1px solid var(--border)}
+.hero-inner{max-width:920px;margin:0 auto;padding:42px 24px 26px}
+.hero h1{font-size:2rem;letter-spacing:-.02em;margin:0 0 10px}
+.lede{font-size:1.1rem;color:var(--soft);max-width:68ch;margin:0 0 12px}
+.meta{font-size:.86rem;color:var(--soft)}
+.toc{background:#fff;border-bottom:1px solid var(--border)}
+.toc-inner{max-width:920px;margin:0 auto;padding:10px 24px;display:flex;flex-wrap:wrap;gap:8px}
+.toc a{text-decoration:none;color:var(--text);background:var(--panel);border:1px solid var(--border);
+  border-radius:999px;padding:5px 14px;font-size:.88rem}
+.toc a:hover{background:var(--accent-soft);border-color:var(--accent)}
+.wrap{max-width:920px;margin:0 auto;padding:0 24px}
+section{padding:34px 0;border-bottom:1px solid var(--border)}
+h2{font-size:1.45rem;letter-spacing:-.01em;margin:0 0 14px}
+h2 .num{color:var(--accent);margin-right:10px}
+h3{font-size:1.12rem;margin:26px 0 8px}
+.lead{color:var(--soft);margin-top:-6px;max-width:70ch}
+p{max-width:76ch}
+a{color:var(--accent)}
+code{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:14px 16px;overflow-x:auto;font-size:.88rem;line-height:1.5}
+pre code{background:none;border:none;padding:0}
+.callout{background:var(--panel);border:1px solid var(--border);border-left:4px solid var(--accent);
+  border-radius:8px;padding:14px 18px;margin:18px 0}
+.callout .title{font-weight:700;margin-bottom:6px}
+.callout.tip{border-left-color:var(--green)}
+.callout.warn{border-left-color:var(--amber)}
+.callout.danger{border-left-color:var(--red)}
+table{border-collapse:collapse;width:100%;max-width:820px;margin:16px 0;font-size:.95rem}
+th{background:var(--panel2);text-align:left;padding:9px 14px;border-bottom:2px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border)}
+.sim{color:var(--green);font-weight:700}.nao{color:var(--red);font-weight:700}.talvez{color:var(--amber);font-weight:700}
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:center;margin:18px 0}
+.node{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:.9rem}
+.node.dev{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.node.cut{background:var(--red-bg);border-color:var(--red);color:var(--red);text-decoration:line-through}
+.arr{color:var(--soft);font-size:1.1rem}
+.fig-caption{text-align:center;color:var(--soft);font-size:.88rem;margin:4px 0 20px}
+.mermaid{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;margin:18px 0;overflow-x:auto}
+.mock{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;margin:18px 0;max-width:640px}
+.mockbar{display:flex;gap:6px;align-items:center;background:var(--panel2);border-radius:8px 8px 0 0;padding:8px 10px;border-bottom:1px solid var(--border)}
+.mocktab{background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 12px;font-size:.82rem}
+.mocktab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mocktab.plus{color:var(--soft);border-style:dashed}
+.mockbody{padding:16px 12px;color:var(--soft);font-size:.85rem}
+.qcard{background:#fff;border:1px solid var(--border);border-left:4px solid var(--purple);border-radius:8px;padding:16px 18px;margin:16px 0}
+.q-title{font-weight:600;margin:0 0 10px}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:1px solid var(--border);border-radius:8px;
+  padding:9px 14px;margin:6px 0;font-size:.95rem;cursor:pointer;font-family:inherit}
+.opt:hover{background:var(--panel)}
+.opt.right{background:var(--green-bg);border-color:var(--green);color:var(--green);font-weight:600}
+.opt.wrong{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+.q-feedback{display:none;background:var(--panel);border-radius:8px;padding:10px 14px;margin-top:8px;font-size:.93rem}
+.q-feedback.show{display:block}
+footer{max-width:920px;margin:0 auto;padding:26px 24px;text-align:center;color:var(--soft);font-size:.9rem}
+.top{position:fixed;right:22px;bottom:22px;background:var(--accent);color:#fff;border-radius:10px;
+  width:42px;height:42px;display:flex;align-items:center;justify-content:center;text-decoration:none;
+  font-size:1.2rem;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.top.show{opacity:1;pointer-events:auto}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <h1>Plano: spec-space Desktop com Tauri</h1>
+    <p class="lede">Empacotar o spec-space como aplicação desktop nativa multiplataforma (Windows/macOS/Linux): janela própria com abas, sem navegador, sem terminal.</p>
+    <p class="meta">docs-html/Active plan/tauri-desktop-app-plan.html · spec-space</p>
+  </div>
+</header>
+
+<nav class="toc">
+  <div class="toc-inner">
+    <a href="#contexto">1 · Contexto</a>
+    <a href="#intuicao">2 · Intuição</a>
+    <a href="#mudancas">3 · Mudanças</a>
+    <a href="#fases">4 · Fases &amp; riscos</a>
+    <a href="#quiz">5 · Quiz</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<section id="contexto">
+  <h2><span class="num">1</span>Contexto</h2>
+  <p class="lead">Onde o spec-space está hoje e o que exatamente o Tauri substitui — e o que ele não substitui.</p>
+
+  <p>Hoje o fluxo do usuário é orientado a terminal: você roda <code>spec-space ./specs</code>, um processo Node sobe o servidor em <code>localhost:4400</code>, registra a pasta no manager e abre o navegador. O manager (<code>src/server/manager.js</code> + <code>client/manager.html</code>) já serve <strong>todos os projetos</strong> de uma vez, cada um em <code>/&lt;slug&gt;/</code>, com sidebar tree, live reload via SSE, diffs de mudança, edição inline e pan/zoom de diagramas. Ou seja: a "aplicação web" já existe e já é multi-projeto — o que falta é a casca nativa.</p>
+
+  <div class="callout">
+    <div class="title">O problema que este plano resolve</div>
+    Exigir um terminal + <code>spec-space manager</code> + navegador são três barreiras entre o usuário e as docs. O objetivo é: <strong>clique duplo no ícone do desktop → janela nativa maximizável, com abas</strong>, sem barra de endereço, sem Chrome visível.
+  </div>
+
+  <div class="callout ramp" style="border-left-style:dashed">
+    <div class="title">Rampa para iniciante (pode pular)</div>
+    <p style="margin:0"><strong>Tauri</strong> é um framework que empacota uma UI web (HTML/CSS/JS) numa janela de aplicativo nativa. Em vez de embutir um navegador inteiro como o Electron, ele usa o <em>webview</em> que o sistema operacional já tem (WebView2 no Windows, WKWebView no macOS, WebKitGTK no Linux). Resultado: binários de ~5–15 MB em vez de ~100+. O backend é em Rust, mas para um app que já tem um servidor Node, o Rust fica quase trivial — só orquestra janelas e processos. A versão atual é a <strong>Tauri 2</strong>.</p>
+  </div>
+
+  <h3>Arquitetura atual (o que permanece intacto)</h3>
+  <p>Todo o núcleo do spec-space — server, injeção de nav, scan, registry, export — continua sendo Node puro, zero dependências. O Tauri <em>envolve</em>; não reescreve.</p>
+</section>
+
+<section id="intuicao">
+  <h2><span class="num">2</span>Intuição</h2>
+  <p class="lead">A janela nativa é só uma "tela sem navegador" apontada para o servidor que já existe; as abas são UI sua dentro do webview.</p>
+
+  <div class="flow">
+    <span class="node">Terminal</span><span class="arr">→</span>
+    <span class="node">spec-space manager</span><span class="arr">→</span>
+    <span class="node">localhost:4400</span><span class="arr">→</span>
+    <span class="node cut">Chrome/Edge</span>
+  </div>
+  <p class="fig-caption">Hoje: o usuário atravessa o terminal e termina num navegador.</p>
+
+  <div class="flow">
+    <span class="node dev">Ícone no desktop</span><span class="arr">→</span>
+    <span class="node dev">Janela Tauri (abas)</span><span class="arr">→</span>
+    <span class="node">localhost:4400</span><span class="arr">→</span>
+    <span class="node">server Node (existente)</span>
+  </div>
+  <p class="fig-caption">Depois: o servidor Node continua igual; só a ponta do usuário muda.</p>
+
+  <p>A ideia central: o processo Tauri é o <strong>no que acorda primeiro</strong>. Ele (1) lança o servidor Node como processo filho (sidecar), (2) espera a porta responder, (3) abre uma janela cujo conteúdo é o manager. O usuário nunca vê terminal, nunca digita URL.</p>
+
+  <h3>As abas</h3>
+  <p>Não são abas do navegador (não existem — não há navegador). São <strong>abas desenhadas em HTML dentro do app</strong>, como as do VS Code: uma barra no topo onde cada aba guarda "qual doc/projeto está aberto". Por baixo, cada aba corresponde a um <code>&lt;iframe&gt;</code> vivo (ou um histórico + recarregamento) apontando para uma URL do manager.</p>
+
+  <div class="mock">
+    <div class="mockbar">
+      <span class="mocktab on">docs-in-html</span>
+      <span class="mocktab">checkout-api · plano-jwt</span>
+      <span class="mocktab plus">+</span>
+    </div>
+    <div class="mockbody">┌ sidebar tree (existente) ┐ &nbsp;│ &nbsp;conteúdo da doc da aba ativa…</div>
+  </div>
+  <p class="fig-caption">Aparência-alvo: barra de abas no topo (novo), sidebar e conteúdo são o spec-space de sempre.</p>
+
+  <div class="callout tip">
+    <div class="title">Por que iframes e não webview por aba</div>
+    Tauri 2 permite múltiplos webviews, mas cada um é pesado e o estado (sidebar colapsada, scroll) já é preservado pelo client existente. Iframes dentro de um único webview são mais leves, mantêm SSE/live reload funcionando por aba, e simplificam arrastar/fechar/reordenar. Múltiplas janelas nativas ficam como extensão futura (item 5 do roadmap).
+  </div>
+
+  <h3>Fluxo completo (Mermaid)</h3>
+  <div class="mermaid">
+flowchart TD
+  U["Usuário: clique duplo no app"] --> T["Processo Tauri (Rust) inicia"]
+  T --> S["Sidecar: node serve.js (manager)"]
+  S --> W["Aguarda porta 4400 responder"]
+  W --> V["Cria janela principal (tab-bar + webview)"]
+  V --> M["Carrega manager localhost:4400"]
+  M --> A1["Aba 1: docs-in-html"]
+  M --> A2["Aba 2: checkout-api/plano-jwt"]
+  A1 -- "SSE live reload" --> S
+  A2 -- "SSE live reload" --> S
+  V -- "Fechar janela" --> K["Tauri encerra sidecar Node"]
+  </div>
+</section>
+
+<section id="mudancas">
+  <h2><span class="num">3</span>Mudanças</h2>
+  <p class="lead">Um novo pacote <code>desktop/</code> no monorepo, mais um script client para a barra de abas. Nada do núcleo é reescrito.</p>
+
+  <h3>Novo: <code>desktop/</code> — o app Tauri</h3>
+  <p>Diretório separado (não vai no pacote npm atual). Contém a configuração do Tauri (<code>tauri.conf.json</code>: identidade, ícone, tamanho de janela, permissões mínimas), o mínimo de Rust (<code>main.rs</code>: gerenciar o sidecar Node e a janela) e o frontend da janela — uma página <code>shell</code> enxuta que só hospeda a barra de abas e os iframes.</p>
+
+  <h3>Sidecar Node: embarcar o runtime</h3>
+  <p>O servidor precisa rodar sem Node instalado na máquina. Duas opções: empacotar o <code>src/</code> + <code>client/</code> como sidecar com um runtime embutido (ex.: binário <code>node</code> por plataforma, ou empacotar com <code>pkg</code>/<code>deno compile</code>), mantendo o princípio zero-dependências do projeto. O plano recomenda sidecar com binário por plataforma: o Tauri já suporta binários externos por-alvo de build.</p>
+
+  <h3>Novo: <code>client/tabs.js</code> (+ CSS) — barra de abas</h3>
+  <p>Script injetável, no mesmo estilo dos scripts existentes (<code>changes.js</code>, <code>reload.js</code>): desenha a barra de abas quando detecta que roda dentro do shell Tauri (via query param ou <code>window.__SPEC_SPACE_DESKTOP__</code>), gerencia lista de abas (título, favicon do projeto, fechar com clique do meio, <code>Ctrl+T</code>/<code>Ctrl+W</code>), sincroniza a aba ativa com a navegação dentro do iframe e persiste as abas abertas para restaurar na próxima sessão.</p>
+
+  <h3>Ajuste: <code>src/cli/serve.js</code> — modo headless</h3>
+  <p>Uma flag (ex.: <code>--sidecar</code>) para: não abrir o navegador (já existe <code>--no-open</code>), escolher porta livre dinamicamente e reportá-la ao Tauri (stdout/IPC), e silenciar logs interativos. Sem mudanças de comportamento para o uso via terminal.</p>
+
+  <h3>Novo: pipeline de build/distribuição</h3>
+  <p>Scripts no <code>desktop/</code> que geram os instaladores (<code>.msi</code>/<code>.exe</code> NSIS no Windows, <code>.dmg</code> no macOS, <code>.AppImage</code>/<code>.deb</code> no Linux) via <code>tauri build</code>, com ícone derivado do <code>icon.png</code> existente. Auto-update pode entrar depois (Tauri 2 tem plugin updater).</p>
+
+  <table>
+    <tr><th>Requisito do usuário</th><th>Coberto por</th><th>Fase</th></tr>
+    <tr><td>Clique no desktop abre o app</td><td class="sim">Instalador + ícone (Tauri)</td><td>1</td></tr>
+    <tr><td>Janela própria maximizável</td><td class="sim">Janela Tauri nativa</td><td>1</td></tr>
+    <tr><td>Várias abas de docs</td><td class="sim"><code>client/tabs.js</code> + iframes</td><td>2</td></tr>
+    <tr><td>Sem Node instalado</td><td class="sim">Sidecar com runtime embutido</td><td>3</td></tr>
+    <tr><td>Live reload/edit inline seguem funcionando</td><td class="sim">Já existem — SSE atravessa iframe</td><td>—</td></tr>
+    <tr><td>Múltiplas janelas nativas</td><td class="talvez">Extensão futura do Tauri</td><td>roadmap</td></tr>
+  </table>
+</section>
+
+<section id="fases">
+  <h2><span class="num">4</span>Fases &amp; riscos</h2>
+  <p class="lead">Cada fase entrega um app utilizável; nenhuma depende das seguintes para ter valor.</p>
+
+  <h3>Fase 1 — Prova de conceito (dev machine)</h3>
+  <p><code>desktop/</code> com Tauri apontando para um manager rodando manualmente. Janela sem abas, carregando <code>localhost:4400</code>. Meta: validar que injeção, SSE, diffs e edição inline funcionam dentro do webview. <em>Verificação: abrir 3 projetos, editar um arquivo, ver o reload na janela.</em></p>
+
+  <h3>Fase 2 — Barra de abas + sidecar</h3>
+  <p>Tauri lança o servidor como filho, espera a porta, aí abre a janela. <code>tabs.js</code> entra. <em>Verificação: fechar a janela encerra o processo Node (sem órfãos no gerenciador de tarefas).</em></p>
+
+  <h3>Fase 3 — Distribuição</h3>
+  <p>Runtime Node embutido por plataforma, builds de instalador nos 3 OSes, ícones. <em>Verificação: instalar num Windows limpo sem Node e abrir as docs.</em></p>
+
+  <div class="callout warn">
+    <div class="title">Riscos conhecidos</div>
+    <strong>Porta 4400 ocupada</strong> (outro manager rodando) → o modo sidecar deve buscar porta livre; <strong>tamanho do binário</strong> cresce com o Node embutido (~40–70 MB, ainda menor que Electron); <strong>permissões de assinatura</strong> no macOS (Apple Developer ID) se quiser distribuir fora do seu círculo; <strong>WebGL/perf</strong> de Mermaid no WebView2 é bom, mas o pan/zoom deve ser revalidado na fase 1.
+  </div>
+
+  <div class="callout tip">
+    <div class="title">Alternativa de baixo custo: PWA</div>
+    Antes de qualquer Tauri, dá pra chegar a 70% do efeito com um manifest + service worker no manager: "instalar" o site cria ícone no desktop e janela sem barra de endereço. Abas, porém, não existem numa PWA (cada instalação é uma janela). Vale como passo interimário, não como destino.
+  </div>
+</section>
+
+<section id="quiz">
+  <h2><span class="num">5</span>Quiz</h2>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">1. No app Tauri, quem sobe o servidor Node do spec-space?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">A) O usuário roda <code>spec-space manager</code> no terminal antes de abrir o app</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">B) O processo Tauri lança o servidor como processo filho (sidecar) e espera a porta responder</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">C) O servidor é reescrito em Rust dentro do binário</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> O Tauri atua como "no": acorda primeiro, sobe o sidecar Node, e só então abre a janela apontada para o localhost. O servidor existente em JavaScript permanece intacto — nada é reescrito em Rust.</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">2. Por que as abas são implementadas com iframes dentro de um único webview, e não um webview Tauri por aba?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">A) Porque o Tauri 2 não suporta múltiplos webviews</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">B) Porque iframes são a única forma de ter navegação por URL</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">C) Porque são mais leves, preservam o estado (sidebar/scroll) e mantêm o SSE do live reload fluindo por aba</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> O Tauri até suporta múltiplos webviews — a escolha é de custo/benefício: um webview só, com abas HTML + iframes, é mais leve, reaproveita o client existente que já preserva estado, e cada iframe mantém sua conexão SSE viva.</div>
+  </div>
+
+  <div class="qcard" data-answer="a">
+    <p class="q-title">3. O que muda em <code>src/cli/serve.js</code>?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">A) Ganha um modo sidecar: porta livre dinâmica, sem abrir navegador, reportando a porta ao Tauri — sem mudar o comportamento via terminal</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">B) Precisa ser refatorado para expor uma API REST que o Rust consome</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">C) Nada — o Tauri se conecta ao processo pelo pipe</button>
+    </div>
+    <div class="q-feedback">✅ <b>A.</b> O ajuste é mínimo e aditivo: uma flag de modo sidecar (porta dinâmica + reporte da porta escolhida), mantendo o CLI idêntico para quem usa o terminal.</div>
+  </div>
+
+  <div class="qcard" data-answer="b">
+    <p class="q-title">4. Um usuário instala o app num Windows sem Node.js. Por que funciona?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">A) Porque o WebView2 já inclui um runtime JavaScript de servidor</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">B) Porque o instalador embute o runtime Node (ou binário equivalente) como sidecar por plataforma</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">C) Porque o Tauri baixa o Node sob demanda na primeira execução</button>
+    </div>
+    <div class="q-feedback">✅ <b>B.</b> A fase 3 de distribuição empacota o runtime junto do app, por alvo de build — mecanismo que o Tauri suporta nativamente ("external binaries"). É isso que destrava o "clique duplo funciona em qualquer máquina".</div>
+  </div>
+
+  <div class="qcard" data-answer="c">
+    <p class="q-title">5. Qual limitação descarta a PWA como solução final aqui?</p>
+    <div class="opts">
+      <button class="opt" data-k="a" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">A) PWA não funciona offline</button>
+      <button class="opt" data-k="b" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">B) PWA não permite maximizar a janela</button>
+      <button class="opt" data-k="c" onclick="var c=this.closest('.qcard'),a=c.dataset.answer,o=this.dataset.k;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('right','wrong')});this.classList.add(o===a?'right':'wrong');if(o!==a){var r=c.querySelector('.opt[data-k='+a+']');if(r){r.classList.add('right')}}c.querySelector('.q-feedback').classList.add('show')">C) PWA não tem abas — cada "instalação" abre uma janela solta — e ainda depende de um navegador instalado</button>
+    </div>
+    <div class="q-feedback">✅ <b>C.</b> A PWA entrega ícone no desktop e janela sem barra de endereço (ótimo como passo interimário), mas o requisito de <em>várias abas navegáveis</em> só é atendido com abas desenhadas no app — o que o shell Tauri viabiliza.</div>
+  </div>
+</section>
+
+</main>
+
+<footer>Plano · spec-space Desktop com Tauri · spec-space</footer>
+<a class="top" href="#" title="Voltar ao topo">↑</a>
+
+<script>
+const top=document.querySelector(".top");
+addEventListener("scroll",()=>top.classList.toggle("show",scrollY>600));
+</script>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true });
+</script>
+</body>
+</html>
