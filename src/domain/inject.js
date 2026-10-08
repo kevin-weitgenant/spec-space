@@ -44,6 +44,9 @@ function injectScripts(html, opts = {}) {
   if (!staticMode && base) tags.push(`<script>window.DOCS_BASE=${JSON.stringify(base + "/")}</script>`);
   if (staticMode) tags.push(`<script>window.DOCS_EXPORT=true</script>`);
   else tags.push(`<script src="${base}/__docs__/reload.js" data-injected></script>`);
+  // desktop-shell bridge: Ctrl/middle-click → new tab in the Tauri host.
+  // No-op in a normal browser (nobody listens for the messages).
+  if (!staticMode) tags.push(`<script src="${base}/__docs__/tabs.js" data-injected defer></script>`);
   if (isShell) {
     // sidebar styles first, then the nav modules (they attach functions to
     // window.docsNav and define nothing on their own), then the boot file

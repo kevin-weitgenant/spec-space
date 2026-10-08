@@ -4,44 +4,227 @@
 <meta charset="UTF-8">
 <title>spec-space</title>
 <style>
-:root{--bg:#fff;--panel:#f6f7f9;--soft:#5b6472;--border:#d9dee6;--accent:#1f6feb;--accent-soft:#e8f0fe}
+:root{--bg:#fff;--panel:#f6f7f9;--panel2:#eef1f5;--soft:#5b6472;--border:#d9dee6;
+  --accent:#1f6feb;--accent-soft:#e8f0fe;--text:#1f2329}
+*{box-sizing:border-box}
+html,body{height:100%}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,var(--accent-soft),var(--bg))}
-.card{max-width:420px;padding:28px 32px;background:#fff;border:1px solid var(--border);border-radius:12px;text-align:center}
-h1{font-size:1.3rem;margin:0 0 8px}
-p{color:var(--soft);font-size:.95rem;line-height:1.6;margin:0 0 14px}
-code{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em}
-#retry{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:.95rem;cursor:pointer}
-#status{font-size:.85rem;color:var(--soft);margin-top:12px}
+  font-size:15px;color:var(--text);display:flex;flex-direction:column;background:var(--bg)}
+/* ── tab bar ─────────────────────────────────────────── */
+#tabbar{display:none;align-items:center;gap:2px;background:var(--panel2);
+  border-bottom:1px solid var(--border);padding:6px 8px 0;flex:0 0 auto}
+.tab{display:inline-flex;align-items:center;gap:8px;max-width:220px;background:var(--panel);
+  border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;
+  padding:6px 10px;font-size:.85rem;cursor:pointer;color:var(--soft);user-select:none}
+.tab.on{background:#fff;color:var(--text);font-weight:600}
+.tab .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tab .x{border:none;background:none;color:var(--soft);cursor:pointer;font-size:1rem;
+  line-height:1;padding:0 2px;border-radius:4px}
+.tab .x:hover{background:var(--red-bg);color:var(--red)}
+.tab.home .t{font-weight:700}
+#newtab{border:1px dashed var(--border);background:none;color:var(--soft);border-radius:8px;
+  padding:5px 12px;cursor:pointer;font-size:1rem}
+#newtab:hover{border-color:var(--accent);color:var(--accent)}
+/* ── content ─────────────────────────────────────────── */
+#views{flex:1 1 auto;position:relative;background:#fff}
+#views iframe{position:absolute;inset:0;width:100%;height:100%;border:none;display:none}
+#views iframe.on{display:block}
+/* ── waiting screen (pre-manager) ─────────────────────── */
+#wait{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,var(--accent-soft),var(--bg))}
+#wait .card{max-width:420px;padding:28px 32px;background:#fff;border:1px solid var(--border);
+  border-radius:12px;text-align:center}
+#wait h1{font-size:1.3rem;margin:0 0 8px}
+#wait p{color:var(--soft);font-size:.95rem;line-height:1.6;margin:0 0 14px}
+#wait code{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em}
+#wait button{background:var(--accent);color:#fff;border:none;border-radius:8px;
+  padding:9px 18px;font-size:.95rem;cursor:pointer}
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>spec-space</h1>
-  <p id="msg">Procurando o manager em <code>localhost</code>…</p>
-  <p id="hint" style="display:none">Inicie-o em outro terminal com:<br><br><code>spec-space manager</code></p>
-  <button id="retry" style="display:none" onclick="probe()">Tentar novamente</button>
-  <div id="status"></div>
+<div id="tabbar"></div>
+<div id="views">
+  <div id="wait">
+    <div class="card">
+      <h1>spec-space</h1>
+      <p id="msg">Procurando o manager em <code>localhost</code>…</p>
+      <p id="hint" style="display:none">Inicie-o em outro terminal com:<br><br><code>spec-space manager</code></p>
+      <button id="retry" style="display:none" onclick="probe()">Tentar novamente</button>
+      <div id="status" style="font-size:.85rem;color:var(--soft);margin-top:12px"></div>
+    </div>
+  </div>
 </div>
+<div id="errbar" style="display:none;position:fixed;left:0;right:0;top:0;z-index:99;background:#ffebe9;color:#cf222e;border-bottom:2px solid #cf222e;padding:8px 14px;font-size:.85rem;white-space:pre-wrap"></div>
 <script>
-const CANDIDATES = [4400, 4490]; // fase 2: a porta real virá do sidecar
+'use strict';
+const BUILD = 'f2-dbg1'; // shown in the tab bar — proves which shell build is running
+addEventListener('error', (e) => showErr(e.message + ' @ ' + (e.filename||'?') + ':' + e.lineno));
+addEventListener('unhandledrejection', (e) => showErr('promise: ' + (e.reason && e.reason.message || e.reason)));
+function showErr(t) {
+  const b = document.getElementById('errbar');
+  b.style.display = 'block';
+  const line = '[' + BUILD + '] ' + t;
+  if (!b.textContent.includes(line)) b.textContent += (b.textContent ? '\n' : '') + line;
+}
+// ── manager discovery ────────────────────────────────────────────────
+const CANDIDATES = [4400, 4490]; // fase 3: a porta virá do sidecar via IPC
+let BASE = null;
+
+async function findManager() {
+  for (const port of CANDIDATES) {
+    try {
+      await fetch('http://localhost:' + port, { mode: 'no-cors', cache: 'no-store' });
+      return 'http://localhost:' + port;
+    } catch (e) {}
+  }
+  return null;
+}
 async function probe() {
   const msg = document.getElementById('msg'), hint = document.getElementById('hint'),
         retry = document.getElementById('retry'), status = document.getElementById('status');
-  msg.textContent = 'Procurando o manager em localhost…';
-  hint.style.display = 'none'; retry.style.display = 'none'; status.textContent = '';
-  for (const port of CANDIDATES) {
-    try {
-      const r = await fetch('http://localhost:' + port, { mode: 'no-cors', cache: 'no-store' });
-      location.replace('http://localhost:' + port + '/'); return;
-    } catch (e) {}
-  }
+  BASE = await findManager();
+  if (BASE) { startTabs(); return; }
   status.textContent = 'Sem resposta (' + new Date().toLocaleTimeString() + ')';
   msg.textContent = 'O manager não está respondendo.';
   hint.style.display = ''; retry.style.display = '';
 }
 probe();
-setInterval(() => { if (!document.hidden) probe(); }, 5000);
+const retryTimer = setInterval(() => { if (!BASE && !document.hidden) probe(); }, 5000);
+
+// ── tab state ────────────────────────────────────────────────────────
+const LS_KEY = 'spec-space-tabs';
+let tabs = [];       // [{id, href, title, home}]
+let active = null;   // tab id
+let nextId = 1;
+let shownHref = null; // URL currently loaded in the shared iframe
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    const s = raw ? JSON.parse(raw) : null;
+    if (s && Array.isArray(s.tabs)) {
+      tabs = s.tabs.map(t => ({ id: nextId++, href: t.href, title: t.title, home: !!t.home }));
+    }
+  } catch (e) {}
+  if (tabs.length === 0 && !localStorage.getItem(LS_KEY))
+    tabs = [{ id: nextId++, href: BASE + '/', title: 'Início', home: false }];
+  active = tabs.length ? tabs[0].id : null;
+}
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ tabs: tabs.map(({id, ...t}) => t) })); } catch (e) {}
+}
+
+function viewFor(tab) {
+  let f = document.getElementById('view');
+  if (!f) {
+    f = document.createElement('iframe');
+    f.id = 'view';
+    f.allow = 'fullscreen';
+    f.setAttribute('allowfullscreen', '');
+    document.getElementById('views').appendChild(f);
+    // src assignment stays with render() — single source of truth via shownHref
+  }
+  return f;
+}
+function titleFor(href) {
+  if (href === BASE + '/' || href === BASE) return 'Início';
+  try {
+    const u = new URL(href);
+    const parts = u.pathname.split('/').filter(Boolean);
+    return parts[0] ? decodeURIComponent(parts[0]) : 'Início';
+  } catch (e) { return href; }
+}
+function render() {
+  const bar = document.getElementById('tabbar');
+  bar.innerHTML = '';
+  for (const t of tabs) {
+    const el = document.createElement('div');
+    el.className = 'tab' + (t.id === active ? ' on' : '') + (t.home ? ' home' : '');
+    const x = document.createElement('button');
+    x.className = 'x'; x.textContent = '×'; x.title = 'Fechar (Ctrl+W)';
+    x.onclick = (e) => { e.stopPropagation(); closeTab(t.id); };
+    el.onmousedown = (e) => { if (e.button === 1) { e.preventDefault(); closeTab(t.id); } };
+    el.onclick = () => activate(t.id);
+    const span = document.createElement('span');
+    span.className = 't'; span.textContent = t.title || titleFor(t.href);
+    span.title = t.href;
+    el.appendChild(span);
+    el.appendChild(x); // every tab is closable — "+" reopens the manager home
+    bar.appendChild(el);
+  }
+  const plus = document.createElement('button');
+  plus.id = 'newtab'; plus.textContent = '+'; plus.title = 'Nova aba (Ctrl+T)';
+  plus.onclick = () => openTab(BASE + '/');
+  bar.appendChild(plus);
+  const bid = document.createElement('span');
+  bid.style.cssText = 'margin-left:auto;font-size:.72rem;color:var(--soft);padding:6px 4px 0';
+  bid.textContent = BUILD; bar.appendChild(bid);
+  // ONE shared iframe: switching tabs NAVIGATES it. A second live
+  // cross-origin iframe deadlocks the WebView2 renderer (see plan notes) —
+  // so tabs are URLs, not frames. Switch cost = one page load.
+  const cur = tabs.find(t => t.id === active);
+  const v = cur ? viewFor(cur) : document.getElementById('view');
+  if (v) v.classList.toggle('on', !!cur);
+  if (cur && v && shownHref !== cur.href) { v.src = cur.href; shownHref = cur.href; }
+  if (!cur && v) { v.src = 'about:blank'; shownHref = null; } // zero tabs: blank view, just "+"
+  document.title = (cur || {}).title || 'spec-space';
+  saveState();
+}
+function activate(id) { active = id; render(); }
+function openTab(href) {
+  if (!href || !href.startsWith(BASE)) return; // same-origin tabs only
+  const t = { id: nextId++, href, title: titleFor(href) };
+  tabs.push(t); activate(t.id);
+}
+function closeTab(id) {
+  const i = tabs.findIndex(t => t.id === id);
+  if (i < 0) return; // any tab is closable — including home
+  tabs.splice(i, 1);
+  if (active === id) active = (tabs[i] || tabs[i - 1] || {}).id ?? null;
+  render();
+}
+function startTabs() {
+  clearInterval(retryTimer);
+  document.getElementById('wait').style.display = 'none';
+  document.getElementById('tabbar').style.display = 'flex';
+  loadState(); render();
+}
+
+// ── host bridge: messages from tabs.js inside the iframes ────────────
+addEventListener('message', (e) => {
+  if (!e.data || typeof e.data.type !== 'string') return;
+  if (e.data.type === 'spec-ping') {
+    try { e.source.postMessage({ type: 'spec-pong' }, '*'); } catch (err) {}
+    return;
+  }
+  if (e.data.type === 'spec-tab-open') { openTab(e.data.href); return; }
+  if (e.data.type === 'spec-key') {
+    if (e.data.key === 't') { if (BASE) openTab(BASE + '/'); }
+    else if (e.data.key === 'w') closeTab(active);
+    return;
+  }
+  if (e.data.type === 'spec-tab-nav') {
+    // the shared iframe navigated — update the ACTIVE tab's URL/title
+    const t = tabs.find(x => x.id === active);
+    if (t) {
+      t.href = e.data.href;
+      shownHref = e.data.href;
+      if (e.data.title && e.data.title !== 'spec') t.title = e.data.title.split(/[·|]/)[0].trim() || t.title;
+      render();
+    }
+    return;
+  }
+});
+
+// (fake fullscreen removed — native requestFullscreen works; the old
+// freezes were the corrupted WebView2 localStorage, not the API)
+
+// ── keyboard ─────────────────────────────────────────────────────────
+addEventListener('keydown', (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  if (e.key === 't' || e.key === 'T') { e.preventDefault(); if (BASE) openTab(BASE + '/'); }
+  else if (e.key === 'w' || e.key === 'W') { e.preventDefault(); closeTab(active); }
+});
 </script>
 </body>
 </html>

@@ -232,9 +232,23 @@ function start(opts = {}) {
 
     // ── cards page ───────────────────────────────────────────────────────
     if (raw === "/" || raw === "/index.html" || raw === "/__manager__") {
-      const html = ops.readFileSync(path.join(__dirname, "..", "..", "client", "manager.html"));
+      const html = ops.readFileSync(path.join(__dirname, "..", "..", "client", "manager.html"), "utf8");
+      // the cards page is served raw (no injectScripts) — but it still needs
+      // the desktop bridge so Ctrl+T/W and Ctrl/middle-click work when the
+      // keyboard focus sits on it (tabs.js no-ops in a regular browser).
+      // ?notabs skips the injection (desktop-shell debugging aid).
+      const withTabs = raw.includes("notabs")
+        ? html
+        : html.replace("</body>", '<script src="/__docs__/tabs.js" defer data-injected></script></body>');
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(html);
+      return res.end(withTabs);
+    }
+
+    // ── desktop bridge for the cards page ────────────────────────────────
+    if (raw === "/__docs__/tabs.js") {
+      const f = path.join(__dirname, "..", "..", "client", "tabs.js");
+      res.writeHead(200, { "Content-Type": "application/javascript; charset=utf-8" });
+      return res.end(ops.readFileSync(f));
     }
 
     // ── route to a docs root by slug prefix ──────────────────────────────
