@@ -1,2 +1,9 @@
-node_modules/
-dist/
+# Tauri desktop app
+desktop/node_modules/
+desktop/src-tauri/target/
+desktop/src-tauri/gen/schemas/
+# ícones de plataformas que o bundle atual não usa
+desktop/src-tauri/icons/android/
+desktop/src-tauri/icons/ios/
+desktop/src-tauri/icons/Square*Logo.png
+desktop/src-tauri/icons/StoreLogo.png

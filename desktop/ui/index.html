@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>spec-space</title>
+<style>
+:root{--bg:#fff;--panel:#f6f7f9;--soft:#5b6472;--border:#d9dee6;--accent:#1f6feb;--accent-soft:#e8f0fe}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(180deg,var(--accent-soft),var(--bg))}
+.card{max-width:420px;padding:28px 32px;background:#fff;border:1px solid var(--border);border-radius:12px;text-align:center}
+h1{font-size:1.3rem;margin:0 0 8px}
+p{color:var(--soft);font-size:.95rem;line-height:1.6;margin:0 0 14px}
+code{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:1px 6px;font-size:.88em}
+#retry{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:.95rem;cursor:pointer}
+#status{font-size:.85rem;color:var(--soft);margin-top:12px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>spec-space</h1>
+  <p id="msg">Procurando o manager em <code>localhost</code>…</p>
+  <p id="hint" style="display:none">Inicie-o em outro terminal com:<br><br><code>spec-space manager</code></p>
+  <button id="retry" style="display:none" onclick="probe()">Tentar novamente</button>
+  <div id="status"></div>
+</div>
+<script>
+const CANDIDATES = [4400, 4490]; // fase 2: a porta real virá do sidecar
+async function probe() {
+  const msg = document.getElementById('msg'), hint = document.getElementById('hint'),
+        retry = document.getElementById('retry'), status = document.getElementById('status');
+  msg.textContent = 'Procurando o manager em localhost…';
+  hint.style.display = 'none'; retry.style.display = 'none'; status.textContent = '';
+  for (const port of CANDIDATES) {
+    try {
+      const r = await fetch('http://localhost:' + port, { mode: 'no-cors', cache: 'no-store' });
+      location.replace('http://localhost:' + port + '/'); return;
+    } catch (e) {}
+  }
+  status.textContent = 'Sem resposta (' + new Date().toLocaleTimeString() + ')';
+  msg.textContent = 'O manager não está respondendo.';
+  hint.style.display = ''; retry.style.display = '';
+}
+probe();
+setInterval(() => { if (!document.hidden) probe(); }, 5000);
+</script>
+</body>
+</html>

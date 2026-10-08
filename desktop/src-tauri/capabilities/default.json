@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Permissão padrão da janela principal (PoC: mínima)",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
