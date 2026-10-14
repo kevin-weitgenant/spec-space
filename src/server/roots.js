@@ -298,7 +298,7 @@ function createRoot(root, opts = {}) {
         const body = ext === ".html" ? injectScripts(data.toString("utf8"), { base }) : data;
         // Dev server: HTML must never come from the browser's heuristic cache,
         // or a live-reload can show a stale doc (no validators to revalidate).
-        const headers = { "Content-Type": type, "Content-Length": body.length, "Accept-Ranges": "bytes" };
+        const headers = { "Content-Type": type, "Content-Length": Buffer.byteLength(body), "Accept-Ranges": "bytes" };
         if (ext === ".html" || ext === ".htm") headers["Cache-Control"] = "no-store";
         send(res, 200, body, headers);
       });
