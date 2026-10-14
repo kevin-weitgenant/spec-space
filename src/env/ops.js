@@ -35,6 +35,7 @@ function createDefaultOps() {
     mkdirSync: fs.mkdirSync,
     readdirSync: fs.readdirSync,
     stat: fs.stat,
+    createReadStream: fs.createReadStream,
     readFile: fs.readFile,
     writeFile: fs.writeFile,
     rename: fs.rename,

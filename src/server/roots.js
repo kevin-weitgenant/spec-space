@@ -23,11 +23,31 @@ const MIME = {
   ".gif": "image/gif", ".webp": "image/webp", ".ico": "image/x-icon",
   ".woff": "font/woff", ".woff2": "font/woff2", ".txt": "text/plain; charset=utf-8",
   ".map": "application/json; charset=utf-8",
+  ".mp4": "video/mp4", ".m4v": "video/mp4", ".webm": "video/webm", ".ogg": "video/ogg",
 };
 
 function send(res, status, body, headers = {}) {
   res.writeHead(status, headers);
   res.end(body);
+}
+
+// "bytes=a-b" | "bytes=a-" | "bytes=-suffix" → {start,end} | null (inválido
+// ou ausente). Um único range — multi-range não vale o parse pra servir vídeo.
+function parseRange(header, size) {
+  if (!header) return null;
+  const m = /^bytes=(\d*)-(\d*)$/.exec(String(header).trim());
+  if (!m || (m[1] === "" && m[2] === "")) return null;
+  let start, end;
+  if (m[1] === "") { // sufixo: últimos N bytes
+    const n = Math.min(Number(m[2]), size);
+    if (n === 0) return null;
+    start = size - n; end = size - 1;
+  } else {
+    start = Number(m[1]);
+    end = m[2] === "" ? size - 1 : Math.min(Number(m[2]), size - 1);
+  }
+  if (start > end || start >= size) return null;
+  return { start, end };
 }
 
 // ── shared guards (module scope — unit-testable without a server) ─────────
@@ -250,17 +270,35 @@ function createRoot(root, opts = {}) {
     send(res, 200, injectScripts(html, { base }), { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" });
   }
 
-  function serveFile(filePath, res) {
+  function serveFile(filePath, res, req) {
     ops.stat(filePath, (err, stat) => {
       if (err || !stat.isFile()) return send(res, 404, "404 Not Found");
       const ext = path.extname(filePath).toLowerCase();
       const type = MIME[ext] || "application/octet-stream";
+
+      // Range/206: sem isto o browser não consegue dar seek em <video> (baixa
+      // o arquivo inteiro linearmente). HTML ignora Range (é injetado, tamanho muda).
+      const range = ext === ".html" || ext === ".htm" ? null : parseRange(req && req.headers.range, stat.size);
+      if (req && req.headers.range && range === null && !/\.html?$/i.test(ext))
+        return send(res, 416, "416 Range Not Satisfiable", { "Content-Range": `bytes */${stat.size}` });
+      if (range) {
+        const headers = {
+          "Content-Type": type,
+          "Content-Length": range.end - range.start + 1,
+          "Content-Range": `bytes ${range.start}-${range.end}/${stat.size}`,
+          "Accept-Ranges": "bytes",
+        };
+        res.writeHead(206, headers);
+        ops.createReadStream(filePath, { start: range.start, end: range.end }).pipe(res);
+        return;
+      }
+
       ops.readFile(filePath, (e, data) => {
         if (e) return send(res, 500, "500 Internal Server Error");
         const body = ext === ".html" ? injectScripts(data.toString("utf8"), { base }) : data;
         // Dev server: HTML must never come from the browser's heuristic cache,
         // or a live-reload can show a stale doc (no validators to revalidate).
-        const headers = { "Content-Type": type };
+        const headers = { "Content-Type": type, "Content-Length": body.length, "Accept-Ranges": "bytes" };
         if (ext === ".html" || ext === ".htm") headers["Cache-Control"] = "no-store";
         send(res, 200, body, headers);
       });
@@ -309,7 +347,7 @@ function createRoot(root, opts = {}) {
     ) {
       return serveShell(res);
     }
-    serveFile(filePath, res);
+    serveFile(filePath, res, req);
   }
 
   return { root, base, handle, reload };
