@@ -37,11 +37,13 @@ function injectScripts(html, opts = {}) {
       : deepLinkBootstrap() + html;
   }
   const tags = [];
+  // dev clients read window.DOCS_BASE to prefix their /__... API calls.
+  // MUST come before lib.js: lib.js snapshots window.DOCS_BASE into
+  // BASE/BASE_N at load time (reload.js filters SSE events by BASE_N).
+  if (!staticMode && base) tags.push(`<script>window.DOCS_BASE=${JSON.stringify(base + "/")}</script>`);
   // the identity lib comes first — every other client consumes window.docsLib
   // (data-injected, so the editor strips it on save like all the rest)
   tags.push(`<script src="${base}/__docs__/lib.js" data-injected></script>`);
-  // dev clients read window.DOCS_BASE to prefix their /__... API calls
-  if (!staticMode && base) tags.push(`<script>window.DOCS_BASE=${JSON.stringify(base + "/")}</script>`);
   if (staticMode) tags.push(`<script>window.DOCS_EXPORT=true</script>`);
   else tags.push(`<script src="${base}/__docs__/reload.js" data-injected></script>`);
   // desktop-shell bridge: Ctrl/middle-click → new tab in the Tauri host.

@@ -1,6 +1,6 @@
 {
   "name": "spec-space",
-  "version": "0.15.2",
+  "version": "0.15.3",
   "description": "Navigate folders of HTML docs with an auto sidebar tree, live reload, and Mermaid/SVG pan/zoom. HTML over Markdown — zero build.",
   "keywords": [
     "docs",
