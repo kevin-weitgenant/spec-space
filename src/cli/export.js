@@ -26,6 +26,17 @@ const CLIENT_DIR = path.join(__dirname, "..", "..", "client");
 // the static site has no server, so _config.json itself would be dead weight.
 const SKIP_FILES = new Set(["_config.json", "_order.json", "_icons.json"]);
 
+// mtimes drive the sidebar's changed-dot on the dev server, but a static
+// export rewrites every file — fresh mtimes would light ALL dots up for any
+// visitor who saw the previous deploy (their localStorage "last seen" is
+// older than the export). Dots are a local-dev signal; strip them at export.
+function stripMtimes(nodes) {
+  for (const n of nodes) {
+    if (n.type === "folder") stripMtimes(n.children);
+    else delete n.mtime;
+  }
+}
+
 function copyDir(src, dest, skipAbs) {
   fs.mkdirSync(dest, { recursive: true });
   for (const e of fs.readdirSync(src, { withFileTypes: true })) {
@@ -61,7 +72,9 @@ function run(root, outDir) {
   //     client's per-doc tab titles). The export NEVER writes to the source.
   const cfg = readConfig(src);
   const anim = ["reveal", "slide", "guide"].includes(cfg.sidebarAnim) ? cfg.sidebarAnim : "guide";
-  const manifest = { root: "", sep: "/", anim, title: typeof cfg.title === "string" ? cfg.title : "", tree: buildTree(src) };
+  const tree = buildTree(src);
+  stripMtimes(tree);
+  const manifest = { root: "", sep: "/", anim, title: typeof cfg.title === "string" ? cfg.title : "", tree };
   fs.writeFileSync(path.join(out, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
 
   // 3 — client/ → __docs__/
